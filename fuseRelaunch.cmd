@@ -1,0 +1,1 @@
+-intstyle "ise" -incremental -o "/home/jackey/My_project/VHDL/cpu/ALUtb_isim_beh.exe" -prj "/home/jackey/My_project/VHDL/cpu/ALUtb_beh.prj" "work.ALUtb" 

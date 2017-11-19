@@ -19,6 +19,8 @@ package helper is
     constant ADDU_op  : std_logic_vector(4 downto 0) := "11100";
     constant ADDIU_op : std_logic_vector(4 downto 0) := "01001";
     constant BNEZ_op  : std_logic_vector(4 downto 0) := "00101";
+    constant NOP_op   : std_logic_vector(4 downto 0) := "00001";
+
 
     constant alu_add  : std_logic_vector(3 downto 0) := "0000";
     constant alu_sub  : std_logic_vector(3 downto 0) := "0001";
@@ -32,16 +34,23 @@ package helper is
     constant alu_rol  : std_logic_vector(3 downto 0) := "1001";
     constant alu_nop  : std_logic_vector(3 downto 0) := "1111";
 
+    constant zero16   : std_logic_vector(15 downto 0) := "0000000000000000";
+    constant zero17   : std_logic_vector(16 downto 0) := "00000000000000000";
+    constant zero5    : std_logic_vector(4 downto 0)  := "00000";
 
-    procedure reg_decode(signal reg_data: out std_logic_vector;
-                        signal addr: in std_logic_vector;
-                        signal r0, r1, r2, r3, r4, r5, r6, r7, SP, IH: in std_logic_vector);
+
+    procedure reg_decode(signal reg_data: out std_logic_vector(15 downto 0);
+                        addr: in std_logic_vector(3 downto 0);
+                        signal r0, r1, r2, r3, r4, r5, r6, r7, SP, IH: in std_logic_vector(15 downto 0));
 
     function sign_extend11(imm : std_logic_vector(10 downto 0))
-                            return std_logic_vector(15 downto 0);
+                            return std_logic_vector;
 
     function sign_extend8(imm : std_logic_vector(7 downto 0))
-                            return std_logic_vector(15 downto 0);
+                            return std_logic_vector;
+
+    function zero_extend8(imm : std_logic_vector(7 downto 0))
+                            return std_logic_vector;
 
 end helper;
 
@@ -67,7 +76,7 @@ package body helper is
 --  end <function_name>;
 
     function sign_extend11(imm : std_logic_vector(10 downto 0))
-                                return std_logic_vector(15 downto 0) is
+                                return std_logic_vector is
     begin
         if (imm(10) = '1') then
             return "11111" & imm;
@@ -77,7 +86,7 @@ package body helper is
     end sign_extend11;
 
     function sign_extend8(imm : std_logic_vector(7 downto 0))
-                                return std_logic_vector(15 downto 0) is
+                                return std_logic_vector is
     begin 
         if imm(7) = '1' then
             return "11111111" & imm;
@@ -86,10 +95,15 @@ package body helper is
         end if;
     end sign_extend8;
 
+    function zero_extend8(imm : std_logic_vector(7 downto 0))
+                                return std_logic_vector is
+    begin 
+        return "00000000" & imm;
+    end zero_extend8;
 
-    procedure reg_decode(signal reg_data: out std_logic_vector;
-                        signal addr: in std_logic_vector;
-    signal r0, r1, r2, r3, r4, r5, r6, r7, SP, IH: in std_logic_vector) is
+    procedure reg_decode(signal reg_data: out std_logic_vector(15 downto 0);
+                        addr: in std_logic_vector(3 downto 0);
+                        signal r0, r1, r2, r3, r4, r5, r6, r7, SP, IH: in std_logic_vector(15 downto 0)) is
     begin
         case addr is
             when "0000" =>
