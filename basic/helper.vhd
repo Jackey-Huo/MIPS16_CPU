@@ -52,6 +52,9 @@ package helper is
     function zero_extend8(imm : std_logic_vector(7 downto 0))
                             return std_logic_vector;
 
+    function zero_extend3(imm : std_logic_vector(2 downto 0))
+                            return std_logic_vector;
+
 end helper;
 
 package body helper is
@@ -100,6 +103,12 @@ package body helper is
     begin 
         return "00000000" & imm;
     end zero_extend8;
+
+    function zero_extend3(imm : std_logic_vector(2 downto 0))
+                                return std_logic_vector is
+    begin 
+        return "0000000000000" & imm;
+    end zero_extend3;
 
     procedure reg_decode(signal reg_data: out std_logic_vector(15 downto 0);
                         addr: in std_logic_vector(3 downto 0);

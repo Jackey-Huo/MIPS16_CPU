@@ -130,18 +130,15 @@ begin
 
     ---------------- ID --------------------------
     ID_unit: process(clk, rst)
-        variable id_rx, id_ry : std_logic_vector(3 downto 0) := "0000";
     begin
         if (clk'event and clk='1') then
             idex_ins_op <= ifid_instruc(15 downto 11);
             case ifid_instruc(15 downto 11) is
                 when ADDU_op =>
                     -- rx value
-                          id_rx := "0" & ifid_instruc(10 downto 8);
-                    reg_decode(idex_reg_a_data, id_rx, r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
                     -- ry value
-                          id_ry := "0" & ifid_instruc(7 downto 5);
-                    reg_decode(idex_reg_b_data, id_ry, r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                    reg_decode(idex_reg_b_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
                     -- write back register index
                     idex_reg_wb <= "0" & ifid_instruc(4 downto 2);
                 when ADDIU_op =>
@@ -150,6 +147,17 @@ begin
                     -- immediate value, put into reg_b
                     idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
                     -- write back register index
+                    idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                when SLL_op =>
+                    -- ry value
+                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                    -- immediate zero extend
+                    if (ifid_instruc(4 downto 2) = "000") then
+                        idex_reg_b_data <= "0000000000001000";
+                    else
+                        idex_reg_b_data <= zero_extend3(ifid_instruc(4 downto 2));
+						  end if;
+                    -- write back rx register
                     idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
                 when LI_op =>
                     -- immediate value, zero extend, put into register A
@@ -170,20 +178,23 @@ begin
         if (rst = '0') then
             exme_ins_op <= zero5;
         elsif (clk'event and clk='1') then
+            exme_ins_op <= idex_ins_op;
             case idex_ins_op is
                 when ADDU_op | ADDIU_op =>
-                    exme_ins_op <= idex_ins_op;
                     ex_reg_a_data <= idex_reg_a_data;
                     ex_reg_b_data <= idex_reg_b_data;
                     ex_alu_op <= alu_add;
                     exme_reg_wb <= idex_reg_wb;
+                when SLL_op =>
+                    ex_reg_a_data <= idex_reg_a_data;
+                    ex_reg_b_data <= idex_reg_b_data;
+                    ex_alu_op <= alu_sll;
+                    exme_reg_wb <= idex_reg_wb;
                 when LI_op =>
-                    exme_ins_op <= idex_ins_op;
                     ex_alu_op <= alu_nop;
                     exme_reg_wb <= idex_reg_wb;
                     exme_bypass <= idex_reg_a_data;
                 when others =>
-                    exme_ins_op <= NOP_op;
                     ex_alu_op <= alu_nop;
             end case;
         end if;
@@ -197,13 +208,15 @@ begin
     ME_unit: process(clk, rst)
     begin
         if (clk'event and clk='1') then
+            mewb_ins_op <= exme_ins_op;
             case exme_ins_op is
                 when ADDU_op | ADDIU_op =>
-                    mewb_ins_op <= exme_ins_op;
+                    mewb_result <= exme_result;
+                    mewb_reg_wb <= exme_reg_wb;
+                when SLL_op =>
                     mewb_result <= exme_result;
                     mewb_reg_wb <= exme_reg_wb;
                 when LI_op =>
-                    mewb_ins_op <= exme_ins_op;
                     mewb_reg_wb <= exme_reg_wb;
                     mewb_bypass <= exme_bypass;
                 when NOP_op =>
@@ -221,7 +234,7 @@ begin
     begin
         if (clk'event and clk='1') then
             case mewb_ins_op is
-                when ADDU_op | ADDIU_op =>
+                when ADDU_op | ADDIU_op | SLL_op =>
                     wb_data := mewb_result;
                     wb_enable := true;
                 when LI_op =>
