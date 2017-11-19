@@ -36,6 +36,7 @@ package helper is
 
     constant zero16   : std_logic_vector(15 downto 0) := "0000000000000000";
     constant zero17   : std_logic_vector(16 downto 0) := "00000000000000000";
+    constant zero18   : std_logic_vector(17 downto 0) := "000000000000000000";
     constant zero5    : std_logic_vector(4 downto 0)  := "00000";
 
 
@@ -47,6 +48,9 @@ package helper is
                             return std_logic_vector;
 
     function sign_extend8(imm : std_logic_vector(7 downto 0))
+                            return std_logic_vector;
+
+    function sign_extend5(imm : std_logic_vector(4 downto 0))
                             return std_logic_vector;
 
     function zero_extend8(imm : std_logic_vector(7 downto 0))
@@ -97,6 +101,17 @@ package body helper is
             return "00000000" & imm;
         end if;
     end sign_extend8;
+
+    function sign_extend5(imm : std_logic_vector(4 downto 0))
+                                return std_logic_vector is
+    begin 
+        if imm(4) = '1' then
+            return "11111111111" & imm;
+        else
+            return "00000000000" & imm;
+        end if;
+    end sign_extend5;
+
 
     function zero_extend8(imm : std_logic_vector(7 downto 0))
                                 return std_logic_vector is

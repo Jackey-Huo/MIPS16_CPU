@@ -161,6 +161,10 @@ BEGIN
 		instruct <= "0100100101010000"; -- ADDIU R1 0x50
 		wait for clk_period;
 		instruct <= "0011001000010000"; -- SLL R2 4  -- shift left by 8 bit
+		wait for clk_period;
+		instruct <= "1001100000100001"; -- LW R0 R1 0x01
+		wait for clk_period;
+		instruct <= "1101100000100001"; -- SW R0 R1 0x01
 
 
       wait;

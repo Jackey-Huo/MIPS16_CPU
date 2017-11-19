@@ -82,8 +82,8 @@ architecture Behavioral of cpu is
     signal idex_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
     signal idex_reg_a_data                 : std_logic_vector (15 downto 0) := zero16;
     signal idex_reg_b_data                 : std_logic_vector (15 downto 0) := zero16;
+    signal idex_bypass                     : std_logic_vector (15 downto 0)  := zero16;
     signal idex_reg_wb                     : std_logic_vector (3 downto 0)  := "0000";
-    signal idex_alu_op                     : std_logic_vector (3 downto 0)  := "0000";
     signal ex_reg_a_data, ex_reg_b_data    : std_logic_vector (15 downto 0) := zero16;
     signal ex_alu_op                       : std_logic_vector (3 downto 0)  := "0000";
     signal exme_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
@@ -91,8 +91,13 @@ architecture Behavioral of cpu is
     signal exme_result                     : std_logic_vector (15 downto 0) := zero16;
     signal exme_reg_wb                     : std_logic_vector (3 downto 0)  := "0000";
     signal exme_bypass                     : std_logic_vector (15 downto 0) := zero16;
+    signal me_read_enable, me_write_enable : std_logic                      := '0';
+    signal me_write_enable_real            : std_logic                      := '0';
+    signal me_read_addr, me_write_addr     : std_logic_vector (17 downto 0) := zero18;
+    signal me_write_data                   : std_logic_vector (15 downto 0) := zero16;
     signal mewb_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
     signal mewb_result                     : std_logic_vector (15 downto 0) := zero16;
+    signal mewb_readout                    : std_logic_vector (15 downto 0) := zero16;
     signal mewb_reg_wb                     : std_logic_vector (3 downto 0)  := "0000";
     signal mewb_bypass                     : std_logic_vector (15 downto 0) := zero16;
 
@@ -108,24 +113,34 @@ architecture Behavioral of cpu is
     end component alu;
 begin
 
+    ------------- Memory Control Unit, pure combinational logic
+    me_write_enable_real <= '0' when (rst = '0') else (me_write_enable and clk);
+
+    EN_ram1 <= '1' when (rst = '0') else '0';
+    WE_ram1 <= '1' when (rst = '0') else
+               '0' when (me_write_enable_real = '1') else
+               '1' when (me_read_enable = '1') else '1';
+    OE_ram1 <= '1' when (rst = '0') else
+               '0' when (me_read_enable = '1') else
+               '1' when (me_write_enable = '1') else '0';
+    addr_ram1 <= zero18 when(rst = '0') else
+                 me_read_addr when (me_read_enable = '1') else
+                 me_write_addr when (me_write_enable = '1') else
+                 "00" & pc;
+    data_ram1 <= me_write_data when (me_write_enable_real = '1') else "ZZZZZZZZZZZZZZZZ";
+    mewb_readout <= data_ram1 when (me_read_enable = '1') else "ZZZZZZZZZZZZZZZZ";
+    --ifid_instruc <= data_ram1;
+    ifid_instruc <= instruct;
+
     ---------------- IF --------------------------
     IF_unit: process(clk, rst)
     begin
         if (rst = '0') then
             pc <= zero16;
-            addr_ram1 <= "00" & zero16;
         elsif ( clk'event and clk='1' ) then
-            addr_ram1 <= "00" & pc;
             pc <= pc + 1;
         end if;
     end process IF_unit;
-    -- ram1 control
-    EN_ram1 <= '1' when (rst = '0') else '0';
-    WE_ram1 <= '1';
-    OE_ram1 <= '1' when (rst = '0') else '0';
-    data_ram1 <= "ZZZZZZZZZZZZZZZZ";
-    --ifid_instruc <= data_ram1;
-    ifid_instruc <= instruct;
 
 
     ---------------- ID --------------------------
@@ -156,18 +171,31 @@ begin
                         idex_reg_b_data <= "0000000000001000";
                     else
                         idex_reg_b_data <= zero_extend3(ifid_instruc(4 downto 2));
-						  end if;
+                          end if;
                     -- write back rx register
                     idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
                 when LI_op =>
                     -- immediate value, zero extend, put into register A
                     idex_reg_a_data <= zero_extend8(ifid_instruc(7 downto 0));
                     idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                when LW_op =>
+                    -- rx value
+                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                    -- immediate sign extend
+                    idex_reg_b_data <= sign_extend5(ifid_instruc(4 downto 0));
+                    -- write back ry register
+                    idex_reg_wb <= "0" & ifid_instruc(7 downto 5);
+                when SW_op =>
+                    -- rx value
+                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                    -- immediate sign extend
+                    idex_reg_b_data <= sign_extend5(ifid_instruc(4 downto 0));
+                    -- ry value
+                    reg_decode(idex_bypass, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
                 when others =>
                     idex_reg_a_data <= zero16;
                     idex_reg_b_data <= zero16;
                     idex_reg_wb <= "0000";
-                    idex_alu_op <= alu_nop;
             end case;
         end if;
     end process ID_unit;
@@ -180,10 +208,11 @@ begin
         elsif (clk'event and clk='1') then
             exme_ins_op <= idex_ins_op;
             case idex_ins_op is
-                when ADDU_op | ADDIU_op =>
+                when ADDU_op | ADDIU_op | LW_op | SW_op =>
                     ex_reg_a_data <= idex_reg_a_data;
                     ex_reg_b_data <= idex_reg_b_data;
                     ex_alu_op <= alu_add;
+                    exme_bypass <= idex_bypass;
                     exme_reg_wb <= idex_reg_wb;
                 when SLL_op =>
                     ex_reg_a_data <= idex_reg_a_data;
@@ -203,22 +232,28 @@ begin
     ALU_comp: alu port map (rst, ex_reg_a_data, ex_reg_b_data, ex_alu_op, exme_result,
                                 exme_carry, exme_zero, exme_ovr);
 
-
     ---------------- ME --------------------------
     ME_unit: process(clk, rst)
     begin
         if (clk'event and clk='1') then
             mewb_ins_op <= exme_ins_op;
             case exme_ins_op is
-                when ADDU_op | ADDIU_op =>
-                    mewb_result <= exme_result;
-                    mewb_reg_wb <= exme_reg_wb;
-                when SLL_op =>
+                when ADDU_op | ADDIU_op | SLL_op =>
                     mewb_result <= exme_result;
                     mewb_reg_wb <= exme_reg_wb;
                 when LI_op =>
                     mewb_reg_wb <= exme_reg_wb;
                     mewb_bypass <= exme_bypass;
+                when LW_op =>
+                    mewb_reg_wb <= exme_reg_wb;
+                    me_read_addr <= "00" & exme_result;
+                    me_read_enable <= '1';
+                    me_write_enable <= '0';
+                when SW_op =>
+                    me_write_addr <= "00" & exme_result;
+                    me_write_data <= exme_bypass;
+                    me_read_enable <= '0';
+                    me_write_enable <= '1';
                 when NOP_op =>
                     mewb_ins_op <= NOP_op;
                 when others =>
@@ -239,6 +274,9 @@ begin
                     wb_enable := true;
                 when LI_op =>
                     wb_data := mewb_bypass;
+                    wb_enable := true;
+                when LW_op =>
+                    wb_data := mewb_readout;
                     wb_enable := true;
                 when NOP_op =>
                     wb_enable := false;
