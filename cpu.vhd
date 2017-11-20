@@ -37,7 +37,6 @@ entity cpu is
     port (
         clk : in std_logic;
         rst : in std_logic;
-        led : out std_logic_vector(15 downto 0);
 
         -- ram1, Instruction memory
         data_ram1 : inout std_logic_vector(15 downto 0);
@@ -61,9 +60,11 @@ entity cpu is
         seri_tsre       : in std_logic;
 
         --digits
-        digit1  :   out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-        digit2  :   out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-          
+        dyp0            : out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        dyp1            : out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+        -- led
+        led : out std_logic_vector(15 downto 0);
+
         -- input instruction, for debug only
         instruct : in std_logic_vector (15 downto 0)
     );
@@ -316,8 +317,18 @@ begin
     begin
     end process Control_unit;
 
+    dyp0 <= "0000000";
+    dyp1 <= "1111111";
+    seri_rdn <= '1';
+    seri_wrn <= '1';
 
+    EN_ram2 <= '1';
+    OE_ram2 <= '1';
+    WE_ram2 <= '1';
+    data_ram2 <= "ZZZZZZZZZZZZZZZZ";
+    addr_ram2 <= zero18;
 
+    led <= instruct;
 
 end Behavioral;
 
