@@ -76,10 +76,12 @@ architecture Behavioral of cpu is
     signal SP, IH : std_logic_vector(15 downto 0) := zero16;
     signal T : std_logic := '0';
     -- pc
-    signal pc : std_logic_vector(15 downto 0) := zero16;
-    signal pc_instruc : std_logic_vector(15 downto 0) := zero16;
+    signal pc                              : std_logic_vector (15 downto 0) := zero16;
+    signal pc_real                         : std_logic_vector (15 downto 0) := zero16;
     -- help signal
     signal ifid_instruc                    : std_logic_vector (15 downto 0) := zero16;
+    signal id_pc_branch                    : std_logic                      := '0';
+    signal id_branch_value                 : std_logic_vector (15 downto 0) := zero16;
     signal idex_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
     signal idex_reg_a_data                 : std_logic_vector (15 downto 0) := zero16;
     signal idex_reg_b_data                 : std_logic_vector (15 downto 0) := zero16;
@@ -127,10 +129,12 @@ begin
     addr_ram1 <= zero18 when(rst = '0') else
                  me_read_addr when (me_read_enable = '1') else
                  me_write_addr when (me_write_enable = '1') else
-                 "00" & pc;
+                 "00" & pc_real;
     data_ram1 <= me_write_data when (me_write_enable_real = '1') else "ZZZZZZZZZZZZZZZZ";
     mewb_readout <= data_ram1 when (me_read_enable = '1') else "ZZZZZZZZZZZZZZZZ";
-    --ifid_instruc <= data_ram1;
+    -- if MEM is using SRAM, insert a NOP into pipeline
+    --ifid_instruc <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0')) else "000010000000000000";
+
     ifid_instruc <= instruct;
 
     ---------------- IF --------------------------
@@ -139,9 +143,11 @@ begin
         if (rst = '0') then
             pc <= zero16;
         elsif ( clk'event and clk='1' ) then
-            pc <= pc + 1;
+            pc <= pc_real + 1;
         end if;
     end process IF_unit;
+    -- mux for real pc
+    pc_real <= id_branch_value when (id_pc_branch = '1') else pc;
 
 
     ---------------- ID --------------------------
@@ -149,6 +155,7 @@ begin
     begin
         if (clk'event and clk='1') then
             idex_ins_op <= ifid_instruc(15 downto 11);
+            id_pc_branch <= '0';
             case ifid_instruc(15 downto 11) is
                 when ADDU_op =>
                     -- rx value
@@ -193,6 +200,12 @@ begin
                     idex_reg_b_data <= sign_extend5(ifid_instruc(4 downto 0));
                     -- ry value
                     reg_decode(idex_bypass, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                when BNEZ_op =>
+                    id_pc_branch <= '1';
+                    -- rx value
+                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                    -- immediate sign extend
+                    idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
                 when others =>
                     idex_reg_a_data <= zero16;
                     idex_reg_b_data <= zero16;
@@ -200,6 +213,22 @@ begin
             end case;
         end if;
     end process ID_unit;
+    -- combination logic multiplexer unit for branch
+    process(pc, idex_reg_b_data, idex_reg_a_data)
+    begin
+        case ifid_instruc(15 downto 11) is
+            when BNEZ_op =>
+                if (idex_reg_a_data /= zero16) then
+                    id_branch_value <= pc - 1 + idex_reg_b_data;
+                else
+                    id_branch_value <= pc;
+                end if;
+            when others =>
+                id_branch_value <= zero16;
+        end case;
+    end process;
+
+
 
     ---------------- EX --------------------------
     EX_unit: process(clk, rst)
@@ -238,6 +267,8 @@ begin
     begin
         if (clk'event and clk='1') then
             mewb_ins_op <= exme_ins_op;
+            me_read_enable <= '0';
+            me_write_enable <= '0';
             case exme_ins_op is
                 when ADDU_op | ADDIU_op | SLL_op =>
                     mewb_result <= exme_result;

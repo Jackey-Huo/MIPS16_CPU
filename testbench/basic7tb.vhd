@@ -2,9 +2,9 @@
 -- Company: 
 -- Engineer:
 --
--- Create Date:   10:14:37 11/19/2017
+-- Create Date:   19:59:00 11/20/2017
 -- Design Name:   
--- Module Name:   /home/jackey/My_project/VHDL/cpu/testbench/ALUtb.vhd
+-- Module Name:   /home/jackey/My_project/VHDL/cpu/testbench/basic7tb.vhd
 -- Project Name:  cpu
 -- Target Device:  
 -- Tool versions:  
@@ -32,10 +32,10 @@ USE ieee.std_logic_1164.ALL;
 -- arithmetic functions with Signed or Unsigned values
 --USE ieee.numeric_std.ALL;
  
-ENTITY ALUtb IS
-END ALUtb;
+ENTITY basic7tb IS
+END basic7tb;
  
-ARCHITECTURE behavior OF ALUtb IS 
+ARCHITECTURE behavior OF basic7tb IS 
  
     -- Component Declaration for the Unit Under Test (UUT)
  
@@ -43,7 +43,6 @@ ARCHITECTURE behavior OF ALUtb IS
     PORT(
          clk : IN  std_logic;
          rst : IN  std_logic;
-         led : OUT  std_logic_vector(15 downto 0);
          data_ram1 : INOUT  std_logic_vector(15 downto 0);
          addr_ram1 : OUT  std_logic_vector(17 downto 0);
          OE_ram1 : OUT  std_logic;
@@ -61,6 +60,7 @@ ARCHITECTURE behavior OF ALUtb IS
          seri_tsre : IN  std_logic;
          dyp0 : OUT  std_logic_vector(6 downto 0);
          dyp1 : OUT  std_logic_vector(6 downto 0);
+         led : OUT  std_logic_vector(15 downto 0);
          instruct : IN  std_logic_vector(15 downto 0)
         );
     END COMPONENT;
@@ -79,7 +79,6 @@ ARCHITECTURE behavior OF ALUtb IS
    signal data_ram2 : std_logic_vector(15 downto 0);
 
  	--Outputs
-   signal led : std_logic_vector(15 downto 0);
    signal addr_ram1 : std_logic_vector(17 downto 0);
    signal OE_ram1 : std_logic;
    signal WE_ram1 : std_logic;
@@ -90,8 +89,9 @@ ARCHITECTURE behavior OF ALUtb IS
    signal EN_ram2 : std_logic;
    signal seri_rdn : std_logic;
    signal seri_wrn : std_logic;
-   signal digit1 : std_logic_vector(6 downto 0);
-   signal digit2 : std_logic_vector(6 downto 0);
+   signal dyp0 : std_logic_vector(6 downto 0);
+   signal dyp1 : std_logic_vector(6 downto 0);
+   signal led : std_logic_vector(15 downto 0);
 
    -- Clock period definitions
    constant clk_period : time := 10 ns;
@@ -102,7 +102,6 @@ BEGIN
    uut: cpu PORT MAP (
           clk => clk,
           rst => rst,
-          led => led,
           data_ram1 => data_ram1,
           addr_ram1 => addr_ram1,
           OE_ram1 => OE_ram1,
@@ -118,8 +117,9 @@ BEGIN
           seri_data_ready => seri_data_ready,
           seri_tbre => seri_tbre,
           seri_tsre => seri_tsre,
-          digit1 => digit1,
-          digit2 => digit2,
+          dyp0 => dyp0,
+          dyp1 => dyp1,
+          led => led,
           instruct => instruct
         );
 
@@ -135,7 +135,7 @@ BEGIN
 
    -- Stimulus process
    stim_proc: process
-   begin		
+	begin
       -- hold reset state for 100 ns.
       wait for 70 ns;	
 
@@ -171,8 +171,7 @@ BEGIN
 		instruct <= "0000100000000000"; -- NOP
 		wait for clk_period;
 
-
-      wait;
+		wait;
    end process;
 
 END;

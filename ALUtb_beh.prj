@@ -1,0 +1,4 @@
+vhdl basic "basic/helper.vhd"
+vhdl work "alu.vhd"
+vhdl work "cpu.vhd"
+vhdl work "testbench/ALUtb.vhd"
