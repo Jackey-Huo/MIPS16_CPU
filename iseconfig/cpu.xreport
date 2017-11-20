@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <report-views version="2.0" >
  <header>
-  <DateModified>2017-11-20T20:35:00</DateModified>
+  <DateModified>2017-11-21T00:34:25</DateModified>
   <ModuleName>cpu</ModuleName>
   <SummaryTimeStamp>2017-11-20T19:55:20</SummaryTimeStamp>
-  <SavedFilePath>/home/jackey/My_project/VHDL/cpu/iseconfig/cpu.xreport</SavedFilePath>
-  <ImplementationReportsDirectory>/home/jackey/My_project/VHDL/cpu/</ImplementationReportsDirectory>
+  <SavedFilePath>D:/CPU/cpu/iseconfig/cpu.xreport</SavedFilePath>
+  <ImplementationReportsDirectory>D:/CPU/cpu\</ImplementationReportsDirectory>
   <DateInitialized>2017-11-16T23:24:18</DateInitialized>
   <EnableMessageFiltering>false</EnableMessageFiltering>
  </header>

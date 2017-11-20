@@ -79,25 +79,40 @@ architecture Behavioral of cpu is
     signal pc                              : std_logic_vector (15 downto 0) := zero16;
     signal pc_real                         : std_logic_vector (15 downto 0) := zero16;
     -- help signal
+	 
+    -- IF/ID pipeline storage
     signal ifid_instruc                    : std_logic_vector (15 downto 0) := zero16;
+    -- NOTICE: What's this?
     signal id_pc_branch                    : std_logic                      := '0';
     signal id_branch_value                 : std_logic_vector (15 downto 0) := zero16;
+	 
+    -- ID/EX
     signal idex_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
     signal idex_reg_a_data                 : std_logic_vector (15 downto 0) := zero16;
     signal idex_reg_b_data                 : std_logic_vector (15 downto 0) := zero16;
+    -- What's this?
     signal idex_bypass                     : std_logic_vector (15 downto 0)  := zero16;
     signal idex_reg_wb                     : std_logic_vector (3 downto 0)  := "0000";
+    
+    -- EX layer variables
     signal ex_reg_a_data, ex_reg_b_data    : std_logic_vector (15 downto 0) := zero16;
     signal ex_alu_op                       : std_logic_vector (3 downto 0)  := "0000";
+    signal ex_alu_output                   : std_logic_vector (15 downto 0) := zero16;
+    
+    -- EX/MEM pipeline storage
     signal exme_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
     signal exme_carry, exme_zero, exme_ovr : std_logic                      := '0';
     signal exme_result                     : std_logic_vector (15 downto 0) := zero16;
     signal exme_reg_wb                     : std_logic_vector (3 downto 0)  := "0000";
     signal exme_bypass                     : std_logic_vector (15 downto 0) := zero16;
+    
+    -- MEM variables
     signal me_read_enable, me_write_enable : std_logic                      := '0';
     signal me_write_enable_real            : std_logic                      := '0';
     signal me_read_addr, me_write_addr     : std_logic_vector (17 downto 0) := zero18;
     signal me_write_data                   : std_logic_vector (15 downto 0) := zero16;
+    
+    --MEM/WB pipeline storage
     signal mewb_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
     signal mewb_result                     : std_logic_vector (15 downto 0) := zero16;
     signal mewb_readout                    : std_logic_vector (15 downto 0) := zero16;
@@ -143,9 +158,12 @@ begin
         if (rst = '0') then
             pc <= zero16;
         elsif ( clk'event and clk='1' ) then
+            -- TODO: the update of PC has 3 ways
+            -- (1) pc <= pc + 1; (2) JR (3) BEQZ
             pc <= pc_real + 1;
         end if;
     end process IF_unit;
+    
     -- mux for real pc
     pc_real <= id_branch_value when (id_pc_branch = '1') else pc;
 
@@ -213,6 +231,7 @@ begin
             end case;
         end if;
     end process ID_unit;
+    
     -- combination logic multiplexer unit for branch
     process(pc, idex_reg_b_data, idex_reg_a_data)
     begin
