@@ -85,7 +85,16 @@ architecture Behavioral of cpu is
     -- NOTICE: What's this?
     signal id_pc_branch                    : std_logic                      := '0';
     signal id_branch_value                 : std_logic_vector (15 downto 0) := zero16;
-	 
+	
+    -- Control Unit
+    signal ctrl_id_write_reg            : std_logic_vector (1 downto 0)  := "00";
+    signal ctrl_ex_alu_reg_a            : std_logic_vector (2 downto 0)  := "000";
+    signal ctrl_ex_alu_reg_b            : std_logic_vector (2 downto 0)  := "000"; 
+    signal ctrl_ex_alu_op               : std_logic_vector (4 downto 0)  := "00000";
+    signal ctrl_me_branch               : std_logic                      := '0';
+    signal ctrl_me_wb                   : std_logic_vector (2 downto 0)  := "000";
+
+
     -- ID/EX
     signal idex_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
     signal idex_reg_a_data                 : std_logic_vector (15 downto 0) := zero16;
@@ -231,7 +240,7 @@ begin
             end case;
         end if;
     end process ID_unit;
-    
+
     -- combination logic multiplexer unit for branch
     process(pc, idex_reg_b_data, idex_reg_a_data)
     begin
