@@ -110,6 +110,7 @@ architecture Behavioral of cpu is
     
     -- EX/MEM pipeline storage
     signal exme_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
+	 -- NOTICE: carry and overflow is not required
     signal exme_carry, exme_zero, exme_ovr : std_logic                      := '0';
     signal exme_result                     : std_logic_vector (15 downto 0) := zero16;
     signal exme_reg_wb                     : std_logic_vector (3 downto 0)  := "0000";
@@ -286,6 +287,7 @@ begin
             end case;
         end if;
     end process EX_unit;
+	 
     -- alu map
     ALU_comp: alu port map (rst, ex_reg_a_data, ex_reg_b_data, ex_alu_op, exme_result,
                                 exme_carry, exme_zero, exme_ovr);
