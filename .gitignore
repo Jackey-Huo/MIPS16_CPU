@@ -46,7 +46,7 @@ _impact.log
 *_pad.csv
 *_pad.txt
 *_par.xrpt
-*_summary.html
+*.html
 *_summary.xml
 *_usage.xml
 *_xst.xrpt
