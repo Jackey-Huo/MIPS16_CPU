@@ -67,7 +67,7 @@ entity cpu is
 
         -- DEBUG variables
 		  -- feed in instruct
-        instruct : in std_logic_vector (15 downto 0);
+        instruct : in std_logic_vector (15 downto 0)
         --dbg_ex_reg_a, dbg_ex_reg_b	: out std_logic_vector(15 downto 0)
     );
 end cpu;
