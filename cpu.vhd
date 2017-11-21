@@ -65,8 +65,10 @@ entity cpu is
         -- led
         led : out std_logic_vector(15 downto 0);
 
-        -- input instruction, for debug only
-        instruct : in std_logic_vector (15 downto 0)
+        -- DEBUG variables
+		  -- feed in instruct
+        instruct : in std_logic_vector (15 downto 0);
+        --dbg_ex_reg_a, dbg_ex_reg_b	: out std_logic_vector(15 downto 0)
     );
 end cpu;
 
@@ -87,13 +89,12 @@ architecture Behavioral of cpu is
     signal id_branch_value                 : std_logic_vector (15 downto 0) := zero16;
 	
     -- Control Unit
-    signal ctrl_id_write_reg            : std_logic_vector (1 downto 0)  := "00";
-    signal ctrl_ex_alu_reg_a            : std_logic_vector (2 downto 0)  := "000";
-    signal ctrl_ex_alu_reg_b            : std_logic_vector (2 downto 0)  := "000"; 
-    signal ctrl_ex_alu_op               : std_logic_vector (4 downto 0)  := "00000";
-    signal ctrl_me_branch               : std_logic                      := '0';
-    signal ctrl_me_wb                   : std_logic_vector (2 downto 0)  := "000";
-
+--    signal ctrl_id_write_reg            : std_logic_vector (1 downto 0)  := "00";
+--    signal ctrl_ex_alu_reg_a            : std_logic_vector (2 downto 0)  := "000";
+--    signal ctrl_ex_alu_reg_b            : std_logic_vector (2 downto 0)  := "000"; 
+--    signal ctrl_ex_alu_op               : std_logic_vector (4 downto 0)  := "00000";
+--    signal ctrl_me_branch               : std_logic                      := '0';
+--    signal ctrl_me_wb                   : std_logic_vector (2 downto 0)  := "000";
 
     -- ID/EX
     signal idex_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
@@ -140,6 +141,10 @@ architecture Behavioral of cpu is
         );
     end component alu;
 begin
+	-- DEBUG
+--	dbg_ex_reg_a <= ex_reg_a;
+--	dbg_ex_reg_b <= ex_reg_b;
+
 
     ------------- Memory Control Unit, pure combinational logic
     me_write_enable_real <= '0' when (rst = '0') else (me_write_enable and clk);
