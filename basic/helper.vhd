@@ -49,6 +49,17 @@ package helper is
     constant chs_wb_reg_data  : std_logic_vector (2 downto 0) := "100";
 
 
+    ------ VGA Section ------
+    -------------------------
+    constant vga480_full_w : integer := 799;
+    constant vga480_full_h : integer := 524;
+    constant vga480_w : integer := 640;
+    constant vga480_h : integer := 480;
+    constant vga480_hs_start : integer := 656;
+    constant vga480_hs_end : integer := 752;
+    constant vga480_vs_start : integer := 490;
+    constant vga480_vs_end : integer := 492;
+
     procedure reg_decode(signal reg_data: out std_logic_vector(15 downto 0);
                         addr: in std_logic_vector(3 downto 0);
                         signal r0, r1, r2, r3, r4, r5, r6, r7, SP, IH: in std_logic_vector(15 downto 0));
