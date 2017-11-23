@@ -23,6 +23,7 @@ NET "flash_addr[4]" LOC = P4;
 NET "flash_addr[3]" LOC = R2;
 NET "flash_addr[2]" LOC = R3;
 NET "flash_addr[1]" LOC = T1;
+#NET "flash_addr[0]" LOC = T2;
 NET "flash_data[15]" LOC = F1;
 NET "flash_data[14]" LOC = F2;
 NET "flash_data[13]" LOC = G3;
@@ -39,8 +40,13 @@ NET "flash_data[3]" LOC = J1;
 NET "flash_data[2]" LOC = J2;
 NET "flash_data[1]" LOC = J4;
 NET "flash_data[0]" LOC = J5;
+
 NET "clk" LOC = U9;
+NET "clock" LOC = B9;
+NET "wrn" LOC = U5;
+NET "rdn" LOC = C14;
 NET "rst" LOC = U10;
+
 NET "flash_byte" LOC = C1;
 NET "flash_vpen" LOC = C2;
 NET "flash_ce" LOC = E4;

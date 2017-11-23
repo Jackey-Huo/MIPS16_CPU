@@ -1,3 +1,1 @@
-work	"alu.vhd"
-basic	"basic/helper.vhd"
-work	"cpu.vhd"
+work	"clk_1152.vhd"
