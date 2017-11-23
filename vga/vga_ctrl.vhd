@@ -33,7 +33,6 @@ entity vga_ctrl is
 	Port(
 		clk : in std_logic; -- clock forced to be 50M
 		rst : in std_logic;
-
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
 
@@ -49,103 +48,56 @@ end vga_ctrl;
 
 architecture Behavioral of vga_ctrl is
 
--- clock used in synchronization
-signal vga_clk : std_logic := '0';
--- clock used in computation
-signal vga_clk_c : std_logic := '0';
+component vga_ctrl_480 is 
+	Port(
+		clk : in std_logic; -- clock forced to be 50M
+		rst : in std_logic;
 
--- column/x and row/y coordinates
-signal x, y : integer range 0 to 4048;
+		Hs : out std_logic; -- line sync
+		Vs : out std_logic; -- field sync
+
+		-- Concatenated color definition for input
+		color : in std_logic_vector (8 downto 0);
+
+		-- Separate color definition for output
+		R : out std_logic_vector(2 downto 0);
+		G : out std_logic_vector(2 downto 0);
+		B : out std_logic_vector(2 downto 0)
+	);
+end component;
+
+component vga_ctrl_768 is
+	Port(
+		clk : in std_logic; -- clock forced to be 50M
+		rst : in std_logic;
+
+		Hs : out std_logic; -- line sync
+		Vs : out std_logic; -- field sync
+
+		-- Concatenated color definition for input
+		color : in std_logic_vector (8 downto 0);
+
+		-- Separate color definition for output
+		R : out std_logic_vector(2 downto 0);
+		G : out std_logic_vector(2 downto 0);
+		B : out std_logic_vector(2 downto 0)
+	);
+end component;
 
 -- Hs, Vs used in computation
 signal Hs_c, Vs_c : std_logic := '0';
-
+signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector (2 downto 0) := "000";
 begin
 
-vga_clk <= vga_clk_c;
-
-	-- halve the 50M clock
-	vga_clk_producer : process (clk)
-	begin
-		if clk'event and clk = '1' then
-			vga_clk_c <= not vga_clk_c;
-		end if;
-	end process;
-		
-
-	-- sweep x and y
-	coor_sweep : process (vga_clk, rst)
-	begin
-		if rst = '0' then
-			x <= 0;
-			y <= 0;
-		elsif vga_clk'event and vga_clk = '1' then
-			if x = vga480_full_w then
-				x <= 0;
-				if y = vga480_full_h then
-	     			y <= 0;
-	    		else
-	     			y <= y + 1;
-	    		end if;
-			else
-				x <= x + 1;
-			end if;
-		end if;
-	end process;
- 
-	-- Synthesis Hs Sync signal
-	Hs_synthesis : process (vga_clk, rst)
-	begin
-		if rst = '0' then
-			Hs_c <= '1';
-		elsif vga_clk'event and vga_clk = '1' then
-			if x >= vga480_hs_start and x < vga480_hs_end then
-				Hs_c <= '0';
-			else
-				Hs_c <= '1';
-			end if;
-		end if;
-	end process;
- 
-	-- Synthesis Vs Sync signal
-	Vs_synthesis : process (vga_clk, rst)
-	begin
-		if rst = '0' then
-			Vs_c <= '1';
-		elsif vga_clk'event and vga_clk = '1' then
-			if y >= vga480_vs_start and y < vga480_vs_end then
-				Vs_c <= '0';
-			else
-				Vs_c <= '1';
-			end if;
-		end if;
-	end process;
-
-	-- Connect computational signal to real signal
-	process (vga_clk, rst)
-	begin
-		if rst = '0' then
-			Hs <= '0';
-			Vs <= '0';
-		elsif vga_clk'event and vga_clk = '1' then
-			Hs <= Hs_c;
-			Vs <= Vs_c;
-		end if;
-	end process;
-
-	-- Set color output
-	color_output : process(vga_clk, rst)
-	begin
-		if x > vga480_w or y > vga480_h then
-			R <= "000";
-			G <= "000";
-			B <= "000";
-		else
-			R <= color(8 downto 6);
-			G <= color(5 downto 3);
-			B <= color(2 downto 0);
-		end if;
-	end process;
-
+	vga768_disp : vga_ctrl_768 port map(
+		clk => clk,
+		rst => rst,
+		Hs => Hs,
+		Vs => Vs,
+		color => color,
+		R => R,
+		G => G,
+		B => B
+	);
 end Behavioral;
 
