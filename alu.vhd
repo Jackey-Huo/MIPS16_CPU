@@ -82,7 +82,7 @@ begin
                 result1(15 downto 0) <= std_logic_vector( shift_right(signed(a1(15 downto 0)),
                           to_integer(unsigned(b1(4 downto 0)))) );
               when alu_rol =>
-                result1 <= std_logic_vector( rotate_left(unsigned(a1(15 downto 0)),
+                result1(15 downto 0) <= std_logic_vector( rotate_left(unsigned(a1(15 downto 0)),
                           to_integer(unsigned(b1(4 downto 0)))) );
               when others =>
                 result1 <= "ZZZZZZZZZZZZZZZZZ";
