@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <report-views version="2.0" >
  <header>
-  <DateModified>2017-11-20T20:35:00</DateModified>
+  <DateModified>2017-11-23T08:12:05</DateModified>
   <ModuleName>cpu</ModuleName>
   <SummaryTimeStamp>2017-11-20T19:55:20</SummaryTimeStamp>
   <SavedFilePath>/home/jackey/My_project/VHDL/cpu/iseconfig/cpu.xreport</SavedFilePath>

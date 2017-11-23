@@ -133,9 +133,9 @@ begin
     data_ram1 <= me_write_data when (me_write_enable_real = '1') else "ZZZZZZZZZZZZZZZZ";
     mewb_readout <= data_ram1 when (me_read_enable = '1') else "ZZZZZZZZZZZZZZZZ";
     -- if MEM is using SRAM, insert a NOP into pipeline
-    --ifid_instruc <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0')) else "000010000000000000";
+    ifid_instruc <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0')) else "0000100000000000";
 
-    ifid_instruc <= instruct;
+    --ifid_instruc <= instruct;
 
     ---------------- IF --------------------------
     IF_unit: process(clk, rst)
@@ -146,7 +146,7 @@ begin
             pc <= pc_real + 1;
         end if;
     end process IF_unit;
-    -- mux for real pc
+    -- mux for real pc, TODO: block pc increase with IF MEM conflict
     pc_real <= id_branch_value when (id_pc_branch = '1') else pc;
 
 
@@ -359,7 +359,7 @@ begin
     data_ram2 <= "ZZZZZZZZZZZZZZZZ";
     addr_ram2 <= zero18;
 
-    led <= instruct;
+    led <= r0;
 
 end Behavioral;
 
