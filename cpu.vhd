@@ -66,9 +66,9 @@ entity cpu is
         led : out std_logic_vector(15 downto 0);
 
         -- DEBUG variables
-		  -- feed in instruct
+        -- feed in instruct
         instruct : in std_logic_vector (15 downto 0)
-        --dbg_ex_reg_a, dbg_ex_reg_b	: out std_logic_vector(15 downto 0)
+        --dbg_ex_reg_a, dbg_ex_reg_b    : out std_logic_vector(15 downto 0)
     );
 end cpu;
 
@@ -81,27 +81,30 @@ architecture Behavioral of cpu is
     signal pc                              : std_logic_vector (15 downto 0) := zero16;
     signal pc_real                         : std_logic_vector (15 downto 0) := zero16;
     -- help signal
-	 
+     
     -- IF/ID pipeline storage
     signal ifid_instruc                    : std_logic_vector (15 downto 0) := zero16;
     -- NOTICE: What's this?
     signal id_pc_branch                    : std_logic                      := '0';
     signal id_branch_value                 : std_logic_vector (15 downto 0) := zero16;
-	
+    
     -- Control Unit
---    signal ctrl_id_write_reg            : std_logic_vector (1 downto 0)  := "00";
---    signal ctrl_ex_alu_reg_a            : std_logic_vector (2 downto 0)  := "000";
---    signal ctrl_ex_alu_reg_b            : std_logic_vector (2 downto 0)  := "000"; 
---    signal ctrl_ex_alu_op               : std_logic_vector (4 downto 0)  := "00000";
---    signal ctrl_me_branch               : std_logic                      := '0';
---    signal ctrl_me_wb                   : std_logic_vector (2 downto 0)  := "000";
+    --signal ctrl_id_write_reg               : std_logic_vector (1 downto 0)  := "00";
+    --signal ctrl_ex_alu_reg_a               : std_logic_vector (2 downto 0)  := "000";
+    --signal ctrl_ex_alu_reg_b               : std_logic_vector (2 downto 0)  := "000"; 
+    --signal ctrl_ex_alu_op                  : std_logic_vector (4 downto 0)  := "00000";
+    --signal ctrl_me_branch                  : std_logic                      := '0';
+    --signal ctrl_me_wb                      : std_logic_vector (2 downto 0)  := "000";
+    signal ctrl_mux_reg_a, ctrl_mux_reg_b  : std_logic_vector (2 downto 0)  := "000";
+    signal ctrl_insert_bubble              : std_logic                      := '0';
 
     -- ID/EX
     signal idex_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
     signal idex_reg_a_data                 : std_logic_vector (15 downto 0) := zero16;
+    signal idex_reg_a_data_real            : std_logic_vector (15 downto 0) := zero16;
     signal idex_reg_b_data                 : std_logic_vector (15 downto 0) := zero16;
-    -- What's this?
-    signal idex_bypass                     : std_logic_vector (15 downto 0)  := zero16;
+    signal idex_reg_b_data_real            : std_logic_vector (15 downto 0) := zero16;
+    signal idex_bypass                     : std_logic_vector (15 downto 0) := zero16;
     signal idex_reg_wb                     : std_logic_vector (3 downto 0)  := "0000";
     
     -- EX layer variables
@@ -111,7 +114,7 @@ architecture Behavioral of cpu is
     
     -- EX/MEM pipeline storage
     signal exme_ins_op                     : std_logic_vector (4 downto 0)  := zero5;
-	 -- NOTICE: carry and overflow is not required
+     -- NOTICE: carry and overflow is not required
     signal exme_carry, exme_zero, exme_ovr : std_logic                      := '0';
     signal exme_result                     : std_logic_vector (15 downto 0) := zero16;
     signal exme_reg_wb                     : std_logic_vector (3 downto 0)  := "0000";
@@ -130,6 +133,8 @@ architecture Behavioral of cpu is
     signal mewb_reg_wb                     : std_logic_vector (3 downto 0)  := "0000";
     signal mewb_bypass                     : std_logic_vector (15 downto 0) := zero16;
 
+    signal wb_reg_data                     : std_logic_vector (15 downto 0) := zero16;
+
     -- component
     component alu is
         port (
@@ -140,10 +145,23 @@ architecture Behavioral of cpu is
             carry_flag, zero_flag, ovr_flag : out std_logic
         );
     end component alu;
+
+    component mux5to1 is
+        port (
+            output       : out std_logic_vector (15 downto 0);
+            ctrl_mux     : in std_logic_vector (2 downto 0);
+            idex_reg     : in std_logic_vector (15 downto 0);
+            alu_result   : in std_logic_vector (15 downto 0);
+            mewb_result  : in std_logic_vector (15 downto 0);
+            mewb_readout : in std_logic_vector (15 downto 0);
+            wb_reg_data  : in std_logic_vector (15 downto 0)
+        );
+    end component mux5to1;
+
 begin
-	-- DEBUG
---	dbg_ex_reg_a <= ex_reg_a;
---	dbg_ex_reg_b <= ex_reg_b;
+    -- DEBUG
+--  dbg_ex_reg_a <= ex_reg_a;
+--  dbg_ex_reg_b <= ex_reg_b;
 
 
     ------------- Memory Control Unit, pure combinational logic
@@ -163,9 +181,9 @@ begin
     data_ram1 <= me_write_data when (me_write_enable_real = '1') else "ZZZZZZZZZZZZZZZZ";
     mewb_readout <= data_ram1 when (me_read_enable = '1') else "ZZZZZZZZZZZZZZZZ";
     -- if MEM is using SRAM, insert a NOP into pipeline
-    ifid_instruc <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0')) else "0000100000000000";
+    --ifid_instruc <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0')) else "0000100000000000";
 
-    --ifid_instruc <= instruct;
+    ifid_instruc <= instruct;
 
     ---------------- IF --------------------------
     IF_unit: process(clk, rst)
@@ -180,7 +198,6 @@ begin
     end process IF_unit;
     -- mux for real pc, TODO: block pc increase with IF MEM conflict
     pc_real <= id_branch_value when (id_pc_branch = '1') else pc;
-
 
     ---------------- ID --------------------------
     ID_unit: process(clk, rst)
@@ -261,7 +278,22 @@ begin
         end case;
     end process;
 
+    -- combination logic multiplexer unit for conflict solve
+    -- multiplexer map
+    Rg_A_mux: mux5to1 port map (idex_reg_a_data_real, ctrl_mux_reg_a, idex_reg_a_data, exme_result,
+                        mewb_result, mewb_readout, wb_reg_data);
+    Rg_B_mux: mux5to1 port map (idex_reg_b_data_real, ctrl_mux_reg_b, idex_reg_b_data, exme_result,
+                        mewb_result, mewb_readout, wb_reg_data);
 
+--   ctrl_mux_reg_a--+                      ctrl_mux_reg_b--+
+--                   |                                      |
+--                  ---                                    ---        ^_^
+--     idex_reg_a--| M |                      idex_reg_b--| M |
+--     alu_result--|   |                      alu_result--|   |
+--    mewb_result--| U |--ex_alu_reg_a       mewb_result--| U |--ex_alu_reg_b
+--   mewb_readout--|   |                    mewb_readout--|   |
+--    wb_reg_data--| X |                     wb_reg_data--| X |
+--                  ---                                    ---
 
     ---------------- EX --------------------------
     EX_unit: process(clk, rst)
@@ -272,26 +304,26 @@ begin
             exme_ins_op <= idex_ins_op;
             case idex_ins_op is
                 when ADDU_op | ADDIU_op | LW_op | SW_op =>
-                    ex_reg_a_data <= idex_reg_a_data;
+                    ex_reg_a_data <= idex_reg_a_data_real;
                     ex_reg_b_data <= idex_reg_b_data;
                     ex_alu_op <= alu_add;
                     exme_bypass <= idex_bypass;
                     exme_reg_wb <= idex_reg_wb;
                 when SLL_op =>
-                    ex_reg_a_data <= idex_reg_a_data;
+                    ex_reg_a_data <= idex_reg_a_data_real;
                     ex_reg_b_data <= idex_reg_b_data;
                     ex_alu_op <= alu_sll;
                     exme_reg_wb <= idex_reg_wb;
                 when LI_op =>
                     ex_alu_op <= alu_nop;
                     exme_reg_wb <= idex_reg_wb;
-                    exme_bypass <= idex_reg_a_data;
+                    exme_bypass <= idex_reg_a_data_real;
                 when others =>
                     ex_alu_op <= alu_nop;
             end case;
         end if;
     end process EX_unit;
-	 
+     
     -- alu map
     ALU_comp: alu port map (rst, ex_reg_a_data, ex_reg_b_data, ex_alu_op, exme_result,
                                 exme_carry, exme_zero, exme_ovr);
@@ -350,6 +382,7 @@ begin
                     wb_enable := false;
             end case;
             if (wb_enable = true) then
+                wb_reg_data <= wb_data;
                 case mewb_reg_wb is
                     when "0000" =>
                         r0 <= wb_data;
@@ -373,13 +406,61 @@ begin
                         IH <= wb_data;
                     when others =>
                 end case;
+            else
+                wb_reg_data <= zero16;
             end if;
+
         end if;
     end process WB_unit;
 
     ------------ Control Unit --------------------
     Control_unit: process(clk, rst)
+        variable ctrl_wb_reg_0      : std_logic_vector (3 downto 0)  := reg_none;
+        variable ctrl_wb_reg_1      : std_logic_vector (3 downto 0)  := reg_none;
+        variable ctrl_wb_reg_2      : std_logic_vector (3 downto 0)  := reg_none;
+        variable ctrl_wb_reg_3      : std_logic_vector (3 downto 0)  := reg_none;
+        variable ctrl_rd_reg_a      : std_logic_vector (3 downto 0)  := reg_none;
+        variable ctrl_rd_reg_b      : std_logic_vector (3 downto 0)  := reg_none;
+        variable ctrl_instruc_0     : std_logic_vector (15 downto 0) := NOP_instruc;
+        variable ctrl_instruc_1     : std_logic_vector (15 downto 0) := NOP_instruc;
+        variable ctrl_instruc_2     : std_logic_vector (15 downto 0) := NOP_instruc;
+        variable ctrl_instruc_3     : std_logic_vector (15 downto 0) := NOP_instruc;
     begin
+        if (rst = '0') then
+            ctrl_wb_reg_0 := reg_none;
+            ctrl_wb_reg_1 := reg_none;
+            ctrl_wb_reg_2 := reg_none;
+            ctrl_wb_reg_3 := reg_none;
+        elsif (clk'event and clk='1') then
+            ctrl_wb_reg_3 := ctrl_wb_reg_2;
+            ctrl_wb_reg_2 := ctrl_wb_reg_1;
+            ctrl_wb_reg_1 := ctrl_wb_reg_0;
+            ctrl_instruc_3 := ctrl_instruc_2;
+            ctrl_instruc_2 := ctrl_instruc_1;
+            ctrl_instruc_1 := ctrl_instruc_0;
+            ctrl_instruc_0 := ifid_instruc;
+            case ctrl_instruc_0(15 downto 11) is
+                when ADDU_op =>
+                    ctrl_wb_reg_0 := "0" & ctrl_instruc_0(4 downto 2);
+                    ctrl_rd_reg_a := "0" & ctrl_instruc_0(10 downto 8);
+                    ctrl_rd_reg_b := "0" & ctrl_instruc_0(7 downto 5);
+                when ADDIU_op =>
+                    ctrl_wb_reg_0 := "0" & ctrl_instruc_0(10 downto 8);
+                    ctrl_rd_reg_a := "0" & ctrl_instruc_0(10 downto 8);
+                    ctrl_rd_reg_b := reg_none;
+                when LI_op =>
+                    ctrl_wb_reg_0 := "0" & ctrl_instruc_0(10 downto 8);
+                    ctrl_rd_reg_a := reg_none;
+                    ctrl_rd_reg_b := reg_none;
+                when others =>
+                    ctrl_wb_reg_0 := reg_none;
+                    ctrl_rd_reg_a := reg_none;
+                    ctrl_rd_reg_b := reg_none;
+            end case;
+            conflict_detect(ctrl_insert_bubble, ctrl_mux_reg_a, ctrl_mux_reg_b, ctrl_rd_reg_a,
+                            ctrl_rd_reg_b, ctrl_wb_reg_1, ctrl_wb_reg_2, ctrl_wb_reg_3, ctrl_instruc_0,
+                            ctrl_instruc_1, ctrl_instruc_2, ctrl_instruc_3);
+        end if;
     end process Control_unit;
 
     dyp0 <= "0000000";

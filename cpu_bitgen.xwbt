@@ -1,8 +1,8 @@
 INTSTYLE=ise
-INFILE=D:\CPU\cpu\cpu.ncd
-OUTFILE=D:\CPU\cpu\cpu.bit
+INFILE=/home/jackey/My_project/VHDL/cpu/cpu.ncd
+OUTFILE=/home/jackey/My_project/VHDL/cpu/cpu.bit
 FAMILY=Spartan3E
 PART=xc3s1200e-4fg320
-WORKINGDIR=D:\CPU\cpu
+WORKINGDIR=/home/jackey/My_project/VHDL/cpu
 LICENSE=WebPack
 USER_INFO=__0_0_0
