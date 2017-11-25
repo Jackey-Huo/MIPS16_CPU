@@ -91,7 +91,6 @@ xilinxsim.ini
 *.version
 compxlib.*
 modelsim.ini
-testbench*
 transcript
 vsim.wlf
 src/cpu/work/

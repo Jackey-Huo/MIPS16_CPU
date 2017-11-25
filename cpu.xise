@@ -15,7 +15,7 @@
   <version xil_pn:ise_version="14.7" xil_pn:schema_version="2"/>
 
   <files>
-    <file xil_pn:name="cpu.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="cpu/cpu.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="4"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="4"/>
     </file>
@@ -24,7 +24,7 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="1"/>
       <library xil_pn:name="basic"/>
     </file>
-    <file xil_pn:name="alu.vhd" xil_pn:type="FILE_VHDL">
+    <file xil_pn:name="cpu/alu.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="3"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="3"/>
     </file>
@@ -39,10 +39,6 @@
       <association xil_pn:name="PostMapSimulation" xil_pn:seqID="57"/>
       <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="57"/>
       <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="57"/>
-    </file>
-    <file xil_pn:name="mux5to1.vhd" xil_pn:type="FILE_VHDL">
-      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="2"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="2"/>
     </file>
     <file xil_pn:name="vga/vga_ctrl.vhd" xil_pn:type="FILE_VHDL">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="0"/>
@@ -60,8 +56,12 @@
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="0"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
-    <file xil_pn:name="cpu.ucf" xil_pn:type="FILE_UCF">
-      <association xil_pn:name="Implementation" xil_pn:seqID="93"/>
+    <file xil_pn:name="cpu/cpu.ucf" xil_pn:type="FILE_UCF">
+      <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
+    </file>
+    <file xil_pn:name="cpu/mux7to1.vhd" xil_pn:type="FILE_VHDL">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="2"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="2"/>
     </file>
   </files>
 
@@ -169,7 +169,7 @@
     <property xil_pn:name="Ignore User Timing Constraints Map" xil_pn:value="false" xil_pn:valueState="default"/>
     <property xil_pn:name="Ignore User Timing Constraints Par" xil_pn:value="false" xil_pn:valueState="default"/>
     <property xil_pn:name="Implementation Top" xil_pn:value="Architecture|cpu|Behavioral" xil_pn:valueState="non-default"/>
-    <property xil_pn:name="Implementation Top File" xil_pn:value="cpu.vhd" xil_pn:valueState="non-default"/>
+    <property xil_pn:name="Implementation Top File" xil_pn:value="cpu/cpu.vhd" xil_pn:valueState="non-default"/>
     <property xil_pn:name="Implementation Top Instance Path" xil_pn:value="/cpu" xil_pn:valueState="non-default"/>
     <property xil_pn:name="Include 'uselib Directive in Verilog File" xil_pn:value="false" xil_pn:valueState="default"/>
     <property xil_pn:name="Include SIMPRIM Models in Verilog File" xil_pn:value="false" xil_pn:valueState="default"/>
@@ -370,7 +370,7 @@
   </properties>
 
   <bindings>
-    <binding xil_pn:location="/cpu" xil_pn:name="cpu.ucf"/>
+    <binding xil_pn:location="/cpu" xil_pn:name="cpu/cpu.ucf"/>
   </bindings>
 
   <libraries>

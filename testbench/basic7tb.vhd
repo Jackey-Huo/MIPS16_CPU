@@ -160,7 +160,7 @@ BEGIN
 		wait for clk_period;
 		instruct <= "0100111101010000"; -- ADDIU R7 0x50     before R7=0x20; after R7=0x70
 		wait for clk_period;
-		instruct <= "0011001000010000"; -- SLL R2 4
+		instruct <= "0011001000010000"; -- SLL R2 R0 4
 		wait for clk_period;
 		instruct <= "1001100000100001"; -- LW R0 R1 0x01
 		wait for clk_period;
@@ -172,6 +172,13 @@ BEGIN
 		wait for clk_period;
 		instruct <= "0000100000000000"; -- NOP
 		wait for clk_period;
+		instruct <= "0110100010111111"; -- LI R0 0xBF
+		wait for clk_period;
+		instruct <= "0011000000010000"; -- SLL R0 R0 0x00
+		wait for clk_period;
+		instruct <= "1101100000100001"; -- SW R0 R1 0x01
+		wait for clk_period;
+
 
 		wait;
    end process;

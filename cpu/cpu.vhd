@@ -122,6 +122,7 @@ architecture Behavioral of cpu is
     signal me_read_addr, me_write_addr     : std_logic_vector (17 downto 0) := zero18;
     signal me_write_data                   : std_logic_vector (15 downto 0) := zero16;
 
+    signal seri_wrn_t, seri_rdn_t          : std_logic                      := '0';
     signal seri1_read_enable               : std_logic                      := '0';
     signal seri1_write_enable              : std_logic                      := '0';
     signal seri1_write_enable_real         : std_logic                      := '0';
@@ -157,6 +158,19 @@ architecture Behavioral of cpu is
             wb_reg_data  : in std_logic_vector (15 downto 0)
         );
     end component mux5to1;
+    component mux7to1 is
+        port (
+            output       : out std_logic_vector (15 downto 0) := zero16;
+            ctrl_mux     : in std_logic_vector (2 downto 0);
+            default_data : in std_logic_vector (15 downto 0);
+            alu_result   : in std_logic_vector (15 downto 0);
+            mewb_result  : in std_logic_vector (15 downto 0);
+            mewb_readout : in std_logic_vector (15 downto 0);
+            wb_reg_data  : in std_logic_vector (15 downto 0);
+            exme_bypass  : in std_logic_vector (15 downto 0);
+            mewb_bypass  : in std_logic_vector (15 downto 0)
+        );
+    end component mux7to1;
 
 begin
 
@@ -165,12 +179,14 @@ begin
     seri1_write_enable_real <= '0' when (rst = '0') else (seri1_read_enable and not(clk));
 
     -- TODO: serial read & write need further implementation, tbre tsre and data_ready not used now
-    seri_rdn <= '1' when (rst = '0') else
+    seri_rdn_t <= '1' when (rst = '0') else
                 '0' when (seri1_read_enable = '1') else
                 '1';
-    seri_wrn <= '1' when (rst = '0') else
+    seri_rdn <= seri_rdn_t;
+    seri_wrn_t <= '1' when (rst = '0') else
                 '0' when (seri1_write_enable_real = '1') else
                 '1';
+    seri_wrn <= seri_rdn_t;
 
     EN_ram1 <= '1' when ((rst = '0') or (seri1_read_enable = '1') or (seri1_write_enable = '1')) else '0';
     WE_ram1 <= '1' when (rst = '0') else
@@ -433,22 +449,26 @@ begin
     -- TODO input will be change to 7, current is not good
     -- combination logic multiplexer unit for conflict solve
     -- multiplexer map
-    Rg_A_mux: mux5to1 port map (idex_reg_a_data_real, ctrl_mux_reg_a, idex_reg_a_data, exme_result,
-                        mewb_result, mewb_readout, wb_reg_data);
-    Rg_B_mux: mux5to1 port map (idex_reg_b_data_real, ctrl_mux_reg_b, idex_reg_b_data, exme_result,
-                        mewb_result, mewb_readout, wb_reg_data);
-    Rg_bypass: mux5to1 port map (idex_bypass_real, ctrl_mux_bypass, idex_reg_a_data, exme_result,
-                        mewb_result, mewb_readout, wb_reg_data);
+    Rg_A_mux: mux7to1 port map (idex_reg_a_data_real, ctrl_mux_reg_a, idex_reg_a_data, exme_result,
+                        mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
+    Rg_B_mux: mux7to1 port map (idex_reg_b_data_real, ctrl_mux_reg_b, idex_reg_b_data, exme_result,
+                        mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
+    Rg_bypass: mux7to1 port map (idex_bypass_real, ctrl_mux_bypass, idex_reg_a_data, exme_result,
+                        mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
 
---   ctrl_mux_reg_a--+                      ctrl_mux_reg_b--+
---                   |                                      |
---                  ---                                    ---        ^_^
---     idex_reg_a--| M |                      idex_reg_b--| M |
---     alu_result--|   |                      alu_result--|   |
---    mewb_result--| U |--ex_alu_reg_a       mewb_result--| U |--ex_alu_reg_b
---   mewb_readout--|   |                    mewb_readout--|   |
---    wb_reg_data--| X |                     wb_reg_data--| X |
---                  ---                                    ---
+--                 ---                                  ---                                  ---
+--    idex_reg_a--|   |                    idex_reg_b--|   |     ^_^           idex_bypass--|   |
+--    alu_result--| M |                    alu_result--| M |                    alu_result--| M |
+--   mewb_result--|   |                   mewb_result--|   |                   mewb_result--|   |
+--  mewb_readout--| U |--ex_alu_reg_a    mewb_readout--| U |--ex_alu_reg_b    mewb_readout--| U |--ex_bypass
+--   wb_reg_data--|   |                   wb_reg_data--|   |                   wb_reg_data--|   |
+--   exme_bypass--| X |                   exme_bypass--| X |                   exme_bypass--| X |
+--   mewb_bypass--|   |                   mewb_bypass--|   |                   mewb_bypass--|   |
+--                 ---                                  ---                                  ---                
+
+
+
+
 
     ---------------- EX --------------------------
     EX_unit: process(clk, rst)
@@ -875,7 +895,13 @@ begin
     data_ram2 <= "ZZZZZZZZZZZZZZZZ";
     addr_ram2 <= zero18;
 
-    led <= r0;
+    led(15) <= seri_wrn_t;
+    led(14) <= seri_rdn_t;
+    led(13) <= seri_tbre;
+    led(12) <= seri_tsre;
+    led(11) <= seri_data_ready;
+    led(10 downto 8) <= "000";
+    led(7 downto 0) <= data_ram1(7 downto 0);
 
 end Behavioral;
 
