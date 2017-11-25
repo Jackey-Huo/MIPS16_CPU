@@ -72,6 +72,13 @@ package helper is
     constant alu_cmp  : std_logic_vector (3 downto 0) := "1010";
     constant alu_nop  : std_logic_vector (3 downto 0) := "1111";
 
+    -- for serial
+    constant seri1_data_addr  : std_logic_vector (15 downto 0) := "1011111100000000"; -- 0xBF00
+    constant seri1_ctrl_addr  : std_logic_vector (15 downto 0) := "1011111100000001"; -- 0xBF01
+    constant seri2_data_addr  : std_logic_vector (15 downto 0) := "1011111100000010"; -- 0xBF02
+    constant seri2_ctrl_addr  : std_logic_vector (15 downto 0) := "1011111100000011"; -- 0xBF03
+
+
     constant zero16   : std_logic_vector (15 downto 0) := "0000000000000000";
     constant zero17   : std_logic_vector (16 downto 0) := "00000000000000000";
     constant zero18   : std_logic_vector (17 downto 0) := "000000000000000000";
@@ -99,9 +106,6 @@ package helper is
     constant IH_index : std_logic_vector (3 downto 0) := "1001";
     constant T_index  : std_logic_vector (3 downto 0) := "1010";
     constant reg_none : std_logic_vector (3 downto 0) := "1111";
-    
-
-
 
 
 
@@ -128,6 +132,7 @@ package helper is
     constant vga768_hs_end : integer := 1208;
     constant vga768_vs_start : integer := 816;
     constant vga768_vs_end : integer := 824;
+
 
     procedure reg_decode(signal reg_data: out std_logic_vector(15 downto 0);
                         addr: in std_logic_vector(3 downto 0);
@@ -164,25 +169,6 @@ package helper is
 end helper;
 
 package body helper is
-
----- Example 1
---  function <function_name>  (signal <signal_name> : in <type_declaration>  ) return <type_declaration> is
---    variable <variable_name>     : <type_declaration>;
---  begin
---    <variable_name> := <signal_name> xor <signal_name>;
---    return <variable_name>; 
---  end <function_name>;
-
----- Example 2
---  function <function_name>  (signal <signal_name> : in <type_declaration>;
---                         signal <signal_name>   : in <type_declaration>  ) return <type_declaration> is
---  begin
---    if (<signal_name> = '1') then
---      return <signal_name>;
---    else
---      return 'Z';
---    end if;
---  end <function_name>;
 
     function sign_extend11(imm : std_logic_vector(10 downto 0))
                                 return std_logic_vector is
@@ -480,13 +466,11 @@ package body helper is
                 ctrl_mux_bypass <= chs_idex_bypass;
         end case;
 
-
-
     end procedure conflict_detect;
 
 
 
 
 
- 
+
 end helper;
