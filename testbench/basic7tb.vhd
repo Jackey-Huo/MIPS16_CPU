@@ -61,7 +61,8 @@ ARCHITECTURE behavior OF basic7tb IS
          dyp0 : OUT  std_logic_vector(6 downto 0);
          dyp1 : OUT  std_logic_vector(6 downto 0);
          led : OUT  std_logic_vector(15 downto 0);
-         instruct : IN  std_logic_vector(15 downto 0)
+         instruct : IN  std_logic_vector(15 downto 0);
+			dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7 : out std_logic_vector(15 downto 0)
         );
     END COMPONENT;
     
@@ -93,6 +94,8 @@ ARCHITECTURE behavior OF basic7tb IS
    signal dyp1 : std_logic_vector(6 downto 0);
    signal led : std_logic_vector(15 downto 0);
 
+	signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := x"0000";
+
    -- Clock period definitions
    constant clk_period : time := 10 ns;
  
@@ -120,7 +123,15 @@ BEGIN
           dyp0 => dyp0,
           dyp1 => dyp1,
           led => led,
-          instruct => instruct
+          instruct => instruct,
+			 dr0=>r0,
+			 dr1=>r1,
+			 dr2=>r2,
+			 dr3=>r3,
+			 dr4=>r4,
+			 dr5=>r5,
+			 dr6=>r6,
+			 dr7=>r7
         );
 
    -- Clock process definitions
@@ -146,24 +157,28 @@ BEGIN
 		wait for clk_period;
 		rst <= '1';
 		wait for clk_period;
-		instruct <= "0110100000001000"; -- LI R0 0x08
-		wait for clk_period;
-		instruct <= "0110100100001100"; -- LI R1 0x0C
-		wait for clk_period;
-		instruct <= "0110101100000100"; -- LI R3 0x04
-		wait for clk_period;
-		instruct <= "1110000000111001"; -- ADDU R0 R1 R6       R0=0x08  R1=0x0C
-		wait for clk_period;
-		instruct <= "1110011000111101"; -- ADDU R6 R1 R7       R1=0x0C  R6=0x14
-		wait for clk_period;
+		instruct <= "0110100000001000"; -- [0000] LI R0 0x08
+		wait for clk_period; --IF
+		instruct <= "0110100100001100"; -- [0001] LI R1 0x0C
+		wait for clk_period; --ID
+		instruct <= "0110101100000100"; -- [0002] LI R3 0x04
+		wait for clk_period; --EX
+		instruct <= "1110000000111001"; -- [0003] ADDU R0 R1 R6       R0=0x08  R1=0x0C
+		wait for clk_period; --MEM
+		instruct <= "1110011000111101"; -- [0004] ADDU R6 R1 R7       R1=0x0C  R6=0x14
+		wait for clk_period; --WB
 		instruct <= "0100100101010000"; -- ADDIU R1 0x50
 		wait for clk_period;
+    assert r0 = x"0008" report "[0000] Failed" severity error;
 		instruct <= "0100111101010000"; -- ADDIU R7 0x50     before R7=0x20; after R7=0x70
 		wait for clk_period;
+    assert r1 = x"000c" report "[0001] Failed" severity error;
 		instruct <= "0011001000010000"; -- SLL R2 4
 		wait for clk_period;
+    assert r3 = x"0004" report "[0002] Failed" severity error;
 		instruct <= "1001100000100001"; -- LW R0 R1 0x01
 		wait for clk_period;
+    assert r6 = x"0014" report "[0003] Failed" severity error;
 		instruct <= "0100100101010000"; -- ADDIU R1 0x50
 		wait for clk_period;
 		instruct <= "1101100000100001"; -- SW R0 R1 0x01

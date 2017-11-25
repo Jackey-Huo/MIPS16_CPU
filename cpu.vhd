@@ -67,7 +67,8 @@ entity cpu is
 
         -- DEBUG variables
         -- feed in instruct
-        instruct : in std_logic_vector (15 downto 0)
+        instruct : in std_logic_vector (15 downto 0);
+		  dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7 : out std_logic_vector(15 downto 0)
         --dbg_ex_reg_a, dbg_ex_reg_b    : out std_logic_vector(15 downto 0)
     );
 end cpu;
@@ -159,6 +160,16 @@ architecture Behavioral of cpu is
     end component mux5to1;
 
 begin
+    -- debug
+    dr0<=r0;
+    dr1<=r1;
+    dr2<=r2;
+    dr3<=r3;
+    dr4<=r4;
+    dr5<=r5;
+    dr6<=r6;
+    dr7<=r7;
+
 
     ------------- Memory and Serial Control Unit, pure combinational logic
     me_write_enable_real <= '0' when (rst = '0') else (me_write_enable and clk);
