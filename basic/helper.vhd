@@ -389,15 +389,15 @@ package body helper is
                 insert_bubble := '0';
                 case conflict_instruc_number_b is
                     when 1 =>
-                        ctrl_mux_reg_b <= chs_alu_result;     --
-                    when 2 =>                                 --                 ---
-                        ctrl_mux_reg_b <= chs_mewb_result;    --    idex_reg_b--| M |
-                    when 3 =>                                 --    alu_result--|   |
-                        ctrl_mux_reg_b <= chs_wb_reg_data;    --   mewb_result--| U |--ex_alu_reg_b
-                    when others =>                            --  mewb_readout--|   |
-                        ctrl_mux_reg_b <= chs_idex_reg;       --   wb_reg_data--| X |
-                end case;                                     --                 ---
-            when LI_op =>
+                        ctrl_mux_reg_b <= chs_alu_result;    --                 ---
+                    when 2 =>                                --    idex_reg_b--|   |
+                        ctrl_mux_reg_b <= chs_mewb_result;   --    alu_result--| M |
+                    when 3 =>                                --   mewb_result--|   |
+                        ctrl_mux_reg_b <= chs_wb_reg_data;   --  mewb_readout--| U |--ex_alu_reg_b
+                    when others =>                           --   wb_reg_data--|   |
+                        ctrl_mux_reg_b <= chs_idex_reg;      --   exme_bypass--| X |
+                end case;                                    --   mewb_bypass--|   |
+            when LI_op =>                                    --                 ---                
                 case conflict_instruc_number_b is
                     when 1 =>
                         ctrl_mux_reg_b <= chs_exme_bypass;

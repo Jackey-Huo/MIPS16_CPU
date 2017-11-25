@@ -84,7 +84,12 @@ begin
               when alu_rol =>
                 result1(15 downto 0) <= std_logic_vector( rotate_left(unsigned(a1(15 downto 0)),
                           to_integer(unsigned(b1(4 downto 0)))) );
-            -- TODO: add cmp operation
+              when alu_cmp =>
+                  if (a1 = b1) then
+                      result1 <= zero17;
+                  else
+                      result1 <= "00000000000000001";
+                  end if;
               when others =>
                 result1 <= "ZZZZZZZZZZZZZZZZZ";
             end case;
