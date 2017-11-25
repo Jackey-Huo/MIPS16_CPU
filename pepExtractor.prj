@@ -1,3 +1,0 @@
-work	"alu.vhd"
-basic	"basic/helper.vhd"
-work	"cpu.vhd"

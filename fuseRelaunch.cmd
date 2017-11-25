@@ -1,1 +1,0 @@
--intstyle "ise" -incremental -o "/home/jackey/My_project/VHDL/cpu/basic7tb_isim_beh.exe" -prj "/home/jackey/My_project/VHDL/cpu/basic7tb_beh.prj" "work.basic7tb" 
