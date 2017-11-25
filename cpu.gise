@@ -133,10 +133,7 @@
     <transform xil_pn:end_ts="1511615436" xil_pn:in_ck="183466546048587110" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1511615436">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <outfile xil_pn:name="alu.vhd"/>
       <outfile xil_pn:name="basic/helper.vhd"/>
-      <outfile xil_pn:name="cpu.vhd"/>
-      <outfile xil_pn:name="mux5to1.vhd"/>
       <outfile xil_pn:name="testbench/ALUtb.vhd"/>
       <outfile xil_pn:name="testbench/basic7tb.vhd"/>
       <outfile xil_pn:name="testcode/test_vga.vhd"/>
@@ -159,10 +156,7 @@
     <transform xil_pn:end_ts="1511615440" xil_pn:in_ck="183466546048587110" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1511615440">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <outfile xil_pn:name="alu.vhd"/>
       <outfile xil_pn:name="basic/helper.vhd"/>
-      <outfile xil_pn:name="cpu.vhd"/>
-      <outfile xil_pn:name="mux5to1.vhd"/>
       <outfile xil_pn:name="testbench/ALUtb.vhd"/>
       <outfile xil_pn:name="testbench/basic7tb.vhd"/>
       <outfile xil_pn:name="testcode/test_vga.vhd"/>
@@ -170,7 +164,7 @@
       <outfile xil_pn:name="vga/vga_ctrl_480.vhd"/>
       <outfile xil_pn:name="vga/vga_ctrl_768.vhd"/>
     </transform>
-    <transform xil_pn:end_ts="1511615447" xil_pn:in_ck="183466546048587110" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="2396794459840671436" xil_pn:start_ts="1511615440">
+    <transform xil_pn:end_ts="1511621481" xil_pn:in_ck="-1033119954255724499" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="2396794459840671436" xil_pn:start_ts="1511621474">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="basic7tb_beh.prj"/>
@@ -180,7 +174,7 @@
       <outfile xil_pn:name="isim.log"/>
       <outfile xil_pn:name="xilinxsim.ini"/>
     </transform>
-    <transform xil_pn:end_ts="1511615447" xil_pn:in_ck="-6832109122331953622" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-1620355573066481223" xil_pn:start_ts="1511615447">
+    <transform xil_pn:end_ts="1511621481" xil_pn:in_ck="-6832109122331953622" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-1620355573066481223" xil_pn:start_ts="1511621481">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="basic7tb_isim_beh.wdb"/>

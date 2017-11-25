@@ -12,6 +12,7 @@ _impact.log
 *.bit
 *.bld
 *.cmd_log
+*.cmd
 *.drc
 *.ll
 *.lso
@@ -63,6 +64,7 @@ xlnx_auto_0_xdb/
 xst/
 _ngo/
 _xmsgs/
+ipcore_dir/
 
 # others
 *.db
@@ -89,7 +91,6 @@ xilinxsim.ini
 *.version
 compxlib.*
 modelsim.ini
-testbench*
 transcript
 vsim.wlf
 src/cpu/work/

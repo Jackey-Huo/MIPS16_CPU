@@ -167,27 +167,40 @@ BEGIN
 		wait for clk_period; --MEM
 		instruct <= "1110011000111101"; -- [0004] ADDU R6 R1 R7       R1=0x0C  R6=0x14
 		wait for clk_period; --WB
-		instruct <= "0100100101010000"; -- ADDIU R1 0x50
-		wait for clk_period;
     assert r0 = x"0008" report "[0000] Failed" severity error;
-		instruct <= "0100111101010000"; -- ADDIU R7 0x50     before R7=0x20; after R7=0x70
+		instruct <= "0100100101010000"; -- [0005] ADDIU R1 0x50
 		wait for clk_period;
     assert r1 = x"000c" report "[0001] Failed" severity error;
-		instruct <= "0011001000010000"; -- SLL R2 4
+		instruct <= "0100111101010000"; -- [0006] ADDIU R7 0x50     before R7=0x20; after R7=0x70
 		wait for clk_period;
     assert r3 = x"0004" report "[0002] Failed" severity error;
-		instruct <= "1001100000100001"; -- LW R0 R1 0x01
-		wait for clk_period;
+    instruct <= "1110000001101011"; -- [0007] SUBU R0 R3 R2
+    wait for clk_period;
     assert r6 = x"0014" report "[0003] Failed" severity error;
-		instruct <= "0100100101010000"; -- ADDIU R1 0x50
+		instruct <= "0011001001010000"; -- [0008] SLL R2 R2 4
 		wait for clk_period;
     assert r7 = x"0020" report "[0004] Failed" severity error;
-		instruct <= "1101100000100001"; -- SW R0 R1 0x01
+		instruct <= "1001100000100001"; -- [0009] LW R0 R1 0x01
 		wait for clk_period;
-		instruct <= "0010100000001000"; -- BNEZ R0 0x08
+    assert r1 = x"005c" report "[0005] Failed" severity error;
+		instruct <= "0100100101010000"; -- [000A] ADDIU R1 0x50
 		wait for clk_period;
+    assert r7 = x"0070" report "[0006] Failed" severity error;
+		instruct <= "1101100000100001"; -- [000B] SW R0 R1 0x01
+		wait for clk_period;
+    assert r2 = x"0008" report "[0007] Failed" severity error;
+		instruct <= "0010100000001000"; -- [000C] BNEZ R0 0x08
+		wait for clk_period;
+    assert r2 = x"0020" report "[0008] Failed" severity error;
 		instruct <= "0000100000000000"; -- NOP
 		wait for clk_period;
+		instruct <= "0110100010111111"; -- LI R0 0xBF
+		wait for clk_period;
+		instruct <= "0011000000010000"; -- SLL R0 R0 0x00
+		wait for clk_period;
+		instruct <= "1101100000100001"; -- SW R0 R1 0x01
+		wait for clk_period;
+
 
 		wait;
    end process;

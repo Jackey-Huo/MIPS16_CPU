@@ -5,14 +5,5 @@
      behavior or data corruption.  It is strongly advised that
      users do not edit the contents of this file. -->
 <messages>
-<msg type="error" file="HDLCompiler" num="806" delta="unknown" >"D:/CPU/cpu/testbench/basic7tb.vhd" Line 181: Syntax error near &quot;<arg fmt="%s" index="1">after</arg>&quot;.
-</msg>
-
-<msg type="warning" file="HDLCompiler" num="1369" delta="unknown" >"D:/CPU/cpu/testbench/basic7tb.vhd" Line 148: Possible infinite loop; process does not have a wait statement
-</msg>
-
-<msg type="error" file="HDLCompiler" num="854" delta="unknown" >"D:/CPU/cpu/testbench/basic7tb.vhd" Line 38: Unit &lt;<arg fmt="%s" index="1">behavior</arg>&gt; ignored due to previous errors.
-</msg>
-
 </messages>
 
