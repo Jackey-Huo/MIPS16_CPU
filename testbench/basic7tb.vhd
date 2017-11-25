@@ -25,8 +25,10 @@
 -- to guarantee that the testbench will bind correctly to the post-implementation 
 -- simulation model.
 --------------------------------------------------------------------------------
-LIBRARY ieee;
-USE ieee.std_logic_1164.ALL;
+LIBRARY IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.STD_LOGIC_UNSIGNED.ALL;
+use IEEE.NUMERIC_STD.ALL;
  
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
@@ -62,7 +64,8 @@ ARCHITECTURE behavior OF basic7tb IS
          dyp1 : OUT  std_logic_vector(6 downto 0);
          led : OUT  std_logic_vector(15 downto 0);
          instruct : IN  std_logic_vector(15 downto 0);
-			dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7 : out std_logic_vector(15 downto 0)
+			dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7 : out std_logic_vector(15 downto 0);
+			dpc_real : out std_logic_vector(15 downto 0)
         );
     END COMPONENT;
     
@@ -98,7 +101,8 @@ ARCHITECTURE behavior OF basic7tb IS
   signal pc_real : std_logic_vector(15 downto 0) := x"0000";
    -- Clock period definitions
    constant clk_period : time := 10 ns;
- 
+  
+  signal temp : std_logic_vector(15 downto 0) := x"0000";
 BEGIN
  
 	-- Instantiate the Unit Under Test (UUT)
@@ -190,8 +194,9 @@ BEGIN
     assert r7 = x"0070" report "[0006] Failed" severity error;
 		instruct <= "1101100000100001"; -- [000B] SW R0 R1 0x01
 		wait for clk_period;
-    assert r2 = x"0008" report "[0007] Failed" severity error;
-		instruct <= "0010100000001000"; -- [000C] BNEZ R0 0x08
+    assert r2 = x"0004" report "[0007] Failed" severity error;
+		instruct <= "0010100000001000"; -- [000C] BNEZ R0 0x80
+    temp <= pc_real + x"0080";
 		wait for clk_period;
     assert r2 = x"0040" report "[0008] Failed" severity error;
 		instruct <= "0000100000000000"; -- NOP
@@ -205,8 +210,7 @@ BEGIN
     -- [000B]
 		instruct <= "1101100000100001"; -- SW R0 R1 0x01
 		wait for clk_period;
-    -- [000C]
-    assert 
+    assert pc_real = temp report "[000C] Failed" severity error;
     wait for clk_period;
     wait for clk_period;
     wait for clk_period;
