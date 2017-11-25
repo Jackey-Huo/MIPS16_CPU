@@ -106,6 +106,29 @@ package helper is
 
 
 
+    ------ VGA Section ------
+    -------------------------
+    constant vga_disp_480       : std_logic_vector (2 downto 0) := "000";
+    constant vga_disp_768       : std_logic_vector (2 downto 0) := "001";
+
+    constant vga480_full_w : integer := 799;
+    constant vga480_full_h : integer := 524;
+    constant vga480_w : integer := 640;
+    constant vga480_h : integer := 480;
+    constant vga480_hs_start : integer := 656;
+    constant vga480_hs_end : integer := 752;
+    constant vga480_vs_start : integer := 490;
+    constant vga480_vs_end : integer := 492;
+
+    constant vga768_full_w : integer := 1263; -- 1024 + 8 + 176 + 56
+    constant vga768_full_h : integer := 816; -- 768 + 0	8	41
+    constant vga768_w : integer := 1024;
+    constant vga768_h : integer := 768;
+    constant vga768_hs_start : integer := 1032; -- 1024 + 8 - 1
+    constant vga768_hs_end : integer := 1208;
+    constant vga768_vs_start : integer := 816;
+    constant vga768_vs_end : integer := 824;
+
     procedure reg_decode(signal reg_data: out std_logic_vector(15 downto 0);
                         addr: in std_logic_vector(3 downto 0);
                         signal r0, r1, r2, r3, r4, r5, r6, r7, SP, IH: in std_logic_vector(15 downto 0));
