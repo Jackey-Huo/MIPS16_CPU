@@ -5,5 +5,14 @@
      behavior or data corruption.  It is strongly advised that
      users do not edit the contents of this file. -->
 <messages>
+<msg type="error" file="HDLCompiler" num="1314" delta="unknown" >"D:/CPU/cpu/testbench/basic7tb.vhd" Line 135: Formal port/generic &lt;<arg fmt="%s" index="1">dpc_real</arg>&gt; is not declared in &lt;<arg fmt="%s" index="2">cpu</arg>&gt;
+</msg>
+
+<msg type="error" file="HDLCompiler" num="806" delta="unknown" >"D:/CPU/cpu/testbench/basic7tb.vhd" Line 210: Syntax error near &quot;<arg fmt="%s" index="1">wait</arg>&quot;.
+</msg>
+
+<msg type="error" file="HDLCompiler" num="854" delta="unknown" >"D:/CPU/cpu/testbench/basic7tb.vhd" Line 38: Unit &lt;<arg fmt="%s" index="1">behavior</arg>&gt; ignored due to previous errors.
+</msg>
+
 </messages>
 

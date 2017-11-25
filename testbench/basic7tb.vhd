@@ -95,7 +95,7 @@ ARCHITECTURE behavior OF basic7tb IS
    signal led : std_logic_vector(15 downto 0);
 
 	signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := x"0000";
-
+  signal pc_real : std_logic_vector(15 downto 0) := x"0000";
    -- Clock period definitions
    constant clk_period : time := 10 ns;
  
@@ -131,7 +131,8 @@ BEGIN
 			 dr4=>r4,
 			 dr5=>r5,
 			 dr6=>r6,
-			 dr7=>r7
+			 dr7=>r7,
+       dpc_real=>pc_real
         );
 
    -- Clock process definitions
@@ -157,6 +158,7 @@ BEGIN
 		wait for clk_period;
 		rst <= '1';
 		wait for clk_period;
+
 		instruct <= "0110100000001000"; -- [0000] LI R0 0x08
 		wait for clk_period; --IF
 		instruct <= "0110100100001100"; -- [0001] LI R1 0x0C
@@ -191,15 +193,25 @@ BEGIN
     assert r2 = x"0008" report "[0007] Failed" severity error;
 		instruct <= "0010100000001000"; -- [000C] BNEZ R0 0x08
 		wait for clk_period;
-    assert r2 = x"0020" report "[0008] Failed" severity error;
+    assert r2 = x"0040" report "[0008] Failed" severity error;
 		instruct <= "0000100000000000"; -- NOP
 		wait for clk_period;
+    -- [0009]
 		instruct <= "0110100010111111"; -- LI R0 0xBF
 		wait for clk_period;
+    -- [000A]
 		instruct <= "0011000000010000"; -- SLL R0 R0 0x00
 		wait for clk_period;
+    -- [000B]
 		instruct <= "1101100000100001"; -- SW R0 R1 0x01
 		wait for clk_period;
+    -- [000C]
+    assert 
+    wait for clk_period;
+    wait for clk_period;
+    wait for clk_period;
+    wait for clk_period;
+    wait for clk_period;
 
 
 		wait;
