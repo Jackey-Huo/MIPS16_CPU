@@ -181,6 +181,7 @@ BEGIN
     assert r6 = x"0014" report "[0003] Failed" severity error;
 		instruct <= "0100100101010000"; -- ADDIU R1 0x50
 		wait for clk_period;
+    assert r7 = x"0020" report "[0004] Failed" severity error;
 		instruct <= "1101100000100001"; -- SW R0 R1 0x01
 		wait for clk_period;
 		instruct <= "0010100000001000"; -- BNEZ R0 0x08
