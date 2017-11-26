@@ -93,6 +93,8 @@ architecture Behavioral of cpu is
     signal ctrl_mux_bypass                 : std_logic_vector (2 downto 0)  := "000";
     signal ctrl_insert_bubble              : std_logic                      := '0';
 
+    signal id_instruc                      : std_logic_vector (15 downto 0) := zero16;
+
     -- ID/EX
     signal idex_instruc                    : std_logic_vector (15 downto 0) := zero16;
     signal idex_reg_a_data                 : std_logic_vector (15 downto 0) := zero16;
@@ -231,13 +233,16 @@ begin
     ---------------- ID --------------------------
     ID_unit: process(clk, rst)
     begin
-        if (clk'event and clk='1') then
+        if (rst = '0') then
+            id_pc_branch <= '0';
+        elsif (clk'event and clk='1') then
             if (ctrl_insert_bubble = '1') then
                 idex_instruc <= idex_instruc;
             else
                 idex_instruc <= ifid_instruc;
             end if;
             id_pc_branch <= '0';
+            id_instruc <= ifid_instruc;
             case ifid_instruc(15 downto 11) is
                 when EXTEND_ALU3_op => -- ADDU, SUBU
                     -- rx value
@@ -395,55 +400,57 @@ begin
     end process ID_unit;
 
     -- combination logic multiplexer unit for branch
-    process(pc, idex_reg_b_data, idex_reg_a_data)
+    process(pc, idex_reg_b_data_real, idex_reg_a_data_real)
     begin
-        case ifid_instruc(15 downto 11) is
-            when BNEZ_op =>
-                if (idex_reg_a_data_real /= zero16) then
-                    id_branch_value <= pc - 1 + idex_reg_b_data_real;
-                else
-                    id_branch_value <= pc;
-                end if;
-            when BEQZ_op =>
-                if (idex_reg_a_data_real = zero16) then
-                    id_branch_value <= pc - 1 + idex_reg_b_data_real;
-                else
-                    id_branch_value <= pc;
-                end if;
-            when B_op =>
-                id_branch_value <= pc - 1 + idex_reg_a_data_real;
-            when EXTEND_TSP_op =>
-                case ifid_instruc(10 downto 8) is
-                    when EX_BTNEZ_pf_op =>
-                        if (idex_reg_a_data_real /= zero16) then
-                            id_branch_value <= pc - 1 + idex_reg_b_data_real;
-                        else
-                            id_branch_value <= pc;
-                        end if;
-                    when EX_BTEQZ_pf_op =>
-                        if (idex_reg_a_data_real = zero16) then
-                            id_branch_value <= pc -1 + idex_reg_b_data_real;
-                        else
-                            id_branch_value <= pc;
-                        end if;
-                    when others =>
-                        id_branch_value <= zero16;
-                end case;
-            when EXTEND_ALUPCmix_op =>
-                case ifid_instruc(4 downto 0) is
-                    when EX_PC_sf_op =>
-                        case ifid_instruc(7 downto 5) is
-                            when EX_JR_sf_diff_op =>
-                                id_branch_value <= idex_reg_a_data_real;
-                            when others =>
-                                id_branch_value <= zero16;
-                        end case;
-                    when others =>
-                        id_branch_value <= zero16;
-                end case;
-            when others =>
-                id_branch_value <= zero16;
-        end case;
+        if (id_pc_branch = '1') then
+            case id_instruc(15 downto 11) is
+                when BNEZ_op =>
+                    if (idex_reg_a_data_real /= zero16) then
+                        id_branch_value <= pc - 1 + idex_reg_b_data_real;
+                    else
+                        id_branch_value <= pc;
+                    end if;
+                when BEQZ_op =>
+                    if (idex_reg_a_data_real = zero16) then
+                        id_branch_value <= pc - 1 + idex_reg_b_data_real;
+                    else
+                        id_branch_value <= pc;
+                    end if;
+                when B_op =>
+                    id_branch_value <= pc - 1 + idex_reg_a_data_real;
+                when EXTEND_TSP_op =>
+                    case id_instruc(10 downto 8) is
+                        when EX_BTNEZ_pf_op =>
+                            if (idex_reg_a_data_real /= zero16) then
+                                id_branch_value <= pc - 1 + idex_reg_b_data_real;
+                            else
+                                id_branch_value <= pc;
+                            end if;
+                        when EX_BTEQZ_pf_op =>
+                            if (idex_reg_a_data_real = zero16) then
+                                id_branch_value <= pc -1 + idex_reg_b_data_real;
+                            else
+                                id_branch_value <= pc;
+                            end if;
+                        when others =>
+                            id_branch_value <= zero16;
+                    end case;
+                when EXTEND_ALUPCmix_op =>
+                    case id_instruc(4 downto 0) is
+                        when EX_PC_sf_op =>
+                            case id_instruc(7 downto 5) is
+                                when EX_JR_sf_diff_op =>
+                                    id_branch_value <= idex_reg_a_data_real;
+                                when others =>
+                                    id_branch_value <= zero16;
+                            end case;
+                        when others =>
+                            id_branch_value <= zero16;
+                    end case;
+                when others =>
+                    id_branch_value <= zero16;
+            end case;
+        end if;
     end process;
 
     -- TODO input will be change to 7, current is not good

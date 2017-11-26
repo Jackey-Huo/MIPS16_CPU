@@ -170,7 +170,9 @@ BEGIN
 		wait for clk_period;
 		instruct <= "1101100000100001"; -- SW R0 R1 0x01
 		wait for clk_period;
-		instruct <= "0010100000001000"; -- BNEZ R0 0x08
+		instruct <= "0000100000000000"; -- NOP
+		wait for clk_period;
+		instruct <= "0010100000001001"; -- BNEZ R0 0x09
 		wait for clk_period;
 		instruct <= "0000100000000000"; -- NOP
 		wait for clk_period;
