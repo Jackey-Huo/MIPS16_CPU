@@ -63,9 +63,7 @@ ARCHITECTURE behavior OF basic7tb IS
          dyp0 : OUT  std_logic_vector(6 downto 0);
          dyp1 : OUT  std_logic_vector(6 downto 0);
          led : OUT  std_logic_vector(15 downto 0);
-         instruct : IN  std_logic_vector(15 downto 0);
-			dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7 : out std_logic_vector(15 downto 0);
-			dpc_real : out std_logic_vector(15 downto 0)
+         instruct : IN  std_logic_vector(15 downto 0)
         );
     END COMPONENT;
     
@@ -127,16 +125,7 @@ BEGIN
           dyp0 => dyp0,
           dyp1 => dyp1,
           led => led,
-          instruct => instruct,
-			 dr0=>r0,
-			 dr1=>r1,
-			 dr2=>r2,
-			 dr3=>r3,
-			 dr4=>r4,
-			 dr5=>r5,
-			 dr6=>r6,
-			 dr7=>r7,
-       dpc_real=>pc_real
+          instruct => instruct
         );
 
    -- Clock process definitions
