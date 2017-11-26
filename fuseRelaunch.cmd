@@ -1,0 +1,1 @@
+-intstyle "ise" -incremental -o "D:/CPU/cpu/basic7tb_isim_beh.exe" -prj "D:/CPU/cpu/basic7tb_beh.prj" "work.basic7tb" 

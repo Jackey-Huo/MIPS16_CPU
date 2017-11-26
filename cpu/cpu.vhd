@@ -65,10 +65,8 @@ entity cpu is
         -- led
         led : out std_logic_vector(15 downto 0);
 
-        -- DEBUG variables
         -- feed in instruct
-        instruct : in std_logic_vector (15 downto 0)
-        --dbg_ex_reg_a, dbg_ex_reg_b    : out std_logic_vector(15 downto 0)
+        instruct : in std_logic_vector (15 downto 0);
     );
 end cpu;
 
@@ -149,17 +147,6 @@ architecture Behavioral of cpu is
         );
     end component alu;
 
-    component mux5to1 is
-        port (
-            output       : out std_logic_vector (15 downto 0);
-            ctrl_mux     : in std_logic_vector (2 downto 0);
-            idex_reg     : in std_logic_vector (15 downto 0);
-            alu_result   : in std_logic_vector (15 downto 0);
-            mewb_result  : in std_logic_vector (15 downto 0);
-            mewb_readout : in std_logic_vector (15 downto 0);
-            wb_reg_data  : in std_logic_vector (15 downto 0)
-        );
-    end component mux5to1;
     component mux7to1 is
         port (
             output       : out std_logic_vector (15 downto 0) := zero16;
