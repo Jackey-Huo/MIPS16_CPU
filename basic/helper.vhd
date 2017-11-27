@@ -269,7 +269,6 @@ package body helper is
         variable conflict_instruc_number_b        : integer                        := 0;
         variable conflict_instruc_bypass          : std_logic_vector (15 downto 0) := NOP_instruc;
         variable conflict_instruc_number_bypass   : integer                        := 0;
-        variable insert_bubble                    : std_logic                      := '0';
     begin
 
         if (ctrl_rd_reg_a /= reg_none) then
@@ -344,8 +343,7 @@ package body helper is
         ctrl_fake_nop := false;
 
         case conflict_instruc_a(15 downto 11) is
-            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op =>
-                insert_bubble := '0';
+            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op | ADDIU3_op =>
                 case conflict_instruc_number_a is
                     when 1 =>
                         ctrl_mux_reg_a <= chs_alu_result;     --                 ---
@@ -365,9 +363,84 @@ package body helper is
                     when 3 =>
                         ctrl_mux_reg_a <= chs_wb_reg_data;
                     when others =>
-                        ctrl_mux_reg_a <= chs_idex_bypass;
+                        ctrl_mux_reg_a <= chs_idex_reg;
                 end case;
-            when LW_op =>
+            when EXTEND_TSP_op =>
+                case conflict_instruc_a(10 downto 8) is
+                    when EX_ADDSP_pf_op =>
+                        case conflict_instruc_number_a is
+                            when 1 =>
+                                ctrl_mux_reg_a <= chs_alu_result;
+                            when 2 =>
+                                ctrl_mux_reg_a <= chs_mewb_result;
+                            when 3 =>
+                                ctrl_mux_reg_a <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_reg_a <= chs_idex_reg;
+                        end case;
+                    when EX_MTSP_pf_op =>
+                        case conflict_instruc_number_a is
+                            when 1 =>
+                                ctrl_mux_reg_a <= chs_exme_bypass;
+                            when 2 =>
+                                ctrl_mux_reg_a <= chs_mewb_bypass;
+                            when 3 =>
+                                ctrl_mux_reg_a <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_reg_a <= chs_idex_reg;
+                        end case;
+                    when others =>
+                        ctrl_mux_reg_a <= chs_idex_reg;
+                end case;
+            when EXTEND_ALUPCmix_op =>
+                case conflict_instruc_a(4 downto 0) is
+                    when EX_AND_sf_op | EX_OR_sf_op | EX_CMP_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op =>
+                        case conflict_instruc_number_a is
+                            when 1 =>
+                                ctrl_mux_reg_a <= chs_alu_result;
+                            when 2 =>
+                                ctrl_mux_reg_a <= chs_mewb_result;
+                            when 3 =>
+                                ctrl_mux_reg_a <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_reg_a <= chs_idex_reg;
+                        end case;
+                    when EX_PC_sf_op =>
+                        case conflict_instruc_a(7 downto 5) is
+                            when EX_MFPC_sf_diff_op =>
+                                case conflict_instruc_number_a is
+                                    when 1 =>
+                                        ctrl_mux_reg_a <= chs_exme_bypass;
+                                    when 2 =>
+                                        ctrl_mux_reg_a <= chs_mewb_bypass;
+                                    when 3 =>
+                                        ctrl_mux_reg_a <= chs_wb_reg_data;
+                                    when others =>
+                                        ctrl_mux_reg_a <= chs_idex_reg;
+                                end case;
+                            when others =>
+                                ctrl_mux_reg_a <= chs_idex_reg;
+                        end case;
+                    when others =>
+                        ctrl_mux_reg_a <= chs_idex_reg;
+                end case;
+            when EXTEND_IH_op =>
+                case conflict_instruc_a(7 downto 0) is
+                    when EX_MFIH_sf_op | EX_MTIH_sf_op =>
+                        case conflict_instruc_number_a is
+                            when 1 =>
+                                ctrl_mux_reg_a <= chs_exme_bypass;
+                            when 2 =>
+                                ctrl_mux_reg_a <= chs_mewb_bypass;
+                            when 3 =>
+                                ctrl_mux_reg_a <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_reg_a <= chs_idex_reg;
+                        end case;
+                    when others =>
+                        ctrl_mux_reg_a <= chs_idex_reg;
+                end case;
+            when LW_op | LW_SP_op =>
                 if (conflict_instruc_number_a = 1) then
                     ctrl_fake_nop := true;
                 end if;
@@ -381,12 +454,11 @@ package body helper is
                 end case;
             when others =>
                 ctrl_mux_reg_a <= chs_idex_reg;
-                insert_bubble := '0';
         end case;
 
+
         case conflict_instruc_b(15 downto 11) is
-            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op =>
-                insert_bubble := '0';
+            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op | ADDIU3_op =>
                 case conflict_instruc_number_b is
                     when 1 =>
                         ctrl_mux_reg_b <= chs_alu_result;    --                 ---
@@ -406,9 +478,84 @@ package body helper is
                     when 3 =>
                         ctrl_mux_reg_b <= chs_wb_reg_data;
                     when others =>
-                        ctrl_mux_reg_b <= chs_idex_bypass;
+                        ctrl_mux_reg_b <= chs_idex_reg;
                 end case;
-            when LW_op =>
+            when EXTEND_TSP_op =>
+                case conflict_instruc_b(10 downto 8) is
+                    when EX_ADDSP_pf_op =>
+                        case conflict_instruc_number_b is
+                            when 1 =>
+                                ctrl_mux_reg_b <= chs_alu_result;
+                            when 2 =>
+                                ctrl_mux_reg_b <= chs_mewb_result;
+                            when 3 =>
+                                ctrl_mux_reg_b <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_reg_b <= chs_idex_reg;
+                        end case;
+                    when EX_MTSP_pf_op =>
+                        case conflict_instruc_number_b is
+                            when 1 =>
+                                ctrl_mux_reg_b <= chs_exme_bypass;
+                            when 2 =>
+                                ctrl_mux_reg_b <= chs_mewb_bypass;
+                            when 3 =>
+                                ctrl_mux_reg_b <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_reg_b <= chs_idex_reg;
+                        end case;
+                    when others =>
+                        ctrl_mux_reg_b <= chs_idex_reg;
+                end case;
+            when EXTEND_ALUPCmix_op =>
+                case conflict_instruc_b(4 downto 0) is
+                    when EX_AND_sf_op | EX_OR_sf_op | EX_CMP_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op =>
+                        case conflict_instruc_number_b is
+                            when 1 =>
+                                ctrl_mux_reg_b <= chs_alu_result;
+                            when 2 =>
+                                ctrl_mux_reg_b <= chs_mewb_result;
+                            when 3 =>
+                                ctrl_mux_reg_b <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_reg_b <= chs_idex_reg;
+                        end case;
+                    when EX_PC_sf_op =>
+                        case conflict_instruc_b(7 downto 5) is
+                            when EX_MFPC_sf_diff_op =>
+                                case conflict_instruc_number_b is
+                                    when 1 =>
+                                        ctrl_mux_reg_b <= chs_exme_bypass;
+                                    when 2 =>
+                                        ctrl_mux_reg_b <= chs_mewb_bypass;
+                                    when 3 =>
+                                        ctrl_mux_reg_b <= chs_wb_reg_data;
+                                    when others =>
+                                        ctrl_mux_reg_b <= chs_idex_reg;
+                                end case;
+                            when others =>
+                                ctrl_mux_reg_b <= chs_idex_reg;
+                        end case;
+                    when others =>
+                        ctrl_mux_reg_b <= chs_idex_reg;
+                end case;
+            when EXTEND_IH_op =>
+                case conflict_instruc_b(7 downto 0) is
+                    when EX_MFIH_sf_op | EX_MTIH_sf_op =>
+                        case conflict_instruc_number_b is
+                            when 1 =>
+                                ctrl_mux_reg_b <= chs_exme_bypass;
+                            when 2 =>
+                                ctrl_mux_reg_b <= chs_mewb_bypass;
+                            when 3 =>
+                                ctrl_mux_reg_b <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_reg_b <= chs_idex_reg;
+                        end case;
+                    when others =>
+                        ctrl_mux_reg_b <= chs_idex_reg;
+                end case;
+            when LW_op | LW_SP_op =>
                 if (conflict_instruc_number_b = 1) then
                     ctrl_fake_nop := true;
                 end if;
@@ -421,23 +568,22 @@ package body helper is
                         ctrl_mux_reg_b <= chs_idex_reg;
                 end case;
             when others =>
-                insert_bubble := '0';
                 ctrl_mux_reg_b <= chs_idex_reg;
         end case;
 
+
         case conflict_instruc_bypass(15 downto 11) is
-            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op =>
-                insert_bubble := '0';
+            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op | ADDIU3_op =>
                 case conflict_instruc_number_bypass is
                     when 1 =>
                         ctrl_mux_bypass <= chs_alu_result;     --
-                    when 2 =>                                      --                 ---
+                    when 2 =>                                  --                 ---
                         ctrl_mux_bypass <= chs_mewb_result;    --   idex_bypass--| M |
-                    when 3 =>                                      --    alu_result--|   |
+                    when 3 =>                                  --    alu_result--|   |
                         ctrl_mux_bypass <= chs_wb_reg_data;    --   mewb_result--| U |--exme_bypass
-                    when others =>                                 --  mewb_readout--|   |
-                        ctrl_mux_bypass <= chs_idex_reg;       --   wb_reg_data--| X |
-                end case;                                          --                 ---
+                    when others =>                             --  mewb_readout--|   |
+                        ctrl_mux_bypass <= chs_idex_bypass;    --   wb_reg_data--| X |
+                end case;                                      --                 ---
             when LI_op =>
                 case conflict_instruc_number_bypass is
                     when 1 =>
@@ -449,7 +595,82 @@ package body helper is
                     when others =>
                         ctrl_mux_bypass <= chs_idex_bypass;
                 end case;
-            when LW_op =>
+            when EXTEND_TSP_op =>
+                case conflict_instruc_bypass(10 downto 8) is
+                    when EX_ADDSP_pf_op =>
+                        case conflict_instruc_number_bypass is
+                            when 1 =>
+                                ctrl_mux_bypass <= chs_alu_result;
+                            when 2 =>
+                                ctrl_mux_bypass <= chs_mewb_result;
+                            when 3 =>
+                                ctrl_mux_bypass <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_bypass <= chs_idex_bypass;
+                        end case;
+                    when EX_MTSP_pf_op =>
+                        case conflict_instruc_number_bypass is
+                            when 1 =>
+                                ctrl_mux_bypass <= chs_exme_bypass;
+                            when 2 =>
+                                ctrl_mux_bypass <= chs_mewb_bypass;
+                            when 3 =>
+                                ctrl_mux_bypass <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_bypass <= chs_idex_bypass;
+                        end case;
+                    when others =>
+                        ctrl_mux_bypass <= chs_idex_bypass;
+                end case;
+            when EXTEND_ALUPCmix_op =>
+                case conflict_instruc_bypass(4 downto 0) is
+                    when EX_AND_sf_op | EX_OR_sf_op | EX_CMP_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op =>
+                        case conflict_instruc_number_bypass is
+                            when 1 =>
+                                ctrl_mux_bypass <= chs_alu_result;
+                            when 2 =>
+                                ctrl_mux_bypass <= chs_mewb_result;
+                            when 3 =>
+                                ctrl_mux_bypass <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_bypass <= chs_idex_bypass;
+                        end case;
+                    when EX_PC_sf_op =>
+                        case conflict_instruc_bypass(7 downto 5) is
+                            when EX_MFPC_sf_diff_op =>
+                                case conflict_instruc_number_bypass is
+                                    when 1 =>
+                                        ctrl_mux_bypass <= chs_exme_bypass;
+                                    when 2 =>
+                                        ctrl_mux_bypass <= chs_mewb_bypass;
+                                    when 3 =>
+                                        ctrl_mux_bypass <= chs_wb_reg_data;
+                                    when others =>
+                                        ctrl_mux_bypass <= chs_idex_bypass;
+                                end case;
+                            when others =>
+                                ctrl_mux_bypass <= chs_idex_bypass;
+                        end case;
+                    when others =>
+                        ctrl_mux_bypass <= chs_idex_bypass;
+                end case;
+            when EXTEND_IH_op =>
+                case conflict_instruc_bypass(7 downto 0) is
+                    when EX_MFIH_sf_op | EX_MTIH_sf_op =>
+                        case conflict_instruc_number_bypass is
+                            when 1 =>
+                                ctrl_mux_bypass <= chs_exme_bypass;
+                            when 2 =>
+                                ctrl_mux_bypass <= chs_mewb_bypass;
+                            when 3 =>
+                                ctrl_mux_bypass <= chs_wb_reg_data;
+                            when others =>
+                                ctrl_mux_bypass <= chs_idex_reg;
+                        end case;
+                    when others =>
+                        ctrl_mux_bypass <= chs_idex_bypass;
+                end case;
+            when LW_op | LW_SP_op =>
                 if (conflict_instruc_number_bypass = 1) then
                     ctrl_fake_nop := true;
                 end if;
@@ -459,10 +680,9 @@ package body helper is
                     when 3 =>
                         ctrl_mux_bypass <= chs_wb_reg_data;
                     when others =>
-                        ctrl_mux_bypass <= chs_idex_reg;
+                        ctrl_mux_bypass <= chs_idex_bypass;
                 end case;
             when others =>
-                insert_bubble := '0';
                 ctrl_mux_bypass <= chs_idex_bypass;
         end case;
 

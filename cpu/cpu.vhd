@@ -66,7 +66,7 @@ entity cpu is
         led : out std_logic_vector(15 downto 0);
 
         -- feed in instruct
-        instruct : in std_logic_vector (15 downto 0);
+        instruct : in std_logic_vector (15 downto 0)
     );
 end cpu;
 
@@ -386,8 +386,8 @@ begin
         end if;
     end process ID_unit;
 
-    -- combination logic multiplexer unit for branch
-    process(pc, idex_reg_b_data_real, idex_reg_a_data_real)
+    -- combination logic multiplexer unit for branch TODO: maybe we need bubble handle, fix it later
+    process(pc, id_instruc, idex_reg_b_data_real, idex_reg_a_data_real)
     begin
         if (id_pc_branch = '1') then
             case id_instruc(15 downto 11) is
@@ -447,7 +447,7 @@ begin
                         mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
     Rg_B_mux: mux7to1 port map (idex_reg_b_data_real, ctrl_mux_reg_b, idex_reg_b_data, exme_result,
                         mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
-    Rg_bypass: mux7to1 port map (idex_bypass_real, ctrl_mux_bypass, idex_reg_a_data, exme_result,
+    Rg_bypass: mux7to1 port map (idex_bypass_real, ctrl_mux_bypass, idex_bypass, exme_result,
                         mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
 
 --                 ---                                  ---                                  ---
@@ -836,6 +836,11 @@ begin
                     ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
                     ctrl_rd_reg_b  := reg_none;
                     ctrl_rd_bypass := reg_none;
+                when ADDIU3_op =>
+                    ctrl_wb_reg_0  := "0" & ctrl_instruc_0(7 downto 5);
+                    ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
+                    ctrl_rd_reg_b  := reg_none;
+                    ctrl_rd_bypass := reg_none;
                 when LI_op =>
                     ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
                     ctrl_rd_reg_a  := reg_none;
@@ -846,9 +851,106 @@ begin
                     ctrl_rd_reg_a  := "0" & ctrl_instruc_0(7 downto 5);
                     ctrl_rd_reg_b  := reg_none;
                     ctrl_rd_bypass := reg_none;
+                when EXTEND_TSP_op => -- ADDSP, BTEQZ, BTNEZ, MTSP
+                    case ctrl_instruc_0(10 downto 8) is
+                        when EX_BTEQZ_pf_op | EX_BTNEZ_pf_op =>
+                            ctrl_wb_reg_0  := reg_none;
+                            ctrl_rd_reg_a  := T_index;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := reg_none;
+                        when EX_ADDSP_pf_op =>
+                            ctrl_wb_reg_0  := SP_index;
+                            ctrl_rd_reg_a  := SP_index;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := reg_none;
+                        when EX_MTSP_pf_op =>
+                            ctrl_wb_reg_0  := SP_index;
+                            ctrl_rd_reg_a  := reg_none;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := "0" & ctrl_instruc_0(7 downto 5);
+                        when others =>
+                            ctrl_wb_reg_0  := reg_none;
+                            ctrl_rd_reg_a  := reg_none;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := reg_none;
+                    end case;
+                when EXTEND_ALUPCmix_op =>
+                    case ctrl_instruc_0(4 downto 0) is
+                        when EX_AND_sf_op | EX_OR_sf_op =>
+                            ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_reg_b  := "0" & ctrl_instruc_0(7 downto 5);
+                            ctrl_rd_bypass := reg_none;
+                        when EX_CMP_sf_op =>
+                            ctrl_wb_reg_0  := T_index;
+                            ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_reg_b  := "0" & ctrl_instruc_0(7 downto 5);
+                            ctrl_rd_bypass := reg_none;
+                        when EX_NEG_sf_op =>
+                            ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_reg_a  := reg_none;
+                            ctrl_rd_reg_b  := "0" & ctrl_instruc_0(7 downto 5);
+                            ctrl_rd_bypass := reg_none;
+                        when EX_NOT_sf_op =>
+                            ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_reg_a  := "0" & ctrl_instruc_0(7 downto 5);
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := reg_none;
+                        when EX_SRLV_sf_op =>
+                            ctrl_wb_reg_0  := "0" & ctrl_instruc_0(7 downto 5);
+                            ctrl_rd_reg_a  := "0" & ctrl_instruc_0(7 downto 5);
+                            ctrl_rd_reg_b  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_bypass := reg_none;
+                        when EX_PC_sf_op =>
+                            case ctrl_instruc_0(7 downto 5) is
+                                when EX_JR_sf_diff_op =>
+                                    ctrl_wb_reg_0  := reg_none;
+                                    ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
+                                    ctrl_rd_reg_b  := reg_none;
+                                    ctrl_rd_bypass := reg_none;
+                                when EX_MFPC_sf_diff_op =>
+                                    ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                                    ctrl_rd_reg_a  := reg_none;
+                                    ctrl_rd_reg_b  := reg_none;
+                                    ctrl_rd_bypass := reg_none;
+                                when others =>
+                                    ctrl_wb_reg_0  := reg_none;
+                                    ctrl_rd_reg_a  := reg_none;
+                                    ctrl_rd_reg_b  := reg_none;
+                                    ctrl_rd_bypass := reg_none;
+                            end case;
+                        when others =>
+                            ctrl_wb_reg_0  := reg_none;
+                            ctrl_rd_reg_a  := reg_none;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := reg_none;
+                    end case;
+                when EXTEND_IH_op =>
+                    case ctrl_instruc_0(7 downto 0) is
+                        when EX_MFIH_sf_op =>
+                            ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_reg_a  := reg_none;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := IH_index;
+                        when EX_MTIH_sf_op =>
+                            ctrl_wb_reg_0  := IH_index;
+                            ctrl_rd_reg_a  := reg_none;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := "0" & ctrl_instruc_0(10 downto 8);
+                        when others =>
+                            ctrl_wb_reg_0  := reg_none;
+                            ctrl_rd_reg_a  := reg_none;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := reg_none;
+                    end case;
                 when LW_op =>
                     ctrl_wb_reg_0  := "0" & ctrl_instruc_0(7 downto 5);
                     ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
+                    ctrl_rd_reg_b  := reg_none;
+                    ctrl_rd_bypass := reg_none;
+                when LW_SP_op =>
+                    ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                    ctrl_rd_reg_a  := SP_index;
                     ctrl_rd_reg_b  := reg_none;
                     ctrl_rd_bypass := reg_none;
                 when SW_op =>
@@ -856,7 +958,12 @@ begin
                     ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
                     ctrl_rd_reg_b  := reg_none;
                     ctrl_rd_bypass := "0" & ctrl_instruc_0(7 downto 5);
-                when BNEZ_op =>
+                when SW_SP_op =>
+                    ctrl_wb_reg_0  := reg_none;
+                    ctrl_rd_reg_a  := SP_index;
+                    ctrl_rd_reg_b  := reg_none;
+                    ctrl_rd_bypass := "0" & ctrl_instruc_0(10 downto 8);
+                when BNEZ_op | BEQZ_op =>
                     ctrl_wb_reg_0  := reg_none;
                     ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
                     ctrl_rd_reg_b  := reg_none;
