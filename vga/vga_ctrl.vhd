@@ -36,6 +36,14 @@ entity vga_ctrl is
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
 
+		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
+
+		PC : in std_logic_vector(15 downto 0);
+		CM : in std_logic_vector(15 downto 0);
+		Tdata : in std_logic_vector(15 downto 0);
+		SPdata : in std_logic_vector(15 downto 0);
+		IHdata : in std_logic_vector(15 downto 0);
+
 		-- Concatenated color definition for input
 		color : in std_logic_vector (8 downto 0);
 
@@ -48,10 +56,27 @@ end vga_ctrl;
 
 architecture Behavioral of vga_ctrl is
 
+component fontROM is
+	port (
+	clka: in std_logic;
+	addra: in std_logic_vector(10 downto 0);
+	douta: out std_logic_vector(7 downto 0));
+end component;
+
 component vga_ctrl_480 is 
 	Port(
 		clk : in std_logic; -- clock forced to be 50M
 		rst : in std_logic;
+
+		fontROMAddr : out std_logic_vector (10 downto 0);
+		fontROMData : in std_logic_vector (7 downto 0);
+
+		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
+		PC : in std_logic_vector(15 downto 0);
+		CM : in std_logic_vector(15 downto 0);
+		Tdata : in std_logic_vector(15 downto 0);
+		SPdata : in std_logic_vector(15 downto 0);
+		IHdata : in std_logic_vector(15 downto 0);
 
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
@@ -87,11 +112,46 @@ end component;
 -- Hs, Vs used in computation
 signal Hs_c, Vs_c : std_logic := '0';
 signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector (2 downto 0) := "000";
+signal fontROMAddr : std_logic_vector (10 downto 0) := "00000000000";
+signal fontROMData : std_logic_vector (7 downto 0) := x"00";
+signal dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7 : std_logic_vector(15 downto 0) := x"0000";
+signal dSP, dIH, dT, d_CM, dPC : std_logic_vector(15 downto 0) := x"0000";
+
 begin
 
-	vga768_disp : vga_ctrl_768 port map(
+	dr0<=r0;
+	dr1<=r1;
+	dr2<=r2;
+	dr3<=r3;
+	dr4<=r4;
+	dr5<=r5;
+	dr6<=r6;
+	dr7<=r7;
+
+	get_font : fontROM port map(
+		clka => clk,
+		addra => fontROMAddr,
+		douta => fontROMData
+		);
+
+	vga480_disp : vga_ctrl_480 port map(
 		clk => clk,
 		rst => rst,
+		fontROMAddr => fontROMAddr,
+		fontROMData => fontROMData,
+		r0=>dr0,
+		r1=>dr1,
+		r2=>dr2,
+		r3=>dr3,
+		r4=>dr4,
+		r5=>dr5,
+		r6=>dr6,
+		r7=>dr7,
+		PC => PC, -- : in std_logic_vector(15 downto 0);
+		CM => CM, -- in std_logic_vector(15 downto 0);
+		Tdata => TData, -- : in std_logic_vector(15 downto 0);
+		SPdata => SPdata, -- : in std_logic_vector(15 downto 0);
+		IHdata => IHdata, --: in std_logic_vector(15 downto 0);
 		Hs => Hs,
 		Vs => Vs,
 		color => color,
