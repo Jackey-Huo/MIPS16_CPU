@@ -53,6 +53,7 @@ _impact.log
 *_xst.xrpt
 # project-wide generated files
 *.gise
+*.xise
 par_usage_statistics.html
 usage_statistics_webtalk.html
 webtalk.log
