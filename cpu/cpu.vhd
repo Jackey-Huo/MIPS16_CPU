@@ -36,6 +36,7 @@ use basic.helper.all;
 entity cpu is
     port (
         clk : in std_logic;
+		  clk50 : in std_logic;
         rst : in std_logic;
 
         -- ram1, Instruction memory
@@ -62,6 +63,12 @@ entity cpu is
         --digits
         dyp0            : out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
         dyp1            : out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+		  
+		  -- VGA
+		  Hs 					: out std_logic; -- line sync
+		  Vs 					: out std_logic; -- field sync
+		  VGA_R, VGA_G, VGA_B : out std_logic_vector (2 downto 0) := "000";
+		
         -- led
         led : out std_logic_vector(15 downto 0);
 
@@ -137,6 +144,9 @@ architecture Behavioral of cpu is
 
     signal wb_reg_data                     : std_logic_vector (15 downto 0) := zero16;
 
+	 -- VGA signals
+	 signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
+
     -- component
     component alu is
         port (
@@ -162,7 +172,57 @@ architecture Behavioral of cpu is
         );
     end component mux7to1;
 
+	component vga_ctrl is
+		Port(
+			clk : in std_logic; -- clock forced to be 50M
+			rst : in std_logic;
+			
+			Hs : out std_logic; -- line sync
+			Vs : out std_logic; -- field sync
+
+			r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
+			PC : in std_logic_vector(15 downto 0);
+			CM : in std_logic_vector(15 downto 0);
+			Tdata : in std_logic_vector(15 downto 0);
+			SPdata : in std_logic_vector(15 downto 0);
+			IHdata : in std_logic_vector(15 downto 0);
+			
+			-- Concatenated color definition for input
+			color : in std_logic_vector (8 downto 0);
+
+			-- Separate color definition for output
+			R : out std_logic_vector(2 downto 0);
+			G : out std_logic_vector(2 downto 0);
+			B : out std_logic_vector(2 downto 0)
+		);
+	end component;
+
+
 begin
+	 ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
+	 vga_disp : vga_ctrl port map(
+		clk => clk50,
+		rst => rst,
+		Hs => Hs,
+		Vs => Vs,
+		r0=>r0,
+		r1=>r1,
+		r2=>r2,
+		r3=>r3,
+		r4=>r4,
+		r5=>r5,
+		r6=>r6,
+		r7=>r7,
+		PC => PC, -- : in std_logic_vector(15 downto 0);
+		CM => me_read_addr(15 downto 0), -- in std_logic_vector(15 downto 0);
+		Tdata => T, -- : in std_logic_vector(15 downto 0);
+		SPdata => SP, -- : in std_logic_vector(15 downto 0);
+		IHdata => IH, --: in std_logic_vector(15 downto 0);
+		color => "000000000",
+		R => VGA_R,
+		G => VGA_G,
+		B => VGA_B
+	);
 
     ------------- Memory and Serial Control Unit, pure combinational logic
     me_write_enable_real <= '0' when (rst = '0') else (me_write_enable and clk);
