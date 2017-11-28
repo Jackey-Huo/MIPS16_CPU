@@ -193,9 +193,11 @@ begin
     data_ram1 <= me_write_data when ((me_write_enable_real = '1') or (seri1_write_enable = '1'))else "ZZZZZZZZZZZZZZZZ";
     mewb_readout <= data_ram1 when ((me_read_enable = '1') or (seri1_write_enable = '1')) else "ZZZZZZZZZZZZZZZZ";
     -- if MEM is using SRAM, insert a NOP into pipeline
-    --ifid_instruc_mem <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0')) else NOP_instruc;
+    --ifid_instruc_mem <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0') and
+                                        --(seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
 
-    ifid_instruc_mem <= instruct;
+    ifid_instruc_mem <= instruct when ((me_read_enable = '0') and (me_write_enable = '0') and
+                                        (seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
 
     ---------------- IF --------------------------
     IF_unit: process(clk, rst)
@@ -207,6 +209,12 @@ begin
             -- (1) pc <= pc + 1; (2) JR (3) BEQZ
             if (ctrl_insert_bubble = '1') then
                 ifid_instruc <= ifid_instruc;
+                pc <= pc_real;
+            elsif ((me_read_enable = '1') or (me_write_enable = '1')) then
+                ifid_instruc <= ifid_instruc_mem;     -- actually, it's a NOP
+                pc <= pc_real;
+            elsif ((seri1_read_enable = '1') or (seri1_write_enable = '1')) then
+                ifid_instruc <= ifid_instruc_mem;     -- actually, it's a NOP
                 pc <= pc_real;
             else
                 ifid_instruc <= ifid_instruc_mem;
@@ -786,6 +794,7 @@ begin
 
         end if;
     end process WB_unit;
+
 
     ------------ Control Unit --------------------
     Control_unit: process(clk, rst)
