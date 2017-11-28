@@ -55,6 +55,9 @@ component vga_ctrl is
 	Port(
 		clk : in std_logic; -- clock forced to be 50M
 		rst : in std_logic;
+		
+		Hs : out std_logic; -- line sync
+		Vs : out std_logic; -- field sync
 
 		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);
@@ -62,10 +65,7 @@ component vga_ctrl is
 		Tdata : in std_logic_vector(15 downto 0);
 		SPdata : in std_logic_vector(15 downto 0);
 		IHdata : in std_logic_vector(15 downto 0);
-
-		Hs : out std_logic; -- line sync
-		Vs : out std_logic; -- field sync
-
+		
 		-- Concatenated color definition for input
 		color : in std_logic_vector (8 downto 0);
 
@@ -82,7 +82,7 @@ signal ctrl_color : std_logic_vector (8 downto 0) := "000000000";
 signal R_r, G_r, B_r : std_logic_vector(2 downto 0) := "000";
 
 -- simulated signals for debugging
-signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := x"0000";
+signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := x"10AF";
 signal SP, IH, T, CM, PC : std_logic_vector(15 downto 0) := x"0000";
 -- CM if memory reading address
 begin
@@ -92,6 +92,8 @@ begin
 	vga_ctrl_comp : vga_ctrl port map(
 		clk => clk,
 		rst => rst,
+		Hs => Hs,
+		Vs => Vs,
 		r0=>r0,
 		r1=>r1,
 		r2=>r2,
@@ -105,8 +107,6 @@ begin
 		Tdata => T, -- : in std_logic_vector(15 downto 0);
 		SPdata => SP, -- : in std_logic_vector(15 downto 0);
 		IHdata => IH, --: in std_logic_vector(15 downto 0);
-		Hs => Hs,
-		Vs => Vs,
 		color => "000000000",
 		R => ctrl_R,
 		G => ctrl_G,

@@ -68,6 +68,9 @@ component vga_ctrl_480 is
 		clk : in std_logic; -- clock forced to be 50M
 		rst : in std_logic;
 
+		Hs : out std_logic; -- line sync
+		Vs : out std_logic; -- field sync
+
 		fontROMAddr : out std_logic_vector (10 downto 0);
 		fontROMData : in std_logic_vector (7 downto 0);
 
@@ -77,9 +80,6 @@ component vga_ctrl_480 is
 		Tdata : in std_logic_vector(15 downto 0);
 		SPdata : in std_logic_vector(15 downto 0);
 		IHdata : in std_logic_vector(15 downto 0);
-
-		Hs : out std_logic; -- line sync
-		Vs : out std_logic; -- field sync
 
 		-- Concatenated color definition for input
 		color : in std_logic_vector (8 downto 0);
@@ -137,6 +137,8 @@ begin
 	vga480_disp : vga_ctrl_480 port map(
 		clk => clk,
 		rst => rst,
+		Hs => Hs,
+		Vs => Vs,
 		fontROMAddr => fontROMAddr,
 		fontROMData => fontROMData,
 		r0=>dr0,
@@ -152,8 +154,6 @@ begin
 		Tdata => TData, -- : in std_logic_vector(15 downto 0);
 		SPdata => SPdata, -- : in std_logic_vector(15 downto 0);
 		IHdata => IHdata, --: in std_logic_vector(15 downto 0);
-		Hs => Hs,
-		Vs => Vs,
 		color => color,
 		R => R,
 		G => G,
