@@ -48,6 +48,7 @@ entity vga_ctrl_480 is
 		Tdata : in std_logic_vector(15 downto 0);
 		SPdata : in std_logic_vector(15 downto 0);
 		IHdata : in std_logic_vector(15 downto 0);
+		instruction : in std_logic_vector(15 downto 0);
 
 		-- Concatenated color definition for input
 		color : in std_logic_vector (8 downto 0);
@@ -740,6 +741,16 @@ begin
 						gt <= (others => fontROMData(dx));
 						bt <= (others => fontROMData(dx));
 					end if;
+				elsif( y >= 144 and y <= 151) then -- OP's O
+					if (x = 149) then
+						inty := y;
+						fontROMAddr <= conv_std_logic_vector( 79 * 8 + inty mod 8, 11);
+					else
+						dx := 7 - (x - 150);
+						rt <= (others => fontROMData(dx));
+						gt <= (others => fontROMData(dx));
+						bt <= (others => fontROMData(dx));
+					end if;
 				else 
 					rt <= (others => '0');
 					gt <= (others => '0');
@@ -790,6 +801,16 @@ begin
 					if (x = 159) then
 						inty := y;
 						fontROMAddr <= conv_std_logic_vector( 72 * 8 + inty mod 8, 11);
+					else
+						dx := 7 - (x - 160);
+						rt <= (others => fontROMData(dx));
+						gt <= (others => fontROMData(dx));
+						bt <= (others => fontROMData(dx));
+					end if;
+				elsif ( y >= 144 and y <= 151) then --OP's P
+					if (x = 159) then
+						inty := y;
+						fontROMAddr <= conv_std_logic_vector( 80 * 8 + inty mod 8, 11);
 					else
 						dx := 7 - (x - 160);
 						rt <= (others => fontROMData(dx));
@@ -865,7 +886,22 @@ begin
 				elsif (y >= 128 and y <= 135) then -- IH 3
 					if (x = 179) then
 						inty := y;
-						tmp := conv_integer(IHdata(15 downto 12));
+						tmp := conv_integer(IHData(15 downto 12));
+						if (tmp <= 9) then
+							fontROMAddr <= conv_std_logic_vector( (tmp + 48) * 8 + inty mod 8, 11);
+						else 
+							fontROMAddr <= conv_std_logic_vector( (tmp - 10 + 65) * 8 + inty mod 8, 11);
+						end if;
+					else
+						dx := 7 - (x - 180);
+						rt <= (others => fontROMData(dx));
+						gt <= (others => fontROMData(dx));
+						bt <= (others => fontROMData(dx));
+					end if;
+				elsif (y >= 144 and y <= 151) then -- OP 3
+					if (x = 179) then
+						inty := y;
+						tmp := conv_integer(instruction(15 downto 12));
 						if (tmp <= 9) then
 							fontROMAddr <= conv_std_logic_vector( (tmp + 48) * 8 + inty mod 8, 11);
 						else 
@@ -958,6 +994,21 @@ begin
 						gt <= (others => fontROMData(dx));
 						bt <= (others => fontROMData(dx));
 					end if;
+				elsif (y >= 144 and y <= 151) then -- OP 2
+					if (x = 189) then
+						inty := y;
+						tmp := conv_integer(instruction(11 downto 8));
+						if (tmp <= 9) then
+							fontROMAddr <= conv_std_logic_vector( (tmp + 48) * 8 + inty mod 8, 11);
+						else 
+							fontROMAddr <= conv_std_logic_vector( (tmp - 10 + 65) * 8 + inty mod 8, 11);
+						end if;
+					else
+						dx := 7 - (x - 190);
+						rt <= (others => fontROMData(dx));
+						gt <= (others => fontROMData(dx));
+						bt <= (others => fontROMData(dx));
+					end if;
 				else 
 					rt <= (others => '0');
 					gt <= (others => '0');
@@ -1039,7 +1090,21 @@ begin
 						gt <= (others => fontROMData(dx));
 						bt <= (others => fontROMData(dx));
 					end if;
-				
+				elsif (y >= 144 and y <= 151) then -- OP 1
+					if (x = 199) then
+						inty := y;
+						tmp := conv_integer(instruction(7 downto 4));
+						if (tmp <= 9) then
+							fontROMAddr <= conv_std_logic_vector( (tmp + 48) * 8 + inty mod 8, 11);
+						else 
+							fontROMAddr <= conv_std_logic_vector( (tmp - 10 + 65) * 8 + inty mod 8, 11);
+						end if;
+					else
+						dx := 7 - (x - 200);
+						rt <= (others => fontROMData(dx));
+						gt <= (others => fontROMData(dx));
+						bt <= (others => fontROMData(dx));
+					end if;
 				else 
 					rt <= (others => '0');
 					gt <= (others => '0');
@@ -1110,6 +1175,21 @@ begin
 					if (x = 209) then
 						inty := y;
 						tmp := conv_integer(IHdata(3 downto 0));
+						if (tmp <= 9) then
+							fontROMAddr <= conv_std_logic_vector( (tmp + 48) * 8 + inty mod 8, 11);
+						else 
+							fontROMAddr <= conv_std_logic_vector( (tmp - 10 + 65) * 8 + inty mod 8, 11);
+						end if;
+					else
+						dx := 7 - (x - 210);
+						rt <= (others => fontROMData(dx));
+						gt <= (others => fontROMData(dx));
+						bt <= (others => fontROMData(dx));
+					end if;
+				elsif (y >= 144 and y <= 151) then -- OP 0
+					if (x = 209) then
+						inty := y;
+						tmp := conv_integer(instruction(3 downto 0));
 						if (tmp <= 9) then
 							fontROMAddr <= conv_std_logic_vector( (tmp + 48) * 8 + inty mod 8, 11);
 						else 

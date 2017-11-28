@@ -43,6 +43,7 @@ entity vga_ctrl is
 		Tdata : in std_logic_vector(15 downto 0);
 		SPdata : in std_logic_vector(15 downto 0);
 		IHdata : in std_logic_vector(15 downto 0);
+		instruction : in std_logic_vector(15 downto 0);
 
 		-- Concatenated color definition for input
 		color : in std_logic_vector (8 downto 0);

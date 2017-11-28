@@ -185,6 +185,7 @@ architecture Behavioral of cpu is
 			Tdata : in std_logic_vector(15 downto 0);
 			SPdata : in std_logic_vector(15 downto 0);
 			IHdata : in std_logic_vector(15 downto 0);
+			instruction : in std_logic_vector(15 downto 0);
 			
 			-- Concatenated color definition for input
 			color : in std_logic_vector (8 downto 0);
@@ -217,6 +218,7 @@ begin
 		Tdata => T, -- : in std_logic_vector(15 downto 0);
 		SPdata => SP, -- : in std_logic_vector(15 downto 0);
 		IHdata => IH, --: in std_logic_vector(15 downto 0);
+		instruction => ifid_instruc_mem,
 		color => "000000000",
 		R => VGA_R,
 		G => VGA_G,
