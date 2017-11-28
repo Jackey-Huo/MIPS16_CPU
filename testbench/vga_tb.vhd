@@ -98,6 +98,8 @@ BEGIN
       wait for clk_period*10;
 
       -- insert stimulus here 
+		rst <= '0';
+		wait for clk_period;
 		rst <= '1';
 
       wait;

@@ -126,7 +126,5 @@ begin
 		end if;
 	end process;
 	
-	--led(8 downto 0) <= R_r & G_r & B_r;
-	--led(15 downto 9) <= (others => '0');
 end Behavioral;
 

@@ -109,9 +109,6 @@ component vga_ctrl_768 is
 	);
 end component;
 
--- Hs, Vs used in computation
-signal Hs_c, Vs_c : std_logic := '0';
-signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector (2 downto 0) := "000";
 signal fontROMAddr : std_logic_vector (10 downto 0) := "00000000000";
 signal fontROMData : std_logic_vector (7 downto 0) := x"00";
 signal dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7 : std_logic_vector(15 downto 0) := x"0000";
