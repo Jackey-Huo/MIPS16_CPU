@@ -133,6 +133,7 @@ architecture Behavioral of cpu is
     signal seri1_read_enable               : std_logic                      := '0';
     signal seri1_write_enable              : std_logic                      := '0';
     signal seri1_write_enable_real         : std_logic                      := '0';
+    signal seri1_ctrl_read_en              : std_logic                      := '0';
 
     --MEM/WB pipeline storage
     signal mewb_instruc                    : std_logic_vector (15 downto 0) := zero16;
@@ -227,7 +228,7 @@ begin
 
     ------------- Memory and Serial Control Unit, pure combinational logic
     me_write_enable_real <= '0' when (rst = '0') else (me_write_enable and clk);
-    seri1_write_enable_real <= '0' when (rst = '0') else (seri1_read_enable and not(clk));
+    seri1_write_enable_real <= '0' when (rst = '0') else (seri1_write_enable and not(clk));
 
     -- TODO: serial read & write need further implementation, tbre tsre and data_ready not used now
     seri_rdn_t <= '1' when (rst = '0') else
@@ -237,7 +238,7 @@ begin
     seri_wrn_t <= '1' when (rst = '0') else
                 '0' when (seri1_write_enable_real = '1') else
                 '1';
-    seri_wrn <= seri_rdn_t;
+    seri_wrn <= seri_wrn_t;
 
     EN_ram1 <= '1' when ((rst = '0') or (seri1_read_enable = '1') or (seri1_write_enable = '1')) else '0';
     WE_ram1 <= '1' when (rst = '0') else
@@ -253,13 +254,16 @@ begin
                  me_write_addr when (me_write_enable = '1') else
                  "00" & pc_real;
     data_ram1 <= me_write_data when ((me_write_enable_real = '1') or (seri1_write_enable = '1'))else "ZZZZZZZZZZZZZZZZ";
-    mewb_readout <= data_ram1 when ((me_read_enable = '1') or (seri1_write_enable = '1')) else "ZZZZZZZZZZZZZZZZ";
+    mewb_readout <= data_ram1 when (me_read_enable = '1') else
+                    "00000000" & data_ram1(7 downto 0) when (seri1_read_enable = '1') else
+                    "00000000000000" &  seri_data_ready & (seri_tbre and seri_tsre) when (seri1_ctrl_read_en = '1') else
+                    "ZZZZZZZZZZZZZZZZ";
     -- if MEM is using SRAM, insert a NOP into pipeline
-    --ifid_instruc_mem <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0') and
-                                        --(seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
-
-    ifid_instruc_mem <= instruct when ((me_read_enable = '0') and (me_write_enable = '0') and
+    ifid_instruc_mem <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0') and
                                         (seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
+
+    --ifid_instruc_mem <= instruct when ((me_read_enable = '0') and (me_write_enable = '0') and
+                                        --(seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
 
     ---------------- IF --------------------------
     IF_unit: process(clk, rst)
@@ -678,6 +682,7 @@ begin
             me_write_enable <= '0';
             seri1_read_enable <= '0';
             seri1_write_enable <= '0';
+            seri1_ctrl_read_en <= '0';
             case exme_instruc(15 downto 11) is
                 when ADDIU_op | ADDIU3_op | EXTEND_RRI_op  =>
                     mewb_result <= exme_result;
@@ -690,11 +695,13 @@ begin
                     mewb_bypass <= exme_bypass;
                 when LW_op | LW_SP_op =>
                     case exme_result is
-                        when seri1_data_addr =>
+                        when seri1_data_addr =>    -- 0xBF00 serial 1 data
                             seri1_write_enable <= '0';
                             seri1_read_enable <= '1';
                             mewb_reg_wb <= exme_reg_wb;
-                        when seri1_ctrl_addr =>    -- do nothing
+                        when seri1_ctrl_addr =>    -- 0xBF01 serial 1 control signal
+                            seri1_ctrl_read_en <= '1';
+                            mewb_reg_wb <= exme_reg_wb;
                         when seri2_data_addr =>   -- not support yet
                         when seri2_ctrl_addr =>
                         when others => -- lw in SRAM
@@ -709,7 +716,7 @@ begin
                             seri1_write_enable <= '1';
                             seri1_read_enable <= '0';
                             me_write_data <= exme_bypass;  -- actually, only low 8 bit will write to serial
-                        when seri1_ctrl_addr =>    -- do nothing
+                        when seri1_ctrl_addr =>    -- not allowed
                         when seri2_data_addr =>   -- not support yet
                         when seri2_ctrl_addr =>
                         when others => -- sw in SRAM
@@ -774,17 +781,8 @@ begin
                     wb_data := mewb_bypass;
                     wb_enable := true;
                 when LW_op | LW_SP_op =>
-                    case exme_result is
-                        when seri1_data_addr =>
-                            wb_data := "00000000" & mewb_readout(7 downto 0);
-                            wb_enable := true;
-                        when seri1_ctrl_addr =>    -- do nothing
-                        when seri2_data_addr =>   -- not support yet
-                        when seri2_ctrl_addr =>
-                        when others => -- lw in SRAM
-                            wb_data := mewb_readout;
-                            wb_enable := true;
-                    end case;
+                    wb_data := mewb_readout;
+                    wb_enable := true;
                 when EXTEND_TSP_op =>
                     case mewb_instruc(10 downto 8) is
                         when EX_ADDSP_pf_op =>
@@ -1073,7 +1071,9 @@ begin
     led(12) <= seri_tsre;
     led(11) <= seri_data_ready;
     led(10 downto 8) <= "000";
-    led(7 downto 0) <= data_ram1(7 downto 0);
+    led(7 downto 0) <= data_ram1(15 downto 8);
+
+    --led <= r6;
 
 end Behavioral;
 

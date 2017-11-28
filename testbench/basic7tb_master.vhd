@@ -72,8 +72,8 @@ ARCHITECTURE behavior OF basic7tb IS
    signal clk : std_logic := '0';
    signal rst : std_logic := '0';
    signal seri_data_ready : std_logic := '0';
-   signal seri_tbre : std_logic := '0';
-   signal seri_tsre : std_logic := '0';
+   signal seri_tbre : std_logic := '1';
+   signal seri_tsre : std_logic := '1';
    signal instruct : std_logic_vector(15 downto 0) := (others => '0');
 
     --BiDirs
@@ -152,14 +152,6 @@ BEGIN
         instruct <= "0110100000001000"; -- [0000] LI R0 0x08
         wait for clk_period; --IF
         instruct <= "0110100100001100"; -- [0001] LI R1 0x0C
-        wait for clk_period; --ID
-        instruct <= "0110101100000100"; -- [0002] LI R3 0x04
-        wait for clk_period; --EX
-        instruct <= "1110000000111001"; -- [0003] ADDU R0 R1 R6       R0=0x08  R1=0x0C
-        wait for clk_period; --MEM
-        instruct <= "1110011000111101"; -- [0004] ADDU R6 R1 R7       R1=0x0C  R6=0x14
-        wait for clk_period; --WB
-        instruct <= "0100100101010000"; -- [0005] ADDIU R1 0x50
         wait for clk_period;
         instruct <= "0100111101010000"; -- [0006] ADDIU R7 0x50     before R7=0x20; after R7=0x70
         wait for clk_period;
@@ -172,12 +164,6 @@ BEGIN
         instruct <= "0100100101010000"; -- [000A] ADDIU R1 0x50
         wait for clk_period;
 		  instruct <= "0000100000000000"; -- [000B] NOP
-		  wait for clk_period;
-		  		  instruct <= "0000100000000000"; -- [000B] NOP
-		  wait for clk_period;
-		  		  instruct <= "0000100000000000"; -- [000B] NOP
-		  wait for clk_period;
-		  		  instruct <= "0000100000000000"; -- [000B] NOP
 		  wait for clk_period;
         instruct <= "1101100000100001"; -- [000B] SW R0 R1 0x01
         wait for clk_period;
@@ -199,6 +185,16 @@ BEGIN
     -- [000A]
         instruct <= "0011000000010000"; -- SLL R0 R0 0x00
         wait for clk_period;
+		  instruct <= "0110100110111111"; -- LI R1 oxBF
+        wait for clk_period;
+		  instruct <= "0011000100100000"; -- SLL R1 R1 0x00
+		  wait for clk_period;
+		  instruct <= "0100100100000001"; -- ADDIU R1 0x01       R6=0xBF01
+		  wait for clk_period;
+		  instruct <= "1001100100000000"; -- LW R1 R0 0x00
+		  wait for clk_period;
+        instruct <= "0000100000000000"; -- NOP
+        wait for clk_period;	  
     -- [000B]
         instruct <= "1101100000100001"; -- SW R0 R1 0x01
         wait for clk_period;
