@@ -171,9 +171,25 @@ BEGIN
         wait for clk_period;
         instruct <= "0100100101010000"; -- [000A] ADDIU R1 0x50
         wait for clk_period;
+		  instruct <= "0000100000000000"; -- [000B] NOP
+		  wait for clk_period;
+		  		  instruct <= "0000100000000000"; -- [000B] NOP
+		  wait for clk_period;
+		  		  instruct <= "0000100000000000"; -- [000B] NOP
+		  wait for clk_period;
+		  		  instruct <= "0000100000000000"; -- [000B] NOP
+		  wait for clk_period;
         instruct <= "1101100000100001"; -- [000B] SW R0 R1 0x01
         wait for clk_period;
-        instruct <= "0010100000001000"; -- [000C] BNEZ R0 0x80
+		  instruct <= "1101100000100010"; -- [000C] SW R0 R1 0x02
+        wait for clk_period;
+		  instruct <= "1101100000100011"; -- [000D] SW R0 R1 0x03
+        wait for clk_period;
+		  instruct <= "1101100000100100"; -- [000E] SW R0 R1 0x04
+        wait for clk_period;
+		  instruct <= "1101100000100101"; -- [000F] SW R0 R1 0x05
+        wait for clk_period;
+        instruct <= "0010100000001000"; -- [0010] BNEZ R0 0x80
         wait for clk_period;
         instruct <= "0000100000000000"; -- NOP
         wait for clk_period;
