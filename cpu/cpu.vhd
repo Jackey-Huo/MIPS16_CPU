@@ -219,7 +219,7 @@ begin
 		Tdata => T, -- : in std_logic_vector(15 downto 0);
 		SPdata => SP, -- : in std_logic_vector(15 downto 0);
 		IHdata => IH, --: in std_logic_vector(15 downto 0);
-		instruction => ifid_instruc_mem,
+		instruction => ifid_instruc,
 		color => "000000000",
 		R => VGA_R,
 		G => VGA_G,
@@ -264,6 +264,27 @@ begin
 
     --ifid_instruc_mem <= instruct when ((me_read_enable = '0') and (me_write_enable = '0') and
                                         --(seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
+
+	--- RST ---
+	reset_global : process(clk, rst)
+	begin
+		if rst = '0' then
+			r0 <= zero16;
+			r1 <= zero16;
+			r2 <= zero16;
+			r3 <= zero16;
+			r4 <= zero16;
+			r5 <= zero16;
+			r6 <= zero16;
+			r7 <= zero16;
+			
+			PC <= zero16;
+			SP <= zero16;
+			IH <= zero16;
+			T <= zero16;
+		end if;
+	end process;
+
 
     ---------------- IF --------------------------
     IF_unit: process(clk, rst)
