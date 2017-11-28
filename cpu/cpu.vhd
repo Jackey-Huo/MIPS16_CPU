@@ -35,8 +35,8 @@ use basic.helper.all;
 
 entity cpu is
     port (
-        clk : in std_logic;
-		  clk50 : in std_logic;
+        click : in std_logic;
+		  clk_50M : in std_logic;
         rst : in std_logic;
 
         -- ram1, Instruction memory
@@ -81,6 +81,11 @@ architecture Behavioral of cpu is
     -- register
     signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := zero16;
     signal SP, IH, T : std_logic_vector(15 downto 0) := zero16;
+	 -- clocks
+	 -- main clock
+	 signal clk : std_logic;
+	 -- vga_clk
+	 signal clk50 : std_logic;
     -- pc
     signal pc                              : std_logic_vector (15 downto 0) := zero16;
     signal pc_real                         : std_logic_vector (15 downto 0) := zero16;
@@ -198,8 +203,24 @@ architecture Behavioral of cpu is
 		);
 	end component;
 
+	component clock_selector is
+		port(
+			click		: in std_logic;
+			clk_50M	: in std_logic;
+			selector	: in std_logic_vector(1 downto 0);
+			clk		: out std_logic
+		);
+	end component;
 
 begin
+	 ------------- Clock selector ----------
+	 clk_sel	: clock_selector port map(
+		click => click,
+		clk_50M => clk_50M,
+		selector => "00",
+		clk => clk
+	 );
+
 	 ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
 	 vga_disp : vga_ctrl port map(
 		clk => clk50,
@@ -265,25 +286,6 @@ begin
     --ifid_instruc_mem <= instruct when ((me_read_enable = '0') and (me_write_enable = '0') and
                                         --(seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
 
-	--- RST ---
-	reset_global : process(clk, rst)
-	begin
-		if rst = '0' then
-			r0 <= zero16;
-			r1 <= zero16;
-			r2 <= zero16;
-			r3 <= zero16;
-			r4 <= zero16;
-			r5 <= zero16;
-			r6 <= zero16;
-			r7 <= zero16;
-			
-			PC <= zero16;
-			SP <= zero16;
-			IH <= zero16;
-			T <= zero16;
-		end if;
-	end process;
 
 
     ---------------- IF --------------------------
@@ -790,7 +792,20 @@ begin
         variable wb_data : std_logic_vector(15 downto 0);
         variable wb_enable : boolean := false;
     begin
-        if (clk'event and clk='1') then
+		  if rst = '0' then
+				r0 <= zero16;
+				r1 <= zero16;
+				r2 <= zero16;
+				r3 <= zero16;
+				r4 <= zero16;
+				r5 <= zero16;
+				r6 <= zero16;
+				r7 <= zero16;
+
+				SP <= zero16;
+				IH <= zero16;
+				T <= zero16;
+        elsif (clk'event and clk='1') then
             case mewb_instruc(15 downto 11) is
                 when ADDIU_op | ADDIU3_op | EXTEND_RRI_op =>
                     wb_data := mewb_result;
