@@ -203,7 +203,7 @@ architecture Behavioral of cpu is
 		);
 	end component;
 
-	component clock_selector is
+	component clock_select is
 		port(
 			click		: in std_logic;
 			clk_50M	: in std_logic;
@@ -214,16 +214,16 @@ architecture Behavioral of cpu is
 
 begin
 	 ------------- Clock selector ----------
-	 clk_sel	: clock_selector port map(
+	 clk_selector	: clock_select port map(
 		click => click,
 		clk_50M => clk_50M,
-		selector => "00",
+		selector => "10",
 		clk => clk
 	 );
 
 	 ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
 	 vga_disp : vga_ctrl port map(
-		clk => clk50,
+		clk => clk_50M,
 		rst => rst,
 		Hs => Hs,
 		Vs => Vs,

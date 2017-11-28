@@ -134,8 +134,8 @@ NET "VGA_B[2]" LOC = B6;
 NET "Hs" LOC = D6;
 NET "Vs" LOC = E6;
 
-NET "clk" LOC = U9;
-NET "clk50" LOC = B9;
+NET "click" LOC = U9;
+NET "clk_50M" LOC = B9;
 NET "rst" LOC = U10;
 NET "OE_ram1" LOC = M16;
 NET "WE_ram1" LOC = M18;
