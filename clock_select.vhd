@@ -33,36 +33,44 @@ entity clock_select is
 	port(
 		click		: in std_logic;
 		clk_50M	: in std_logic;
-		selector	: in std_logic_vector(1 downto 0);
+		selector	: in std_logic_vector(2 downto 0);
 		clk		: out std_logic
 	);
 end clock_select;
 
 architecture Behavioral of clock_select is
 
-signal clk_c : std_logic := '0';
+signal clk_125, clk_25 : std_logic := '0';
 
 begin
 	process(clk_50M)
 	begin
 		case selector is
-			when "00" => clk <= clk_50M;
-			when "01" => clk <= click;
-			when "10" => clk <= clk_c;
+			when "000" => clk <= clk_50M;
+			when "001" => clk <= click;
+			when "010" => clk <= clk_25;
+			when "011" => clk <= clk_125;
 			when others => clk <= click;
 		end case;
 	end process;
 
 	process(clk_50M)
-		variable cnt : integer := 0;
+		variable cnt_125, cnt_25 : integer := 0;
 	begin
 		if clk_50M'event and clk_50M = '1' then
 			-- four divide
-			if cnt = 3 then
-				clk_c <= not clk_c;
-				cnt := 0;
+			if cnt_125 = 3 then
+				clk_125 <= not clk_125;
+				cnt_125 := 0;
 			else
-				cnt := cnt + 1;
+				cnt_125 := cnt_125 + 1;
+			end if;
+			-- two divide
+			if cnt_25 = 1 then
+				clk_25 <= not clk_25;
+				cnt_25 := 0;
+			else
+				cnt_25 := cnt_25 + 1;
 			end if;
 		end if;
 	end process;

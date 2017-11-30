@@ -207,7 +207,7 @@ architecture Behavioral of cpu is
 		port(
 			click		: in std_logic;
 			clk_50M	: in std_logic;
-			selector	: in std_logic_vector(1 downto 0);
+			selector	: in std_logic_vector(2 downto 0);
 			clk		: out std_logic
 		);
 	end component;
@@ -217,7 +217,7 @@ begin
 	 clk_selector	: clock_select port map(
 		click => click,
 		clk_50M => clk_50M,
-		selector => "10",
+		selector => "000", --25M
 		clk => clk
 	 );
 
