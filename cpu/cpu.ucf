@@ -86,7 +86,7 @@ NET "dyp1[2]" LOC = G9;
 NET "dyp1[1]" LOC = A10;
 NET "dyp1[0]" LOC = B10;
 
-# switch 
+# switch / sw
 NET "instruct[0]" LOC = T7;
 NET "instruct[1]" LOC = R7;
 NET "instruct[2]" LOC = U8;

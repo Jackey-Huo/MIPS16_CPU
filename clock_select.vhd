@@ -49,10 +49,10 @@ begin
 	process(clk_50M)
 	begin
 		case selector is
-			when "000" => clk <= clk_50M;
-			when "001" => clk <= click;
+			when "000" => clk <= click;
+			when "001" => clk <= clk_125;
 			when "010" => clk <= clk_25;
-			when "011" => clk <= clk_125;
+			when "011" => clk <= clk_50M;
 			when others => clk <= click;
 		end case;
 	end process;

@@ -73,6 +73,7 @@ entity cpu is
         led : out std_logic_vector(15 downto 0);
 
         -- feed in instruct
+		  -- instruct ( 2 downto 0 ) control clock
         instruct : in std_logic_vector (15 downto 0)
     );
 end cpu;
@@ -221,7 +222,7 @@ begin
 	 clk_selector	: clock_select port map(
 		click => click,
 		clk_50M => clk_50M,
-		selector => "000", --25M
+		selector => instruct(2 downto 0), --25M
 		clk => clk,
 		clk_flash => clk_flash
 	 );
