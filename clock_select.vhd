@@ -34,15 +34,18 @@ entity clock_select is
 		click		: in std_logic;
 		clk_50M	: in std_logic;
 		selector	: in std_logic_vector(2 downto 0);
-		clk		: out std_logic
+		clk		: out std_logic;
+		clk_flash: out std_logic
 	);
 end clock_select;
 
 architecture Behavioral of clock_select is
 
 signal clk_125, clk_25 : std_logic := '0';
-
+-- flash uses 256 divide frequency
+signal clk_flash_c : std_logic := '0';
 begin
+	clk_flash <= clk_flash_c;
 	process(clk_50M)
 	begin
 		case selector is
@@ -55,7 +58,7 @@ begin
 	end process;
 
 	process(clk_50M)
-		variable cnt_125, cnt_25 : integer := 0;
+		variable cnt_125, cnt_25, cnt_flash : integer := 0;
 	begin
 		if clk_50M'event and clk_50M = '1' then
 			-- four divide
@@ -71,6 +74,13 @@ begin
 				cnt_25 := 0;
 			else
 				cnt_25 := cnt_25 + 1;
+			end if;
+			-- 256 divide for flash
+			if cnt_flash = 255 then
+				cnt_flash := 0;
+				clk_flash_c <= not clk_flash_c;
+			else
+				cnt_flash := cnt_flash + 1;
 			end if;
 		end if;
 	end process;

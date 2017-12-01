@@ -152,6 +152,9 @@ architecture Behavioral of cpu is
 	 -- VGA signals
 	 signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
 
+	 -- flash signals
+	 signal clk_flash : std_logic;
+
     -- component
     component alu is
         port (
@@ -208,7 +211,8 @@ architecture Behavioral of cpu is
 			click		: in std_logic;
 			clk_50M	: in std_logic;
 			selector	: in std_logic_vector(2 downto 0);
-			clk		: out std_logic
+			clk		: out std_logic;
+			clk_flash: out std_logic
 		);
 	end component;
 
@@ -218,7 +222,8 @@ begin
 		click => click,
 		clk_50M => clk_50M,
 		selector => "000", --25M
-		clk => clk
+		clk => clk,
+		clk_flash => clk_flash
 	 );
 
 	 ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
