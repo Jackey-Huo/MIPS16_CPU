@@ -17,8 +17,11 @@
 -- Additional Comments: 
 --
 ----------------------------------------------------------------------------------
-library IEEE;
+library IEEE, BASIC;
 use IEEE.STD_LOGIC_1164.ALL;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_arith.all;
+use BASIC.HELPER.ALL;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
@@ -31,7 +34,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity vga_sweep is
 	port(
-		clk : in std_logic; -- clock forced to be 50M
+		vga_clk : in std_logic; -- vga_clock : 25M
 		rst : in std_logic;
 		
 		Hs : out std_logic; -- line sync
@@ -43,11 +46,6 @@ end vga_sweep;
 
 architecture Behavioral of vga_sweep is
 
--- clock used in synchronization
-signal vga_clk : std_logic := '0';
--- clock used in computation
-signal vga_clk_c : std_logic := '0';
-
 -- column/x and row/y coordinates
 signal x, y : integer range 0 to 4048;
 
@@ -57,16 +55,6 @@ signal Hs_c, Vs_c : std_logic := '0';
 begin
 	pos_x <= x;
 	pos_y <= y;
-	vga_clk <= vga_clk_c;
-
-	-- halve the 50M clock
-	vga_clk_producer : process (clk)
-	begin
-		if clk'event and clk = '1' then
-			vga_clk_c <= not vga_clk_c;
-		end if;
-	end process;
-		
 
 	-- sweep x and y
 	coor_sweep : process (vga_clk, rst)
