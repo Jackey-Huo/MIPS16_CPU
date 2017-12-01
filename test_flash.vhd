@@ -80,6 +80,7 @@ component bootloader is
 			click	: in std_logic;
 			clk : in  std_logic;
 			rst : in  std_logic;
+			boot_finish_flag : out std_logic;
 			
 			flash_byte : out  std_logic;
 			flash_vpen : out  std_logic;
@@ -153,7 +154,7 @@ end component;
 	signal bl_flash_dataout	: std_logic_vector (15 downto 0) := zero16;
 	signal bl_flash_dataout_r : std_logic_vector (15 downto 0) := zero16;
 	signal clk_flash : std_logic := '0';
-	
+	signal boot_finish : std_logic := '0';
 	signal clk : std_logic := '0';
 
 	signal ctrl_read, ctrl_write, ctrl_erase : std_logic := '1';
@@ -228,6 +229,7 @@ begin
 			click	=> click,
 			clk => clk_flash,
 			rst => rst,
+			boot_finish_flag=>boot_finish,
 			flash_byte => flash_byte, --: out  std_logic;
 			flash_vpen =>flash_vpen, --: out  std_logic;
 			flash_ce => flash_ce, --: out  std_logic;

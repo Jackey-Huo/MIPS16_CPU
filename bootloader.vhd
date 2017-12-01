@@ -37,6 +37,7 @@ entity bootloader is
 			clk : in  std_logic;
 			rst : in  std_logic;
 			
+			boot_finish_flag	: out std_logic := '0';
 			flash_byte : out  std_logic;
 			flash_vpen : out  std_logic;
 			flash_ce : out  std_logic;
@@ -90,7 +91,6 @@ begin
 	
 	process (state, addr)
 	begin
-		-- 0 to 9 is : 0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8, 0x80, 0x90
 		case state is
 			when flash_prepare =>
 				next_state <= flash_will_set;
@@ -119,6 +119,7 @@ begin
 				end if;
 				digit <= not "0100000";
 			when boot_finish =>
+				boot_finish_flag <= '1';
 				next_state <= boot_finish;
 				digit <= not "0001111";
 			when others =>
