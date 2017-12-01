@@ -35,13 +35,30 @@ use basic.helper.all;
 
 entity test_flash is
 	port(
-			clk : in std_logic;
-			clock	: in std_logic;
-			rst : in std_logic;
+			click		: in std_logic;
+			clk_50M	: in std_logic;
+			rst		: in std_logic;
 
-			rdn,wrn : out std_logic;
+			-- ram1, Instruction memory
+			data_ram1 : inout std_logic_vector(15 downto 0);
+			addr_ram1 : out std_logic_vector(17 downto 0);
+			OE_ram1   : out std_logic;
+			WE_ram1   : out std_logic;
+			EN_ram1   : out std_logic;
+			
+			-- serial
+			seri_rdn        : out std_logic := '1';
+			seri_wrn        : out std_logic := '1';
+			seri_data_ready : in std_logic;
+			seri_tbre       : in std_logic;
+			seri_tsre       : in std_logic;
 
-			flash_addr : out std_logic_vector (22 downto 1);
+			-- VGA
+			Hs 					: out std_logic; -- line sync
+			Vs 					: out std_logic; -- field sync
+			VGA_R, VGA_G, VGA_B : out std_logic_vector (2 downto 0) := "000";
+
+			flash_addr : out std_logic_vector (22 downto 0);
 			flash_data : out std_logic_vector (15 downto 0);
 			flash_byte : out std_logic;--BYTE#
 			flash_vpen : out std_logic;
@@ -57,35 +74,52 @@ end test_flash;
 
 architecture Behavioral of test_flash is
 
-component clk_1152
-Port ( clk : in  STD_LOGIC;--ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½à¾§ï¿½ï¿
-		clk_flash : out std_logic
+component vga_ctrl is
+	Port(
+		clk : in std_logic; -- clock forced to be 50M
+		rst : in std_logic;
+		
+		Hs : out std_logic; -- line sync
+		Vs : out std_logic; -- field sync
+
+		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
+		PC : in std_logic_vector(15 downto 0);
+		CM : in std_logic_vector(15 downto 0);
+		Tdata : in std_logic_vector(15 downto 0);
+		SPdata : in std_logic_vector(15 downto 0);
+		IHdata : in std_logic_vector(15 downto 0);
+		instruction : in std_logic_vector(15 downto 0);
+		
+		-- Concatenated color definition for input
+		color : in std_logic_vector (8 downto 0);
+
+		-- Separate color definition for output
+		R : out std_logic_vector(2 downto 0);
+		G : out std_logic_vector(2 downto 0);
+		B : out std_logic_vector(2 downto 0)
 	);
 end component;
 
-component flash_io is
-    port (
-			addr : in  STD_LOGIC_VECTOR (22 downto 1);
-			data_in : in  STD_LOGIC_VECTOR (15 downto 0);
-			data_out : out  STD_LOGIC_VECTOR (15 downto 0);
-			clk : in std_logic;
-			reset : in std_logic;
-
-			flash_byte : out std_logic;--BYTE#
-			flash_vpen : out std_logic;
-			flash_ce : out std_logic;
-			flash_oe : out std_logic;
-			flash_we : out std_logic;
-			flash_rp : out std_logic;
-			--flash_sts : in std_logic;
-			flash_addr : out std_logic_vector(22 downto 1);
-			flash_data : out std_logic_vector(15 downto 0);
-
-			ctl_read : in  std_logic;
-			ctl_write : in  std_logic;
-			ctl_erase : in std_logic
+component clock_select is
+	port(
+		click		: in std_logic;
+		clk_50M	: in std_logic;
+		selector	: in std_logic_vector(2 downto 0);
+		clk		: out std_logic;
+		clk_flash: out std_logic
 	);
 end component;
+    -- MEM variables
+    signal me_read_enable, me_write_enable : std_logic                      := '0';
+    signal me_write_enable_real            : std_logic                      := '0';
+    signal me_read_addr, me_write_addr     : std_logic_vector (17 downto 0) := zero18;
+    signal me_write_data                   : std_logic_vector (15 downto 0) := zero16;
+
+    signal seri_wrn_t, seri_rdn_t          : std_logic                      := '0';
+    signal seri1_read_enable               : std_logic                      := '0';
+    signal seri1_write_enable              : std_logic                      := '0';
+    signal seri1_write_enable_real         : std_logic                      := '0';
+    signal seri1_ctrl_read_en              : std_logic                      := '0';
 
 	signal bl_flash_addr	: std_logic_vector (22 downto 1) := "0000000000000000000000";
 	signal bl_flash_addr_r	: std_logic_vector (22 downto 1) := "0000000000000000000000";
@@ -94,81 +128,121 @@ end component;
 	signal bl_flash_dataout	: std_logic_vector (15 downto 0) := zero16;
 	signal bl_flash_dataout_r : std_logic_vector (15 downto 0) := zero16;
 	signal clk_flash : std_logic := '0';
-	signal temp_clock : std_logic := '0';
-	signal clk10 : std_logic := '0';
+	
+	signal clk : std_logic := '0';
 
-	signal ctrl_read, ctrl_write, ctrl_erease : std_logic := '1';
+	signal ctrl_read, ctrl_write, ctrl_erase : std_logic := '1';
+
+    signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := zero16;
+    signal SP, IH, T : std_logic_vector(15 downto 0) := zero16;
 begin
---	clk_producer : process(clock, rst)
---		variable cnt : integer := 0;
---	begin
---		if rst = '0' then
---			cnt := 0;
---			clk_flash <= '0';
---		elsif (clock'event and clock = '0') then
---			cnt := cnt + 1;
---			if cnt = 4 then
---				cnt := 0;
---				clk_flash <= not clk_flash;
---			end if;
---		end if;
---	end process;
-	wrn <= '1';
-	rdn <= '1';
+    me_write_enable_real <= '0' when (rst = '0') else (me_write_enable and clk);
+    seri1_write_enable_real <= '0' when (rst = '0') else (seri1_write_enable and not(clk));
 
-	clk_producer: clk_1152 PORT MAP (
-		clk => clock,
-		clk_flash => clk_flash);
+    -- TODO: serial read & write need further implementation, tbre tsre and data_ready not used now
+    seri_rdn_t <= '1' when (rst = '0') else
+                '0' when (seri1_read_enable = '1') else
+                '1';
+    seri_rdn <= seri_rdn_t;
+    seri_wrn_t <= '1' when (rst = '0') else
+                '0' when (seri1_write_enable_real = '1') else
+                '1';
+    seri_wrn <= seri_wrn_t;
 
-	read_flash : flash_io port map (
-		addr => bl_flash_addr,
-		data_in => bl_flash_datain,
-		data_out => bl_flash_dataout,
-		clk => clk_flash,
-		reset => rst,
-		flash_byte => flash_byte,
-		flash_vpen => flash_vpen,
-		flash_ce => flash_ce,
-		flash_oe => flash_oe,
-		flash_we => flash_we,
-		flash_rp => flash_rp,
-		--flash_sts => flash_sts,
-		flash_addr => flash_addr,
-		flash_data => flash_data,
-		ctl_read => ctrl_read,
-		ctl_write => ctrl_write,
-		ctl_erase => ctrl_erease
+	EN_ram1 <= '1' when ((rst = '0') or (seri1_read_enable = '1') or (seri1_write_enable = '1')) else '0';
+	WE_ram1 <= '1' when (rst = '0') else
+				'1' when ((seri1_read_enable = '1') or (seri1_write_enable = '1')) else
+				'0' when (me_write_enable_real = '1') else
+				'1' when (me_read_enable = '1') else '1';
+	OE_ram1 <= '1' when (rst = '0') else
+				'1' when ((seri1_read_enable = '1') or (seri1_write_enable = '1')) else
+				'0' when (me_read_enable = '1') else
+				'1' when (me_write_enable = '1') else '0';
+	addr_ram1 <= zero18 when(rst = '0') else
+					me_read_addr when (me_read_enable = '1') else
+					me_write_addr when (me_write_enable = '1') else
+					(others => '0');
+	data_ram1 <= me_write_data when ((me_write_enable_real = '1') or (seri1_write_enable = '1'))else "ZZZZZZZZZZZZZZZZ";
+	
+	 ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
+	vga_disp : vga_ctrl port map(
+		clk => clk_50M,
+		rst => rst,
+		Hs => Hs,
+		Vs => Vs,
+		-- read addr
+		r0=>zero16,
+		r1=>bl_flash_addr(16 downto 1),
+		r2=>r2,
+		r3=>r3,
+		r4=>r4,
+		r5=>r5,
+		r6=>r6,
+		r7=>r7,
+		PC => bl_flash_dataout_r, -- : in std_logic_vector(15 downto 0);
+		CM => zero16, -- in std_logic_vector(15 downto 0);
+		Tdata => T, -- : in std_logic_vector(15 downto 0);
+		SPdata => SP, -- : in std_logic_vector(15 downto 0);
+		IHdata => IH, --: in std_logic_vector(15 downto 0);
+		instruction => zero16,
+		color => "000000000",
+		R => VGA_R,
+		G => VGA_G,
+		B => VGA_B
 	);
 
-	process(clk, rst)
-		variable cnt : integer := 0;
+	clk_selector	: clock_select port map(
+		click => click,
+		clk_50M => clk_50M,
+		selector => "000", --25M
+		clk => clk,
+		clk_flash => clk_flash
+	);
+
+	
+	process (state, addr)
 	begin
-		--bl_flash_dataout <= sig_flash_dataout and rst;
-		if (rst = '0') then
-			ctrl_erease <= '1';
-			ctrl_write <= '1';
-			ctrl_read <= '1';
-			bl_flash_dataout_r <= zero16;
-			bl_flash_addr <= "0000000000000000000001";
-			bl_flash_datain <= zero16;
-		elsif ( clk'event and clk = '1') then
-			ctrl_erease <= '1';
-			ctrl_write <= '1';
-			ctrl_read <= not ctrl_read;
-			if cnt = 10 then
-				cnt := 0;
-				bl_flash_addr <= bl_flash_addr + 1;
-			else
-				cnt := cnt + 1;
-			end if;
-			bl_flash_dataout_r <= bl_flash_dataout;
-			bl_flash_addr_r <= bl_flash_addr;
+		case state is
+			when flash_prepare =>
+				next_state <= flash_will_set;
+				digit <= not "1000000";
+			when flash_will_set =>
+				next_state <= flash_set;
+				digit <= not "1111001";
+			when flash_set =>
+				next_state <= flash_will_read;
+				digit <= not "0100100";
+			when flash_will_read =>
+				next_state <= flash_read;
+				digit <= not "0110000";
+			when flash_read =>
+				next_state <= flash_read_finish;
+				digit <= not "0011001";
+			when flash_read_finish =>
+				next_state <= mem_write;
+				digit <= not "0010010";
+			when mem_write =>
+				if addr < x"01f3" then
+					next_state <= flash_will_read;
+				else
+					next_state <= boot_finish;
+				end if;
+				digit <= not "0000010";
+			when boot_finish =>
+				next_state <= boot_finish;
+				digit <= not "1111000";
+			when others =>
+				next_state <= flash_prepare;
+				digit <= not "1111111";
+		end case;
+		if state = mem_write then
+			next_addr <= addr + x"0001";
+		else
+			next_addr <= addr;
 		end if;
 	end process;
 
-	led(7 downto 0) <= bl_flash_dataout_r(7 downto 0);
-	led(8) <= ctrl_read;
-	led(9) <= clk10;
-	led(15 downto 10) <= bl_flash_addr_r(6 downto 1);
+	led(2 downto 0) <= ctrl_erase & ctrl_write & ctrl_read;
+	led(15 downto 3) <= (others => '0');
 end Behavioral;
 

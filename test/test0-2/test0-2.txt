@@ -9,3 +9,5 @@ NOP
 NOP
 NOP
 NOP
+B 0xFFFC
+NOP

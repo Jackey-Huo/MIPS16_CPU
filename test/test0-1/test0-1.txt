@@ -1,10 +1,12 @@
 LI R3 0x0004
 LI R4 0x0007
-;Register r/w conflict with line #0
+NOP
 ADDIU R3 0x0005
 LI R2 0x0008
-; Register r/w conflict with line #3
+NOP
 ADDU R3 R4 R3
+NOP
+NOP
 NOP
 NOP
 NOP
@@ -12,5 +14,3 @@ NOP
 NOP
 B 0xFFFC
 NOP
-; expect result: R3 = 0010; R2 = 0008; R4 = 0007;
-; test passed

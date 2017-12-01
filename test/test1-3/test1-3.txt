@@ -30,3 +30,5 @@ END:
 	NOP
 	NOP
 	NOP
+B 0xFFFC
+NOP
