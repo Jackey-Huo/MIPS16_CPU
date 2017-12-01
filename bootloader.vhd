@@ -51,12 +51,11 @@ entity bootloader is
 
 			memory_write_enable : out std_logic;
 			memory_read_enable : out std_logic;
-			digit : out  STD_LOGIC_VECTOR (6 downto 0)
+			digit : out  std_logic_vector (6 downto 0)
 		);
 end bootloader;
 
 architecture Behavioral of bootloader is
-	signal clk: std_logic;
 	signal mem_write_en: std_logic;
 	type boot_state is (flash_prepare, flash_will_set, flash_set, flash_will_read, flash_read, flash_read_finish, mem_write, boot_finish);
 	signal state: boot_state := flash_prepare;
@@ -78,7 +77,7 @@ begin
 		if rst = '0' then
 			state <= flash_prepare;
 			addr <= x"0000";
-		elsif rising_edge(clk) then
+		elsif rising_edge(click) then
 			state <= next_state;
 			addr <= next_addr;
 		end if;
@@ -133,14 +132,13 @@ begin
 			flash_oe <= '1';
 			memory_read_enable <= '0';
 			memory_write_enable <= '0';
-			led <= x"0000";
 		elsif rising_edge(clk) then
 			case next_state is
 				when flash_prepare =>
 					flash_we <= '1';
 					flash_oe <= '1';
-					mem_write_en <= '0';
-					led <= x"0000";
+					memory_write_enable <= '0';
+					memory_read_enable <= '0';
 				when flash_will_set =>
 					flash_we <= '0';
 				when flash_set =>
@@ -152,22 +150,22 @@ begin
 					memory_write_enable <= '0';
 					memory_read_enable <= '0';
 					flash_data <= "ZZZZZZZZZZZZZZZZ";
-					led <= next_addr;
 				when flash_read =>
-					led <= flash_data;
 					data <= flash_data;
 					mem_addr <= next_addr;
 				when flash_read_finish =>
 					flash_oe <= '1';
 				when mem_write =>
-					mem_write_en <= '1';
+					memory_write_enable <= '1';
+					memory_read_enable <= '0';
 				when boot_finish =>
-					mem_write_en <= '0';
+					memory_write_enable <= '0';
+					memory_read_enable <= '0';
 				when others =>
 					flash_we <= '1';
 					flash_oe <= '1';
-					mem_write_en <= '0';
-					led <= x"0000";
+					memory_read_enable <= '0';
+					memory_write_enable <= '0';
 			end case;
 		end if;
 	end process;

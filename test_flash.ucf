@@ -80,9 +80,6 @@ NET "data_ram1[15]" LOC = M14;
 NET "OE_ram1" LOC = M16;
 NET "WE_ram1" LOC = M18;
 NET "EN_ram1" LOC = M15;
-NET "OE_ram2" LOC = R9;
-NET "WE_ram2" LOC = M9;
-NET "EN_ram2" LOC = N10;
 
 NET "click" LOC = U9;
 NET "clk_50M" LOC = B9;
@@ -130,3 +127,11 @@ NET "seri_wrn" LOC = U5;
 NET "seri_data_ready" LOC = A16;
 NET "seri_tbre" LOC = D14;
 NET "seri_tsre" LOC = N9;
+
+NET "dyp0[6]" LOC = C7;
+NET "dyp0[5]" LOC = D7;
+NET "dyp0[4]" LOC = E7;
+NET "dyp0[3]" LOC = F7;
+NET "dyp0[2]" LOC = A8;
+NET "dyp0[1]" LOC = E8;
+NET "dyp0[0]" LOC = F8;

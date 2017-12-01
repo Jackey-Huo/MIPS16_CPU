@@ -39,6 +39,8 @@ entity test_flash is
 			clk_50M	: in std_logic;
 			rst		: in std_logic;
 
+        dyp0            : out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+
 			-- ram1, Instruction memory
 			data_ram1 : inout std_logic_vector(15 downto 0);
 			addr_ram1 : out std_logic_vector(17 downto 0);
@@ -59,7 +61,7 @@ entity test_flash is
 			VGA_R, VGA_G, VGA_B : out std_logic_vector (2 downto 0) := "000";
 
 			flash_addr : out std_logic_vector (22 downto 0);
-			flash_data : out std_logic_vector (15 downto 0);
+			flash_data : inout std_logic_vector (15 downto 0);
 			flash_byte : out std_logic;--BYTE#
 			flash_vpen : out std_logic;
 			flash_ce : out std_logic;
@@ -73,6 +75,29 @@ entity test_flash is
 end test_flash;
 
 architecture Behavioral of test_flash is
+component bootloader is
+    Port (
+			click	: in std_logic;
+			clk : in  std_logic;
+			rst : in  std_logic;
+			
+			flash_byte : out  std_logic;
+			flash_vpen : out  std_logic;
+			flash_ce : out  std_logic;
+			flash_oe : out  std_logic;
+			flash_we : out  std_logic;
+			flash_rp : out  std_logic;
+			flash_addr : out  std_logic_vector (22 downto 0);
+			flash_data : inout  std_logic_vector (15 downto 0);
+
+			memory_address : out std_logic_vector(17 downto 0);
+			memory_data_bus : inout std_logic_vector(15 downto 0);
+
+			memory_write_enable : out std_logic;
+			memory_read_enable : out std_logic;
+			digit : out  std_logic_vector (6 downto 0)
+		);
+end component;
 
 component vga_ctrl is
 	Port(
@@ -121,8 +146,8 @@ end component;
     signal seri1_write_enable_real         : std_logic                      := '0';
     signal seri1_ctrl_read_en              : std_logic                      := '0';
 
-	signal bl_flash_addr	: std_logic_vector (22 downto 1) := "0000000000000000000000";
-	signal bl_flash_addr_r	: std_logic_vector (22 downto 1) := "0000000000000000000000";
+	signal bl_flash_addr	: std_logic_vector (22 downto 0) := "00000000000000000000000";
+	signal bl_flash_addr_r	: std_logic_vector (22 downto 0) := "00000000000000000000000";
 	
 	signal bl_flash_datain	: std_logic_vector (15 downto 0) := zero16;
 	signal bl_flash_dataout	: std_logic_vector (15 downto 0) := zero16;
@@ -172,14 +197,14 @@ begin
 		Vs => Vs,
 		-- read addr
 		r0=>zero16,
-		r1=>bl_flash_addr(16 downto 1),
-		r2=>r2,
-		r3=>r3,
-		r4=>r4,
+		r1=>bl_flash_addr_r(16 downto 1),
+		r2=>bl_flash_dataout_r,
+		r3=>me_write_addr(15 downto 0),
+		r4=>me_write_data,
 		r5=>r5,
 		r6=>r6,
 		r7=>r7,
-		PC => bl_flash_dataout_r, -- : in std_logic_vector(15 downto 0);
+		PC => zero16, -- : in std_logic_vector(15 downto 0);
 		CM => zero16, -- in std_logic_vector(15 downto 0);
 		Tdata => T, -- : in std_logic_vector(15 downto 0);
 		SPdata => SP, -- : in std_logic_vector(15 downto 0);
@@ -199,49 +224,33 @@ begin
 		clk_flash => clk_flash
 	);
 
-	
-	process (state, addr)
-	begin
-		case state is
-			when flash_prepare =>
-				next_state <= flash_will_set;
-				digit <= not "1000000";
-			when flash_will_set =>
-				next_state <= flash_set;
-				digit <= not "1111001";
-			when flash_set =>
-				next_state <= flash_will_read;
-				digit <= not "0100100";
-			when flash_will_read =>
-				next_state <= flash_read;
-				digit <= not "0110000";
-			when flash_read =>
-				next_state <= flash_read_finish;
-				digit <= not "0011001";
-			when flash_read_finish =>
-				next_state <= mem_write;
-				digit <= not "0010010";
-			when mem_write =>
-				if addr < x"01f3" then
-					next_state <= flash_will_read;
-				else
-					next_state <= boot_finish;
-				end if;
-				digit <= not "0000010";
-			when boot_finish =>
-				next_state <= boot_finish;
-				digit <= not "1111000";
-			when others =>
-				next_state <= flash_prepare;
-				digit <= not "1111111";
-		end case;
-		if state = mem_write then
-			next_addr <= addr + x"0001";
-		else
-			next_addr <= addr;
-		end if;
-	end process;
+	bl	:	bootloader port map(
+			click	=> click,
+			clk => clk_flash,
+			rst => rst,
+			flash_byte => flash_byte, --: out  std_logic;
+			flash_vpen =>flash_vpen, --: out  std_logic;
+			flash_ce => flash_ce, --: out  std_logic;
+			flash_oe => flash_oe, --: out  std_logic;
+			flash_we => flash_we, --: out  std_logic;
+			flash_rp => flash_rp, --: out  std_logic;
+			flash_addr => flash_addr, -- : out  std_logic_vector (22 downto 0);
+			flash_data => flash_data, --: inout  std_logic_vector (15 downto 0);
 
+			memory_address => me_write_addr, -- : out std_logic_vector(17 downto 0);
+			memory_data_bus => me_write_data, --: inout std_logic_vector(15 downto 0);
+
+			memory_write_enable => me_write_enable, -- : out std_logic;
+			memory_read_enable => me_read_enable, --: out std_logic;
+			digit => dyp0 --: out  STD_LOGIC_VECTOR (6 downto 0)
+	);
+	
+	process(clk)
+	begin
+		--bl_flash_addr_r <= flash_addr;
+		bl_flash_dataout_r <= flash_data;
+	end process;
+	
 	led(2 downto 0) <= ctrl_erase & ctrl_write & ctrl_read;
 	led(15 downto 3) <= (others => '0');
 end Behavioral;
