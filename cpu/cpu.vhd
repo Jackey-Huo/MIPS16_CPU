@@ -63,11 +63,21 @@ entity cpu is
         --digits
         dyp0            : out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
         dyp1            : out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
+
+        --VGA
+        Hs                  : out std_logic;   -- line sync
+        Vs                  : out std_logic;   -- field sync
+        VGA_R, VGA_G, VGA_B : out std_logic_vector (2 downto 0) := "000";
           
-          -- VGA
---        Hs                    : out std_logic; -- line sync
---        Vs                    : out std_logic; -- field sync
---        VGA_R, VGA_G, VGA_B : out std_logic_vector (2 downto 0) := "000";
+        --flash
+        flash_addr : out std_logic_vector (22 downto 0);
+        flash_data : inout std_logic_vector (15 downto 0);
+        flash_byte : out std_logic;            -- BYTE#
+        flash_vpen : out std_logic;
+        flash_ce   : out std_logic;
+        flash_oe   : out std_logic;
+        flash_we   : out std_logic;
+        flash_rp   : out std_logic;
         
         -- led
         led : out std_logic_vector(15 downto 0);
@@ -153,6 +163,13 @@ architecture Behavioral of cpu is
      -- VGA signals
      signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
 
+     -- flash signals
+     signal clk_flash : std_logic := '0';
+     signal boot_finish : std_logic := '0';
+     signal boot_write_addr : std_logic_vector(17 downto 0) := zero18;
+     signal boot_write_data : std_logic_vector(15 downto 0) := zero16;
+     signal boot_write_enable, boot_read_enable : std_logic := '0';
+     
     -- component
     component alu is
         port (
@@ -178,38 +195,64 @@ architecture Behavioral of cpu is
         );
     end component mux7to1;
 
---  component vga_ctrl is
---      Port(
---          clk : in std_logic; -- clock forced to be 50M
---          rst : in std_logic;
---          
---          Hs : out std_logic; -- line sync
---          Vs : out std_logic; -- field sync
---
---          r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
---          PC : in std_logic_vector(15 downto 0);
---          CM : in std_logic_vector(15 downto 0);
---          Tdata : in std_logic_vector(15 downto 0);
---          SPdata : in std_logic_vector(15 downto 0);
---          IHdata : in std_logic_vector(15 downto 0);
---          instruction : in std_logic_vector(15 downto 0);
---          
---          -- Concatenated color definition for input
---          color : in std_logic_vector (8 downto 0);
---
---          -- Separate color definition for output
---          R : out std_logic_vector(2 downto 0);
---          G : out std_logic_vector(2 downto 0);
---          B : out std_logic_vector(2 downto 0)
---      );
---  end component;
+    component bootloader is
+         Port (
+                click   : in std_logic;
+                clk : in  std_logic;
+                rst : in  std_logic;
+                boot_finish_flag : out std_logic;
+                flash_byte : out  std_logic;
+                flash_vpen : out  std_logic;
+                flash_ce : out  std_logic;
+                flash_oe : out  std_logic;
+                flash_we : out  std_logic;
+                flash_rp : out  std_logic;
+                flash_addr : out  std_logic_vector (22 downto 0);
+                flash_data : inout  std_logic_vector (15 downto 0);
+
+                memory_address : out std_logic_vector(17 downto 0);
+                memory_data_bus : inout std_logic_vector(15 downto 0);
+
+                memory_write_enable : out std_logic;
+                memory_read_enable : out std_logic;
+                digit : out  std_logic_vector (6 downto 0)
+            );
+    end component;
+
+
+    component vga_ctrl is
+        Port(
+            clk : in std_logic; -- clock forced to be 50M
+            rst : in std_logic;
+            
+            Hs : out std_logic; -- line sync
+            Vs : out std_logic; -- field sync
+
+            r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
+            PC : in std_logic_vector(15 downto 0);
+            CM : in std_logic_vector(15 downto 0);
+            Tdata : in std_logic_vector(15 downto 0);
+            SPdata : in std_logic_vector(15 downto 0);
+            IHdata : in std_logic_vector(15 downto 0);
+            instruction : in std_logic_vector(15 downto 0);
+            
+            -- Concatenated color definition for input
+            color : in std_logic_vector (8 downto 0);
+
+            -- Separate color definition for output
+            R : out std_logic_vector(2 downto 0);
+            G : out std_logic_vector(2 downto 0);
+            B : out std_logic_vector(2 downto 0)
+        );
+    end component;
 
     component clock_select is
         port(
             click       : in std_logic;
             clk_50M : in std_logic;
-            selector    : in std_logic_vector(1 downto 0);
-            clk     : out std_logic
+            selector    : in std_logic_vector(2 downto 0);
+            clk     : out std_logic;
+            clk_flash: out std_logic
         );
     end component;
 
@@ -218,35 +261,59 @@ begin
      clk_selector   : clock_select port map(
         click => click,
         clk_50M => clk_50M,
-        selector => "10",
-        clk => clk
+        selector => instruct(2 downto 0), --25M
+        clk => clk,
+        clk_flash => clk_flash
      );
 
+    -- bootloader : load monitor program from flash
+    bl  :   bootloader port map(
+            click   => click,
+            clk => clk_flash,
+            rst => rst,
+            boot_finish_flag => boot_finish,
+            flash_byte => flash_byte, --: out  std_logic;
+            flash_vpen =>flash_vpen, --: out  std_logic;
+            flash_ce => flash_ce, --: out  std_logic;
+            flash_oe => flash_oe, --: out  std_logic;
+            flash_we => flash_we, --: out  std_logic;
+            flash_rp => flash_rp, --: out  std_logic;
+            flash_addr => flash_addr, -- : out  std_logic_vector (22 downto 0);
+            flash_data => flash_data, --: inout  std_logic_vector (15 downto 0);
+
+            memory_address => boot_write_addr, -- : out std_logic_vector(17 downto 0);
+            memory_data_bus => boot_write_data, --: inout std_logic_vector(15 downto 0);
+
+            memory_write_enable => boot_write_enable, -- : out std_logic;
+            memory_read_enable => boot_read_enable, --: out std_logic;
+            digit => dyp0 --: out  STD_LOGIC_VECTOR (6 downto 0)
+    );
+ 
      ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
---     vga_disp : vga_ctrl port map(
---        clk => clk_50M,
---        rst => rst,
---        Hs => Hs,
---        Vs => Vs,
---        r0=>r0,
---        r1=>r1,
---        r2=>r2,
---        r3=>r3,
---        r4=>r4,
---        r5=>r5,
---        r6=>r6,
---        r7=>r7,
---        PC => PC, -- : in std_logic_vector(15 downto 0);
---        CM => me_read_addr(15 downto 0), -- in std_logic_vector(15 downto 0);
---        Tdata => T, -- : in std_logic_vector(15 downto 0);
---        SPdata => SP, -- : in std_logic_vector(15 downto 0);
---        IHdata => IH, --: in std_logic_vector(15 downto 0);
---        instruction => ifid_instruc,
---        color => "000000000",
---        R => VGA_R,
---        G => VGA_G,
---        B => VGA_B
---    );
+     vga_disp : vga_ctrl port map(
+        clk => clk_50M,
+        rst => rst,
+        Hs => Hs,
+        Vs => Vs,
+        r0=>r0,
+        r1=>r1,
+        r2=>r2,
+        r3=>r3,
+        r4=>r4,
+        r5=>r5,
+        r6=>r6,
+        r7=>r7,
+        PC => PC, -- : in std_logic_vector(15 downto 0);
+        CM => me_read_addr(15 downto 0), -- in std_logic_vector(15 downto 0);
+        Tdata => T, -- : in std_logic_vector(15 downto 0);
+        SPdata => SP, -- : in std_logic_vector(15 downto 0);
+        IHdata => IH, --: in std_logic_vector(15 downto 0);
+        instruction => ifid_instruc,
+        color => "000000000",
+        R => VGA_R,
+        G => VGA_G,
+        B => VGA_B
+    );
 
     ------------- Memory and Serial Control Unit, pure combinational logic
     me_write_enable_real <= '0' when (rst = '0') else (me_write_enable and clk);
@@ -292,7 +359,7 @@ begin
     ---------------- IF --------------------------
     IF_unit: process(clk, rst)
     begin
-        if (rst = '0') then
+        if (rst = '0' or boot_finish = '0') then
             pc <= zero16;
         elsif ( clk'event and clk='1' ) then
             -- TODO: the update of PC has 3 ways
@@ -320,7 +387,7 @@ begin
     ---------------- ID --------------------------
     ID_unit: process(clk, rst)
     begin
-        if (rst = '0') then
+        if (rst = '0' or boot_finish = '0') then
             id_pc_branch <= '0';
             idex_instruc <= NOP_instruc;
         elsif (clk'event and clk='1') then
@@ -574,7 +641,7 @@ begin
     EX_unit: process(clk, rst)
         variable ex_instruc : std_logic_vector (15 downto 0) := NOP_instruc;
     begin
-        if (rst = '0') then
+        if (rst = '0' or boot_finish = '0') then
             exme_instruc <= NOP_instruc;
             ex_instruc := NOP_instruc;
         elsif (clk'event and clk='1') then
@@ -715,6 +782,11 @@ begin
             seri1_read_enable <= '0';
             seri1_write_enable <= '0';
             seri1_ctrl_read_en <= '0';
+        elsif boot_finish = '0' then
+            me_read_enable <= boot_read_enable;
+            me_write_enable <= boot_write_enable;
+            me_write_addr <= boot_write_addr;
+            me_write_data <= boot_write_data;
         elsif (clk'event and clk='1') then
             mewb_instruc <= exme_instruc;
             me_read_enable <= '0';
@@ -809,7 +881,7 @@ begin
         variable wb_data : std_logic_vector(15 downto 0);
         variable wb_enable : boolean := false;
     begin
-          if (rst = '0') then
+          if rst = '0' or boot_finish = '0' then
                 r0 <= zero16;
                 r1 <= zero16;
                 r2 <= zero16;
@@ -818,7 +890,6 @@ begin
                 r5 <= zero16;
                 r6 <= zero16;
                 r7 <= zero16;
-
                 SP <= zero16;
                 IH <= zero16;
                 T <= zero16;
@@ -925,7 +996,7 @@ begin
         variable ctrl_instruc_3     : std_logic_vector (15 downto 0) := NOP_instruc;
         variable ctrl_fake_nop      : boolean                        := false;
     begin
-        if (rst = '0') then
+        if (rst = '0' or boot_finish = '0') then
             ctrl_wb_reg_0  := reg_none;
             ctrl_wb_reg_1  := reg_none;
             ctrl_wb_reg_2  := reg_none;
@@ -1114,7 +1185,6 @@ begin
         end if;
     end process Control_unit;
 
-    dyp0 <= "0000000";
     dyp1 <= "1111111";
 
     EN_ram2 <= '1';

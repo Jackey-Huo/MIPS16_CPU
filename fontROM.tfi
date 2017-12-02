@@ -1,0 +1,11 @@
+
+
+
+// Instantiate the module
+fontROM instance_name (
+    .clka(clka), 
+    .addra(addra), 
+    .douta(douta)
+    );
+
+

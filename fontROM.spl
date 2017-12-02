@@ -1,0 +1,6 @@
+[Inputs]
+clka
+=addra[10:0]=
+[Outputs]
+=douta[7:0]=
+[BiDir]

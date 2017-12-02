@@ -30,45 +30,59 @@ use IEEE.STD_LOGIC_1164.ALL;
 --use UNISIM.VComponents.all;
 
 entity clock_select is
-	port(
-		click		: in std_logic;
-		clk_50M	: in std_logic;
-		selector	: in std_logic_vector(1 downto 0);
-		clk		: out std_logic
-	);
+    port(
+        click       : in std_logic;
+        clk_50M : in std_logic;
+        selector    : in std_logic_vector(2 downto 0);
+        clk     : out std_logic;
+        clk_flash: out std_logic
+    );
 end clock_select;
 
 architecture Behavioral of clock_select is
 
-signal clk4 : std_logic := '0';   -- four divide
-signal clk2 : std_logic := '0';   -- two divide
-
+signal clk_125, clk_25 : std_logic := '0';
+-- flash uses 256 divide frequency
+signal clk_flash_c : std_logic := '0';
 begin
-	process(clk_50M)
-	begin
-		case selector is
-			when "00" => clk <= clk_50M;
-			when "01" => clk <= click;
-			when "10" => clk <= clk4;
-			when "11" => clk <= clk2;
-			when others => clk <= click;
-		end case;
-	end process;
+    clk_flash <= clk_flash_c;
+    process(clk_50M)
+    begin
+        case selector is
+            when "000" => clk <= click;
+            when "001" => clk <= clk_125;
+            when "010" => clk <= clk_25;
+            when "011" => clk <= clk_50M;
+            when others => clk <= click;
+        end case;
+    end process;
 
-	process(clk_50M)
-		variable cnt4 : integer := 0;
-	begin
-		if clk_50M'event and clk_50M = '1' then
-			-- four divide
-			if cnt4 = 3 then
-				clk4 <= not clk4;
-				cnt4 := 0;
-			else
-				cnt4 := cnt4 + 1;
-			end if;
-			-- two divide
-			clk2 <= not clk2;
-		end if;
-	end process;
+    process(clk_50M)
+        variable cnt_125, cnt_25, cnt_flash : integer := 0;
+    begin
+        if clk_50M'event and clk_50M = '1' then
+            -- four divide
+            if cnt_125 = 3 then
+                clk_125 <= not clk_125;
+                cnt_125 := 0;
+            else
+                cnt_125 := cnt_125 + 1;
+            end if;
+            -- two divide
+            if cnt_25 = 1 then
+                clk_25 <= not clk_25;
+                cnt_25 := 0;
+            else
+                cnt_25 := cnt_25 + 1;
+            end if;
+            -- 256 divide for flash
+            if cnt_flash = 255 then
+                cnt_flash := 0;
+                clk_flash_c <= not clk_flash_c;
+            else
+                cnt_flash := cnt_flash + 1;
+            end if;
+        end if;
+    end process;
 end Behavioral;
 
