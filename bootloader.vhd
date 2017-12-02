@@ -58,8 +58,8 @@ end bootloader;
 
 architecture Behavioral of bootloader is
 	signal mem_write_en: std_logic;
-	type boot_state is (flash_prepare, flash_will_set, flash_set, flash_will_read, flash_read, flash_read_finish, mem_write, boot_finish);
-	signal state: boot_state := flash_prepare;
+	type boot_state is (flash_init, flash_read0, flash_read1, flash_read2, flash_read3, flash_read_done, mem_write, boot_finish);
+	signal state: boot_state := flash_init;
 	signal next_state: boot_state;
 	signal addr: std_logic_vector(15 downto 0) := x"0000";
 	signal next_addr: std_logic_vector(15 downto 0);
@@ -81,7 +81,7 @@ begin
 	process (state_clk, rst)
 	begin
 		if rst = '0' then
-			state <= flash_prepare;
+			state <= flash_init;
 			addr <= x"0000";
 		elsif (state_clk'event and state_clk = '1') then
 			state <= next_state;
@@ -92,28 +92,28 @@ begin
 	process (state, addr)
 	begin
 		case state is
-			when flash_prepare =>
-				next_state <= flash_will_set;
+			when flash_init =>
+				next_state <= flash_read0;
 				digit <= not "0000001";
-			when flash_will_set =>
-				next_state <= flash_set;
+			when flash_read0 =>
+				next_state <= flash_read1;
 				digit <= not "1001111";
-			when flash_set =>
-				next_state <= flash_will_read;
+			when flash_read1 =>
+				next_state <= flash_read2;
 				digit <= not "0010010";
-			when flash_will_read =>
-				next_state <= flash_read;
+			when flash_read2 =>
+				next_state <= flash_read3;
 				digit <= not "0000110";
-			when flash_read =>
-				next_state <= flash_read_finish;
+			when flash_read3 =>
+				next_state <= flash_read_done;
 				digit <= not "1001100";
-			when flash_read_finish =>
+			when flash_read_done =>
 				next_state <= mem_write;
 				digit <= not "0100100";
 			when mem_write =>
 				if addr < x"0200" then
 					--if addr < x"01f3" then
-					next_state <= flash_will_read;
+					next_state <= flash_read2;
 				else
 					next_state <= boot_finish;
 				end if;
@@ -123,7 +123,7 @@ begin
 				next_state <= boot_finish;
 				digit <= not "0001111";
 			when others =>
-				next_state <= flash_prepare;
+				next_state <= flash_init;
 				digit <= not "1111111";
 		end case;
 		if state = mem_write then
@@ -142,27 +142,27 @@ begin
 			memory_write_enable <= '0';
 		elsif rising_edge(clk) then
 			case next_state is
-				when flash_prepare =>
+				when flash_init =>
 					flash_we <= '1';
 					flash_oe <= '1';
 					memory_write_enable <= '0';
 					memory_read_enable <= '0';
-				when flash_will_set =>
+				when flash_read0 =>
 					flash_we <= '0';
-				when flash_set =>
+				when flash_read1 =>
 					flash_data <= x"00ff";
 					flash_we <= '1';
-				when flash_will_read =>
+				when flash_read2 =>
 					flash_oe <= '0';
 					flash_addr <= "000000" & next_addr & "0";
 					memory_write_enable <= '0';
 					memory_read_enable <= '0';
 					flash_data <= "ZZZZZZZZZZZZZZZZ";
-				when flash_read =>
+				when flash_read3 =>
 					data <= flash_data;
 					
 					mem_addr <= next_addr;
-				when flash_read_finish =>
+				when flash_read_done =>
 					flash_oe <= '1';
 					
 				when mem_write =>
