@@ -40,7 +40,8 @@ end clock_select;
 
 architecture Behavioral of clock_select is
 
-signal clk_c : std_logic := '0';
+signal clk4 : std_logic := '0';   -- four divide
+signal clk2 : std_logic := '0';   -- two divide
 
 begin
 	process(clk_50M)
@@ -48,22 +49,25 @@ begin
 		case selector is
 			when "00" => clk <= clk_50M;
 			when "01" => clk <= click;
-			when "10" => clk <= clk_c;
+			when "10" => clk <= clk4;
+			when "11" => clk <= clk2;
 			when others => clk <= click;
 		end case;
 	end process;
 
 	process(clk_50M)
-		variable cnt : integer := 0;
+		variable cnt4 : integer := 0;
 	begin
 		if clk_50M'event and clk_50M = '1' then
 			-- four divide
-			if cnt = 3 then
-				clk_c <= not clk_c;
-				cnt := 0;
+			if cnt4 = 3 then
+				clk4 <= not clk4;
+				cnt4 := 0;
 			else
-				cnt := cnt + 1;
+				cnt4 := cnt4 + 1;
 			end if;
+			-- two divide
+			clk2 <= not clk2;
 		end if;
 	end process;
 end Behavioral;

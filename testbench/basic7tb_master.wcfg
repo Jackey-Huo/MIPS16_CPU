@@ -3,9 +3,9 @@
    <wave_state>
    </wave_state>
    <db_ref_list>
-      <db_ref path="/home/jackey/My_project/VHDL/cpu/basic7tb_isim_beh.wdb" id="1" type="auto">
+      <db_ref path="/home/jackey/My_project/VHDL/cpu/basic7tb_master_isim_beh.wdb" id="1" type="auto">
          <top_modules>
-            <top_module name="basic7tb" />
+            <top_module name="basic7tb_master" />
             <top_module name="helper" />
             <top_module name="numeric_std" />
             <top_module name="std_logic_1164" />
@@ -14,101 +14,105 @@
          </top_modules>
       </db_ref>
    </db_ref_list>
-   <WVObjectSize size="24" />
-   <wvobject fp_name="/basic7tb/clk" type="logic" db_ref_id="1">
-      <obj_property name="ElementShortName">clk</obj_property>
-      <obj_property name="ObjectShortName">clk</obj_property>
+   <WVObjectSize size="25" />
+   <wvobject fp_name="/basic7tb_master/click" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">click</obj_property>
+      <obj_property name="ObjectShortName">click</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/rst" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/clk_50m" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk_50m</obj_property>
+      <obj_property name="ObjectShortName">clk_50m</obj_property>
+   </wvobject>
+   <wvobject fp_name="/basic7tb_master/rst" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">rst</obj_property>
       <obj_property name="ObjectShortName">rst</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/seri_data_ready" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/seri_data_ready" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">seri_data_ready</obj_property>
       <obj_property name="ObjectShortName">seri_data_ready</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/seri_tbre" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/seri_tbre" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">seri_tbre</obj_property>
       <obj_property name="ObjectShortName">seri_tbre</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/seri_tsre" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/seri_tsre" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">seri_tsre</obj_property>
       <obj_property name="ObjectShortName">seri_tsre</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/instruct" type="array" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/instruct" type="array" db_ref_id="1">
       <obj_property name="ElementShortName">instruct[15:0]</obj_property>
       <obj_property name="ObjectShortName">instruct[15:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/data_ram1" type="array" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/data_ram1" type="array" db_ref_id="1">
       <obj_property name="ElementShortName">data_ram1[15:0]</obj_property>
       <obj_property name="ObjectShortName">data_ram1[15:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/data_ram2" type="array" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/data_ram2" type="array" db_ref_id="1">
       <obj_property name="ElementShortName">data_ram2[15:0]</obj_property>
       <obj_property name="ObjectShortName">data_ram2[15:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/addr_ram1" type="array" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/addr_ram1" type="array" db_ref_id="1">
       <obj_property name="ElementShortName">addr_ram1[17:0]</obj_property>
       <obj_property name="ObjectShortName">addr_ram1[17:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/oe_ram1" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/oe_ram1" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">oe_ram1</obj_property>
       <obj_property name="ObjectShortName">oe_ram1</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/we_ram1" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/we_ram1" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">we_ram1</obj_property>
       <obj_property name="ObjectShortName">we_ram1</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/en_ram1" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/en_ram1" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">en_ram1</obj_property>
       <obj_property name="ObjectShortName">en_ram1</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/addr_ram2" type="array" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/addr_ram2" type="array" db_ref_id="1">
       <obj_property name="ElementShortName">addr_ram2[17:0]</obj_property>
       <obj_property name="ObjectShortName">addr_ram2[17:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/oe_ram2" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/oe_ram2" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">oe_ram2</obj_property>
       <obj_property name="ObjectShortName">oe_ram2</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/we_ram2" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/we_ram2" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">we_ram2</obj_property>
       <obj_property name="ObjectShortName">we_ram2</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/en_ram2" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/en_ram2" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">en_ram2</obj_property>
       <obj_property name="ObjectShortName">en_ram2</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/seri_rdn" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/seri_rdn" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">seri_rdn</obj_property>
       <obj_property name="ObjectShortName">seri_rdn</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/seri_wrn" type="logic" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/seri_wrn" type="logic" db_ref_id="1">
       <obj_property name="ElementShortName">seri_wrn</obj_property>
       <obj_property name="ObjectShortName">seri_wrn</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/dyp0" type="array" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/dyp0" type="array" db_ref_id="1">
       <obj_property name="ElementShortName">dyp0[6:0]</obj_property>
       <obj_property name="ObjectShortName">dyp0[6:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/dyp1" type="array" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/dyp1" type="array" db_ref_id="1">
       <obj_property name="ElementShortName">dyp1[6:0]</obj_property>
       <obj_property name="ObjectShortName">dyp1[6:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/led" type="array" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/led" type="array" db_ref_id="1">
       <obj_property name="ElementShortName">led[15:0]</obj_property>
       <obj_property name="ObjectShortName">led[15:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/clk_period" type="other" db_ref_id="1">
+   <wvobject fp_name="/basic7tb_master/clk_50m_period" type="other" db_ref_id="1">
+      <obj_property name="ElementShortName">clk_50m_period</obj_property>
+      <obj_property name="ObjectShortName">clk_50m_period</obj_property>
+   </wvobject>
+   <wvobject fp_name="/basic7tb_master/clk_period" type="other" db_ref_id="1">
       <obj_property name="ElementShortName">clk_period</obj_property>
       <obj_property name="ObjectShortName">clk_period</obj_property>
    </wvobject>
-   <wvobject fp_name="/basic7tb/uut/r1" type="array" db_ref_id="1">
-      <obj_property name="ElementShortName">r1[15:0]</obj_property>
-      <obj_property name="ObjectShortName">r1[15:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/basic7tb/uut/r0" type="array" db_ref_id="1">
-      <obj_property name="ElementShortName">r0[15:0]</obj_property>
-      <obj_property name="ObjectShortName">r0[15:0]</obj_property>
+   <wvobject fp_name="/basic7tb_master/uut/clk" type="logic" db_ref_id="1">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
    </wvobject>
 </wave_config>

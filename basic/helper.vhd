@@ -443,6 +443,7 @@ package body helper is
             when LW_op | LW_SP_op =>
                 if (conflict_instruc_number_a = 1) then
                     ctrl_fake_nop := true;
+                    ctrl_mux_reg_a <= chs_idex_reg;
                 end if;
                 case conflict_instruc_number_a is
                     when 2 =>
@@ -558,6 +559,7 @@ package body helper is
             when LW_op | LW_SP_op =>
                 if (conflict_instruc_number_b = 1) then
                     ctrl_fake_nop := true;
+                    ctrl_mux_reg_b <= chs_idex_reg;
                 end if;
                 case conflict_instruc_number_b is
                     when 2 =>
@@ -673,6 +675,7 @@ package body helper is
             when LW_op | LW_SP_op =>
                 if (conflict_instruc_number_bypass = 1) then
                     ctrl_fake_nop := true;
+                    ctrl_mux_bypass <= chs_idex_bypass;
                 end if;
                 case conflict_instruc_number_bypass is
                     when 2 =>

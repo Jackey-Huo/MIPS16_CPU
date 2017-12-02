@@ -2,9 +2,9 @@
 -- Company: 
 -- Engineer:
 --
--- Create Date:   19:59:00 11/20/2017
+-- Create Date:   21:15:46 12/02/2017
 -- Design Name:   
--- Module Name:   /home/jackey/My_project/VHDL/cpu/testbench/basic7tb.vhd
+-- Module Name:   /home/jackey/My_project/VHDL/cpu/basic7tb_master.vhd
 -- Project Name:  cpu
 -- Target Device:  
 -- Tool versions:  
@@ -25,25 +25,24 @@
 -- to guarantee that the testbench will bind correctly to the post-implementation 
 -- simulation model.
 --------------------------------------------------------------------------------
-LIBRARY IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.STD_LOGIC_UNSIGNED.ALL;
-use IEEE.NUMERIC_STD.ALL;
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
  
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
 --USE ieee.numeric_std.ALL;
  
-ENTITY basic7tb IS
-END basic7tb;
+ENTITY basic7tb_master IS
+END basic7tb_master;
  
-ARCHITECTURE behavior OF basic7tb IS 
+ARCHITECTURE behavior OF basic7tb_master IS 
  
     -- Component Declaration for the Unit Under Test (UUT)
  
     COMPONENT cpu
     PORT(
-         clk : IN  std_logic;
+         click : IN  std_logic;
+         clk_50M : IN  std_logic;
          rst : IN  std_logic;
          data_ram1 : INOUT  std_logic_vector(15 downto 0);
          addr_ram1 : OUT  std_logic_vector(17 downto 0);
@@ -69,18 +68,19 @@ ARCHITECTURE behavior OF basic7tb IS
     
 
    --Inputs
-   signal clk : std_logic := '0';
+   signal click : std_logic := '0';
+   signal clk_50M : std_logic := '0';
    signal rst : std_logic := '0';
    signal seri_data_ready : std_logic := '0';
-   signal seri_tbre : std_logic := '1';
-   signal seri_tsre : std_logic := '1';
+   signal seri_tbre : std_logic := '0';
+   signal seri_tsre : std_logic := '0';
    signal instruct : std_logic_vector(15 downto 0) := (others => '0');
 
-    --BiDirs
+	--BiDirs
    signal data_ram1 : std_logic_vector(15 downto 0);
    signal data_ram2 : std_logic_vector(15 downto 0);
 
-    --Outputs
+ 	--Outputs
    signal addr_ram1 : std_logic_vector(17 downto 0);
    signal OE_ram1 : std_logic;
    signal WE_ram1 : std_logic;
@@ -96,13 +96,15 @@ ARCHITECTURE behavior OF basic7tb IS
    signal led : std_logic_vector(15 downto 0);
 
    -- Clock period definitions
-   constant clk_period : time := 10 ns;
-  
+   constant clk_50M_period : time := 20 ns;
+	constant clk_period : time := 100 ns;
+ 
 BEGIN
  
-    -- Instantiate the Unit Under Test (UUT)
+	-- Instantiate the Unit Under Test (UUT)
    uut: cpu PORT MAP (
-          clk => clk,
+          click => click,
+          clk_50M => clk_50M,
           rst => rst,
           data_ram1 => data_ram1,
           addr_ram1 => addr_ram1,
@@ -126,18 +128,27 @@ BEGIN
         );
 
    -- Clock process definitions
-   clk_process :process
+   clk_50M_process :process
    begin
-        clk <= '0';
-        wait for clk_period/2;
-        clk <= '1';
-        wait for clk_period/2;
+		clk_50M <= '0';
+		wait for clk_50M_period/2;
+		clk_50M <= '1';
+		wait for clk_50M_period/2;
    end process;
+ 
+    click_process :process
+   begin
+		click <= '0';
+		wait for clk_period/2;
+		click <= '1';
+		wait for clk_period/2;
+   end process;
+ 
  
 
    -- Stimulus process
    stim_proc: process
-    begin
+   begin		
       -- hold reset state for 100 ns.
       wait for 70 ns;   
 
@@ -159,11 +170,9 @@ BEGIN
         wait for clk_period;
         instruct <= "0011001001010000"; -- [0008] SLL R2 R2 4
         wait for clk_period;
-        instruct <= "1001100000100001"; -- [0009] LW R0 R1 0x01
+        instruct <= "1001111010000000"; -- [0009] LW R6 R4 0x00
         wait for clk_period;
-        instruct <= "0100100101010000"; -- [000A] ADDIU R1 0x50
-        wait for clk_period;
-		  instruct <= "0000100000000000"; -- [000B] NOP
+        instruct <= "1110001110010001"; -- [000A] ADDU R3 R4 R4
 		  wait for clk_period;
         instruct <= "1101100000100001"; -- [000B] SW R0 R1 0x01
         wait for clk_period;
@@ -199,8 +208,9 @@ BEGIN
         instruct <= "1101100000100001"; -- SW R0 R1 0x01
         wait for clk_period;
 
+      -- insert stimulus here 
 
-        wait;
+      wait;
    end process;
 
 END;

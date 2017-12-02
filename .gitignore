@@ -34,6 +34,7 @@ _impact.log
 *.twr
 *.twx
 *.unroutes
+*.ipf
 *.ut
 *.xpi
 *.xst
@@ -103,3 +104,5 @@ src/cpu/work/
 *.so
 # Backup
 *~
+*.bak
+

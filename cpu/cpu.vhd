@@ -36,7 +36,7 @@ use basic.helper.all;
 entity cpu is
     port (
         click : in std_logic;
-		  clk_50M : in std_logic;
+          clk_50M : in std_logic;
         rst : in std_logic;
 
         -- ram1, Instruction memory
@@ -63,12 +63,12 @@ entity cpu is
         --digits
         dyp0            : out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
         dyp1            : out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
-		  
-		  -- VGA
-		  Hs 					: out std_logic; -- line sync
-		  Vs 					: out std_logic; -- field sync
-		  VGA_R, VGA_G, VGA_B : out std_logic_vector (2 downto 0) := "000";
-		
+          
+          -- VGA
+--        Hs                    : out std_logic; -- line sync
+--        Vs                    : out std_logic; -- field sync
+--        VGA_R, VGA_G, VGA_B : out std_logic_vector (2 downto 0) := "000";
+        
         -- led
         led : out std_logic_vector(15 downto 0);
 
@@ -81,11 +81,11 @@ architecture Behavioral of cpu is
     -- register
     signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := zero16;
     signal SP, IH, T : std_logic_vector(15 downto 0) := zero16;
-	 -- clocks
-	 -- main clock
-	 signal clk : std_logic;
-	 -- vga_clk
-	 signal clk50 : std_logic;
+     -- clocks
+     -- main clock
+     signal clk : std_logic;
+     -- vga_clk
+     signal clk50 : std_logic;
     -- pc
     signal pc                              : std_logic_vector (15 downto 0) := zero16;
     signal pc_real                         : std_logic_vector (15 downto 0) := zero16;
@@ -94,14 +94,15 @@ architecture Behavioral of cpu is
     -- IF/ID pipeline storage
     signal ifid_instruc                    : std_logic_vector (15 downto 0) := zero16;
     signal ifid_instruc_mem                : std_logic_vector (15 downto 0) := zero16;
-    -- NOTICE: What's this?
-    signal id_pc_branch                    : std_logic                      := '0';
-    signal id_branch_value                 : std_logic_vector (15 downto 0) := zero16;
     
     -- Control Unit
     signal ctrl_mux_reg_a, ctrl_mux_reg_b  : std_logic_vector (2 downto 0)  := "000";
     signal ctrl_mux_bypass                 : std_logic_vector (2 downto 0)  := "000";
     signal ctrl_insert_bubble              : std_logic                      := '0';
+
+    -- branch signal
+    signal id_pc_branch                    : std_logic                      := '0';
+    signal id_branch_value                 : std_logic_vector (15 downto 0) := zero16;
 
     signal id_instruc                      : std_logic_vector (15 downto 0) := zero16;
 
@@ -149,8 +150,8 @@ architecture Behavioral of cpu is
 
     signal wb_reg_data                     : std_logic_vector (15 downto 0) := zero16;
 
-	 -- VGA signals
-	 signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
+     -- VGA signals
+     signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
 
     -- component
     component alu is
@@ -177,75 +178,75 @@ architecture Behavioral of cpu is
         );
     end component mux7to1;
 
-	component vga_ctrl is
-		Port(
-			clk : in std_logic; -- clock forced to be 50M
-			rst : in std_logic;
-			
-			Hs : out std_logic; -- line sync
-			Vs : out std_logic; -- field sync
+--  component vga_ctrl is
+--      Port(
+--          clk : in std_logic; -- clock forced to be 50M
+--          rst : in std_logic;
+--          
+--          Hs : out std_logic; -- line sync
+--          Vs : out std_logic; -- field sync
+--
+--          r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
+--          PC : in std_logic_vector(15 downto 0);
+--          CM : in std_logic_vector(15 downto 0);
+--          Tdata : in std_logic_vector(15 downto 0);
+--          SPdata : in std_logic_vector(15 downto 0);
+--          IHdata : in std_logic_vector(15 downto 0);
+--          instruction : in std_logic_vector(15 downto 0);
+--          
+--          -- Concatenated color definition for input
+--          color : in std_logic_vector (8 downto 0);
+--
+--          -- Separate color definition for output
+--          R : out std_logic_vector(2 downto 0);
+--          G : out std_logic_vector(2 downto 0);
+--          B : out std_logic_vector(2 downto 0)
+--      );
+--  end component;
 
-			r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
-			PC : in std_logic_vector(15 downto 0);
-			CM : in std_logic_vector(15 downto 0);
-			Tdata : in std_logic_vector(15 downto 0);
-			SPdata : in std_logic_vector(15 downto 0);
-			IHdata : in std_logic_vector(15 downto 0);
-			instruction : in std_logic_vector(15 downto 0);
-			
-			-- Concatenated color definition for input
-			color : in std_logic_vector (8 downto 0);
-
-			-- Separate color definition for output
-			R : out std_logic_vector(2 downto 0);
-			G : out std_logic_vector(2 downto 0);
-			B : out std_logic_vector(2 downto 0)
-		);
-	end component;
-
-	component clock_select is
-		port(
-			click		: in std_logic;
-			clk_50M	: in std_logic;
-			selector	: in std_logic_vector(1 downto 0);
-			clk		: out std_logic
-		);
-	end component;
+    component clock_select is
+        port(
+            click       : in std_logic;
+            clk_50M : in std_logic;
+            selector    : in std_logic_vector(1 downto 0);
+            clk     : out std_logic
+        );
+    end component;
 
 begin
-	 ------------- Clock selector ----------
-	 clk_selector	: clock_select port map(
-		click => click,
-		clk_50M => clk_50M,
-		selector => "10",
-		clk => clk
-	 );
+     ------------- Clock selector ----------
+     clk_selector   : clock_select port map(
+        click => click,
+        clk_50M => clk_50M,
+        selector => "10",
+        clk => clk
+     );
 
-	 ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
-	 vga_disp : vga_ctrl port map(
-		clk => clk_50M,
-		rst => rst,
-		Hs => Hs,
-		Vs => Vs,
-		r0=>r0,
-		r1=>r1,
-		r2=>r2,
-		r3=>r3,
-		r4=>r4,
-		r5=>r5,
-		r6=>r6,
-		r7=>r7,
-		PC => PC, -- : in std_logic_vector(15 downto 0);
-		CM => me_read_addr(15 downto 0), -- in std_logic_vector(15 downto 0);
-		Tdata => T, -- : in std_logic_vector(15 downto 0);
-		SPdata => SP, -- : in std_logic_vector(15 downto 0);
-		IHdata => IH, --: in std_logic_vector(15 downto 0);
-		instruction => ifid_instruc,
-		color => "000000000",
-		R => VGA_R,
-		G => VGA_G,
-		B => VGA_B
-	);
+     ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
+--     vga_disp : vga_ctrl port map(
+--        clk => clk_50M,
+--        rst => rst,
+--        Hs => Hs,
+--        Vs => Vs,
+--        r0=>r0,
+--        r1=>r1,
+--        r2=>r2,
+--        r3=>r3,
+--        r4=>r4,
+--        r5=>r5,
+--        r6=>r6,
+--        r7=>r7,
+--        PC => PC, -- : in std_logic_vector(15 downto 0);
+--        CM => me_read_addr(15 downto 0), -- in std_logic_vector(15 downto 0);
+--        Tdata => T, -- : in std_logic_vector(15 downto 0);
+--        SPdata => SP, -- : in std_logic_vector(15 downto 0);
+--        IHdata => IH, --: in std_logic_vector(15 downto 0);
+--        instruction => ifid_instruc,
+--        color => "000000000",
+--        R => VGA_R,
+--        G => VGA_G,
+--        B => VGA_B
+--    );
 
     ------------- Memory and Serial Control Unit, pure combinational logic
     me_write_enable_real <= '0' when (rst = '0') else (me_write_enable and clk);
@@ -280,7 +281,7 @@ begin
                     "00000000000000" &  seri_data_ready & (seri_tbre and seri_tsre) when (seri1_ctrl_read_en = '1') else
                     "ZZZZZZZZZZZZZZZZ";
     -- if MEM is using SRAM, insert a NOP into pipeline
-    ifid_instruc_mem <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0') and
+     ifid_instruc_mem <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0') and
                                         (seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
 
     --ifid_instruc_mem <= instruct when ((me_read_enable = '0') and (me_write_enable = '0') and
@@ -312,174 +313,185 @@ begin
         end if;
     end process IF_unit;
     -- mux for real pc, TODO: block pc increase with IF MEM conflict
-    pc_real <= id_branch_value when (id_pc_branch = '1') else pc;
+    pc_real <= zero16 when (rst = '0') else
+               id_branch_value when ((id_pc_branch = '1') and (ctrl_insert_bubble = '0')) else
+               pc;
 
     ---------------- ID --------------------------
     ID_unit: process(clk, rst)
     begin
         if (rst = '0') then
             id_pc_branch <= '0';
+            idex_instruc <= NOP_instruc;
         elsif (clk'event and clk='1') then
             if (ctrl_insert_bubble = '1') then
                 idex_instruc <= idex_instruc;
+                idex_reg_a_data <= idex_reg_a_data;
+                idex_reg_b_data <= idex_reg_b_data;
+                idex_bypass <= idex_bypass;
+                idex_reg_wb <= idex_reg_wb;
+                id_pc_branch <= id_pc_branch;
+                id_instruc <= id_instruc;
             else
                 idex_instruc <= ifid_instruc;
+
+                id_pc_branch <= '0';
+                id_instruc <= ifid_instruc;
+                case ifid_instruc(15 downto 11) is
+                    when EXTEND_ALU3_op => -- ADDU, SUBU
+                        -- rx value
+                        reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                        -- ry value
+                        reg_decode(idex_reg_b_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                        -- write back register index
+                        idex_reg_wb <= "0" & ifid_instruc(4 downto 2);
+                    when ADDIU_op =>
+                        -- rx value
+                        reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                        -- immediate value, put into reg_b
+                        idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
+                        -- write back register index
+                        idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                    when ADDIU3_op =>
+                        -- rx value
+                        reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                        -- immediate value, put into reg_b
+                        idex_reg_b_data <= sign_extend4(ifid_instruc(3 downto 0));
+                        -- write back register index
+                        idex_reg_wb <= "0" & ifid_instruc(7 downto 5);
+                    when EXTEND_TSP_op =>
+                        case ifid_instruc(10 downto 8) is
+                            when EX_ADDSP_pf_op =>  -- TODO: conflict detection
+                                idex_reg_a_data <= SP;
+                                idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
+                                idex_reg_wb <= SP_index;
+                            when EX_BTEQZ_pf_op =>
+                                id_pc_branch <= '1';
+                                idex_reg_a_data <= T;
+                                idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
+                            when EX_BTNEZ_pf_op =>
+                                id_pc_branch <= '1';
+                                idex_reg_a_data <= T;
+                                idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
+                            when EX_MTSP_pf_op =>
+                                reg_decode(idex_bypass, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                idex_reg_wb <= SP_index;
+                            when others =>
+                        end case;
+                    when EXTEND_ALUPCmix_op =>
+                        case ifid_instruc(4 downto 0) is
+                            when EX_AND_sf_op | EX_OR_sf_op =>         -- rx <- rx [] ry
+                                reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                reg_decode(idex_reg_b_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                            when EX_NEG_sf_op =>               -- rx <- 0-ry
+                                idex_reg_a_data <= zero16;
+                                reg_decode(idex_reg_b_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                            when EX_NOT_sf_op =>                           -- rx <- ~ry
+                                reg_decode(idex_reg_a_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                            when EX_SRLV_sf_op =>             -- ry <- ry >> rx
+                                reg_decode(idex_reg_a_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                reg_decode(idex_reg_b_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                idex_reg_wb <= "0" & ifid_instruc(7 downto 5);
+                            when EX_CMP_sf_op =>
+                                reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                reg_decode(idex_reg_b_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                idex_reg_wb <= T_index;
+                            when EX_PC_sf_op =>
+                                case ifid_instruc(7 downto 5) is
+                                    when EX_MFPC_sf_diff_op =>
+                                        idex_bypass <= pc_real;
+                                        idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                                    when EX_JR_sf_diff_op =>
+                                        id_pc_branch <= '1';
+                                        reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                    when others =>
+                                        idex_reg_wb <= reg_none;
+                                end case;
+                            when others =>
+                                idex_reg_wb <= reg_none;
+                        end case;
+                    when EXTEND_RRI_op =>
+                        case ifid_instruc(1 downto 0) is
+                            when EX_SLL_sf_op | EX_SRA_sf_op | EX_SRL_sf_op =>
+                                reg_decode(idex_reg_a_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                if (ifid_instruc(4 downto 2) = "000") then
+                                    idex_reg_b_data <= "0000000000001000";
+                                else
+                                    idex_reg_b_data <= zero_extend3(ifid_instruc(4 downto 2));
+                                end if;
+                                idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                            when others =>
+                                idex_reg_wb <= reg_none;
+                        end case;
+                    when EXTEND_IH_op =>
+                        case ifid_instruc(7 downto 0) is
+                            when EX_MFIH_sf_op =>
+                                idex_bypass <= IH;
+                                idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                            when EX_MTIH_sf_op =>
+                                reg_decode(idex_bypass, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                idex_reg_wb <= IH_index;
+                            when others =>
+                                idex_reg_wb <= reg_none;
+                        end case;
+                    when LI_op =>
+                        -- immediate value, zero extend, put into register A
+                        idex_reg_a_data <= zero_extend8(ifid_instruc(7 downto 0));
+                        idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                    when LW_op =>
+                        -- rx value
+                        reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                        -- immediate sign extend
+                        idex_reg_b_data <= sign_extend5(ifid_instruc(4 downto 0));
+                        -- write back ry register
+                        idex_reg_wb <= "0" & ifid_instruc(7 downto 5);
+                    when LW_SP_op =>
+                        -- sp value
+                        idex_reg_a_data <= SP;
+                        -- immediate sign extend
+                        idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
+                        -- write back rx register
+                        idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                    when SW_op =>
+                        -- rx value
+                        reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                        -- immediate sign extend
+                        idex_reg_b_data <= sign_extend5(ifid_instruc(4 downto 0));
+                        -- ry value
+                        reg_decode(idex_bypass, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                    when SW_SP_op =>
+                        -- sp value
+                        idex_reg_a_data <= SP;
+                        -- immediate sign extend
+                        idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
+                        -- rx value  TODO: control unit for bypass value
+                        reg_decode(idex_bypass, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                    when BNEZ_op =>
+                        id_pc_branch <= '1';
+                        -- rx value
+                        reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                        -- immediate sign extend
+                        idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
+                    when BEQZ_op =>
+                        id_pc_branch <= '1';
+                        -- rx value
+                        reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                        -- immediate sign extend
+                        idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
+                    when B_op =>
+                        id_pc_branch <= '1';
+                        -- immediate sign extend
+                        idex_reg_a_data <= sign_extend11(ifid_instruc(10 downto 0));
+                    when others =>
+                        idex_reg_a_data <= zero16;
+                        idex_reg_b_data <= zero16;
+                        idex_reg_wb <= reg_none;
+                end case;
+
             end if;
-            id_pc_branch <= '0';
-            id_instruc <= ifid_instruc;
-            case ifid_instruc(15 downto 11) is
-                when EXTEND_ALU3_op => -- ADDU, SUBU
-                    -- rx value
-                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                    -- ry value
-                    reg_decode(idex_reg_b_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                    -- write back register index
-                    idex_reg_wb <= "0" & ifid_instruc(4 downto 2);
-                when ADDIU_op =>
-                    -- rx value
-                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                    -- immediate value, put into reg_b
-                    idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
-                    -- write back register index
-                    idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
-                when ADDIU3_op =>
-                    -- rx value
-                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                    -- immediate value, put into reg_b
-                    idex_reg_b_data <= sign_extend4(ifid_instruc(3 downto 0));
-                    -- write back register index
-                    idex_reg_wb <= "0" & ifid_instruc(7 downto 5);
-                when EXTEND_TSP_op =>
-                    case ifid_instruc(10 downto 8) is
-                        when EX_ADDSP_pf_op =>  -- TODO: conflict detection
-                            idex_reg_a_data <= SP;
-                            idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
-                            idex_reg_wb <= SP_index;
-                        when EX_BTEQZ_pf_op =>
-                            id_pc_branch <= '1';
-                            idex_reg_a_data <= T;
-                            idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
-                        when EX_BTNEZ_pf_op =>
-                            id_pc_branch <= '1';
-                            idex_reg_a_data <= T;
-                            idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
-                        when EX_MTSP_pf_op =>
-                            reg_decode(idex_bypass, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                            idex_reg_wb <= SP_index;
-                        when others =>
-                    end case;
-                when EXTEND_ALUPCmix_op =>
-                    case ifid_instruc(4 downto 0) is
-                        when EX_AND_sf_op | EX_OR_sf_op =>         -- rx <- rx [] ry
-                            reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                            reg_decode(idex_reg_b_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                            idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
-                        when EX_NEG_sf_op =>               -- rx <- 0-ry
-                            idex_reg_a_data <= zero16;
-                            reg_decode(idex_reg_b_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                            idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
-                        when EX_NOT_sf_op =>                           -- rx <- ~ry
-                            reg_decode(idex_reg_a_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                            idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
-                        when EX_SRLV_sf_op =>             -- ry <- ry >> rx
-                            reg_decode(idex_reg_a_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                            reg_decode(idex_reg_b_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                            idex_reg_wb <= "0" & ifid_instruc(7 downto 5);
-                        when EX_CMP_sf_op =>
-                            reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                            reg_decode(idex_reg_b_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                            idex_reg_wb <= T_index;
-                        when EX_PC_sf_op =>
-                            case ifid_instruc(7 downto 5) is
-                                when EX_MFPC_sf_diff_op =>
-                                    idex_bypass <= pc_real;
-                                    idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
-                                when EX_JR_sf_diff_op =>
-                                    id_pc_branch <= '1';
-                                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                                when others =>
-                                    idex_reg_wb <= reg_none;
-                            end case;
-                        when others =>
-                            idex_reg_wb <= reg_none;
-                    end case;
-                when EXTEND_RRI_op =>
-                    case ifid_instruc(1 downto 0) is
-                        when EX_SLL_sf_op | EX_SRA_sf_op | EX_SRL_sf_op =>
-                            reg_decode(idex_reg_a_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                            if (ifid_instruc(4 downto 2) = "000") then
-                                idex_reg_b_data <= "0000000000001000";
-                            else
-                                idex_reg_b_data <= zero_extend3(ifid_instruc(4 downto 2));
-                            end if;
-                            idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
-                        when others =>
-                            idex_reg_wb <= reg_none;
-                    end case;
-                when EXTEND_IH_op =>
-                    case ifid_instruc(7 downto 0) is
-                        when EX_MFIH_sf_op =>
-                            idex_bypass <= IH;
-                            idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
-                        when EX_MTIH_sf_op =>
-                            reg_decode(idex_bypass, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                            idex_reg_wb <= IH_index;
-                        when others =>
-                            idex_reg_wb <= reg_none;
-                    end case;
-                when LI_op =>
-                    -- immediate value, zero extend, put into register A
-                    idex_reg_a_data <= zero_extend8(ifid_instruc(7 downto 0));
-                    idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
-                when LW_op =>
-                    -- rx value
-                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                    -- immediate sign extend
-                    idex_reg_b_data <= sign_extend5(ifid_instruc(4 downto 0));
-                    -- write back ry register
-                    idex_reg_wb <= "0" & ifid_instruc(7 downto 5);
-                when LW_SP_op =>
-                    -- sp value
-                    idex_reg_a_data <= SP;
-                    -- immediate sign extend
-                    idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
-                    -- write back rx register
-                    idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
-                when SW_op =>
-                    -- rx value
-                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                    -- immediate sign extend
-                    idex_reg_b_data <= sign_extend5(ifid_instruc(4 downto 0));
-                    -- ry value
-                    reg_decode(idex_bypass, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                when SW_SP_op =>
-                    -- sp value
-                    idex_reg_a_data <= SP;
-                    -- immediate sign extend
-                    idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
-                    -- rx value  TODO: control unit for bypass value
-                    reg_decode(idex_bypass, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                when BNEZ_op =>
-                    id_pc_branch <= '1';
-                    -- rx value
-                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                    -- immediate sign extend
-                    idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
-                when BEQZ_op =>
-                    id_pc_branch <= '1';
-                    -- rx value
-                    reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
-                    -- immediate sign extend
-                    idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
-                when B_op =>
-                    id_pc_branch <= '1';
-                    -- immediate sign extend
-                    idex_reg_a_data <= sign_extend11(ifid_instruc(10 downto 0));
-                when others =>
-                    idex_reg_a_data <= zero16;
-                    idex_reg_b_data <= zero16;
-                    idex_reg_wb <= reg_none;
-            end case;
         end if;
     end process ID_unit;
 
@@ -556,9 +568,6 @@ begin
 --   exme_bypass--| X |                   exme_bypass--| X |                   exme_bypass--| X |
 --   mewb_bypass--|   |                   mewb_bypass--|   |                   mewb_bypass--|   |
 --                 ---                                  ---                                  ---                
-
-
-
 
 
     ---------------- EX --------------------------
@@ -699,7 +708,14 @@ begin
     ---------------- ME --------------------------
     ME_unit: process(clk, rst)
     begin
-        if (clk'event and clk='1') then
+        if (rst = '0') then
+            mewb_instruc <= NOP_instruc;
+            me_read_enable <= '0';
+            me_write_enable <= '0';
+            seri1_read_enable <= '0';
+            seri1_write_enable <= '0';
+            seri1_ctrl_read_en <= '0';
+        elsif (clk'event and clk='1') then
             mewb_instruc <= exme_instruc;
             me_read_enable <= '0';
             me_write_enable <= '0';
@@ -787,24 +803,26 @@ begin
         end if;
     end process ME_unit;
 
+
     ---------------- WB --------------------------
     WB_unit: process(clk, rst)
         variable wb_data : std_logic_vector(15 downto 0);
         variable wb_enable : boolean := false;
     begin
-		  if rst = '0' then
-				r0 <= zero16;
-				r1 <= zero16;
-				r2 <= zero16;
-				r3 <= zero16;
-				r4 <= zero16;
-				r5 <= zero16;
-				r6 <= zero16;
-				r7 <= zero16;
+          if (rst = '0') then
+                r0 <= zero16;
+                r1 <= zero16;
+                r2 <= zero16;
+                r3 <= zero16;
+                r4 <= zero16;
+                r5 <= zero16;
+                r6 <= zero16;
+                r7 <= zero16;
 
-				SP <= zero16;
-				IH <= zero16;
-				T <= zero16;
+                SP <= zero16;
+                IH <= zero16;
+                T <= zero16;
+                wb_enable := false;
         elsif (clk'event and clk='1') then
             case mewb_instruc(15 downto 11) is
                 when ADDIU_op | ADDIU3_op | EXTEND_RRI_op =>
@@ -929,7 +947,11 @@ begin
             ctrl_instruc_3 := ctrl_instruc_2;
             ctrl_instruc_2 := ctrl_instruc_1;
             ctrl_instruc_1 := ctrl_instruc_0;
-            ctrl_instruc_0 := ifid_instruc;
+            if (ctrl_insert_bubble = '1') then        -- if the last instruction need insert bubble
+                ctrl_instruc_0 := id_instruc;         -- grab id_instruc, for ifid_instruc now contain
+            else                                      -- next instruction
+                ctrl_instruc_0 := ifid_instruc;
+            end if;
             case ctrl_instruc_0(15 downto 11) is
                 when EXTEND_ALU3_op => -- ADDU, SUBU
                     ctrl_wb_reg_0  := "0" & ctrl_instruc_0(4 downto 2);
