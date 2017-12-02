@@ -64,7 +64,7 @@ architecture Behavioral of vga_ctrl_480 is
 
 component vga_sweep is
 	port(
-		vga_clk : in std_logic; -- vga_clock
+		clk : in std_logic; -- clock forced to be 50M
 		rst : in std_logic;
 		
 		Hs : out std_logic; -- line sync
@@ -91,19 +91,9 @@ shared variable dx : integer range 0 to 7;
 shared variable inty,tmp : integer range 0 to 500;
 
 begin
-	vga_clk <= vga_clk_c;
-
-	-- halve the 50M clock
-	vga_clk_producer : process (clk)
-	begin
-		if clk'event and clk = '1' then
-			vga_clk_c <= not vga_clk_c;
-		end if;
-	end process;
-	
 	-- get sweep
 	sweep_screen : vga_sweep port map(
-		vga_clk => vga_clk_c,
+		clk => clk,
 		rst => rst,
 		Hs => Hs,
 		Vs => Vs,
@@ -111,13 +101,14 @@ begin
 		pos_y => y
 	);
 	-- Set character
-	character : process(vga_clk, rst)
+	character : process(rst, x, y)
 	begin
 		if rst = '0' then
 			rt <= "000";
 			gt <= "000";
 			bt <= "000";
-		elsif(vga_clk'event and vga_clk='1')then 
+		else
+		--elsif(vga_clk'event and vga_clk='1')then 
 			if (x >= 39 and x <= 47) then
 				if (y >= 64 and y <= 71) or (y >= 80 and y <= 87) or (y >= 96 and y <= 103) or (y >= 112 and y <= 119)
 					or (y >= 128 and y <= 135) or (y >= 144 and y <= 151) or (y >= 160 and y <= 167) or (y >= 176 and y<= 183)
@@ -659,7 +650,7 @@ begin
 					bt <= (others => '0');
 				end if;
 			elsif ( x >= 149 and x <= 157) then 
-				if ( y >= 64 and y <= 71) then --PC的P
+				if ( y >= 64 and y <= 71) then --PC鐨凱
 					if (x = 149) then
 						inty := y;
 						fontROMAddr <= conv_std_logic_vector( 80 * 8 + inty mod 8, 11);
@@ -669,7 +660,7 @@ begin
 						gt <= (others => fontROMData(dx));
 						bt <= (others => fontROMData(dx));
 					end if;
-				elsif ( y >= 80 and y <= 87) then -- CM的C
+				elsif ( y >= 80 and y <= 87) then -- CM鐨凜
 					if (x = 149) then
 						inty := y;
 						fontROMAddr <= conv_std_logic_vector( 67 * 8 + inty mod 8, 11);
@@ -679,7 +670,7 @@ begin
 						gt <= (others => fontROMData(dx));
 						bt <= (others => fontROMData(dx));
 					end if;
-				elsif( y>= 112 and y <= 119) then -- SP的S
+				elsif( y>= 112 and y <= 119) then -- SP鐨凷
 					if (x = 149) then
 						inty := y;
 						fontROMAddr <= conv_std_logic_vector( 83 * 8 + inty mod 8, 11);
@@ -689,7 +680,7 @@ begin
 						gt <= (others => fontROMData(dx));
 						bt <= (others => fontROMData(dx));
 					end if;
-				elsif( y>= 128 and y <= 135) then -- IH的I
+				elsif( y>= 128 and y <= 135) then -- IH鐨処
 					if (x = 149) then
 						inty := y;
 						fontROMAddr <= conv_std_logic_vector( 73 * 8 + inty mod 8, 11);
@@ -715,7 +706,7 @@ begin
 					bt <= (others => '0');
 				end if;
 			elsif ( x >= 159 and x <= 167) then 
-				if ( y >= 64 and y <= 71) then --PC的C
+				if ( y >= 64 and y <= 71) then --PC鐨凜
 					if (x = 159) then
 						inty := y;
 						fontROMAddr <= conv_std_logic_vector( 67 * 8 + inty mod 8, 11);
@@ -725,7 +716,7 @@ begin
 						gt <= (others => fontROMData(dx));
 						bt <= (others => fontROMData(dx));
 					end if;
-				elsif (y >= 80 and y <= 87) then -- CM的M
+				elsif (y >= 80 and y <= 87) then -- CM鐨凪
 					if (x = 159) then
 						inty := y;
 						fontROMAddr <= conv_std_logic_vector( 77 * 8 + inty mod 8, 11);
@@ -745,7 +736,7 @@ begin
 						gt <= (others => fontROMData(dx));
 						bt <= (others => fontROMData(dx));
 					end if;
-				elsif ( y >= 112 and y <= 119) then --SP的P
+				elsif ( y >= 112 and y <= 119) then --SP鐨凱
 					if (x = 159) then
 						inty := y;
 						fontROMAddr <= conv_std_logic_vector( 80 * 8 + inty mod 8, 11);
@@ -755,7 +746,7 @@ begin
 						gt <= (others => fontROMData(dx));
 						bt <= (others => fontROMData(dx));
 					end if;
-				elsif ( y >= 128 and y <= 135) then --IH的H
+				elsif ( y >= 128 and y <= 135) then --IH鐨凥
 					if (x = 159) then
 						inty := y;
 						fontROMAddr <= conv_std_logic_vector( 72 * 8 + inty mod 8, 11);

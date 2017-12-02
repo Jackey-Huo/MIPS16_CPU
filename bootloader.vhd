@@ -59,6 +59,7 @@ end bootloader;
 architecture Behavioral of bootloader is
 	signal mem_write_en: std_logic;
 	type boot_state is (flash_init, flash_read0, flash_read1, flash_read2, flash_read3, flash_read_done, mem_write, boot_finish);
+
 	signal state: boot_state := flash_init;
 	signal next_state: boot_state;
 	signal addr: std_logic_vector(15 downto 0) := x"0000";
@@ -74,7 +75,6 @@ begin
 	flash_rp <= '1';
 	memory_data_bus <= data;
 	memory_address <= "00" & mem_addr;
-	
 	state_clk <= clk; -- click;
 	
 	-- first test in click
@@ -111,8 +111,8 @@ begin
 				next_state <= mem_write;
 				digit <= not "0100100";
 			when mem_write =>
+				-- slightly larger than monitor program
 				if addr < x"0200" then
-					--if addr < x"01f3" then
 					next_state <= flash_read2;
 				else
 					next_state <= boot_finish;
@@ -127,7 +127,7 @@ begin
 				digit <= not "1111111";
 		end case;
 		if state = mem_write then
-			next_addr <= addr + x"0001";
+			next_addr <= addr + 1;
 		else
 			next_addr <= addr;
 		end if;
@@ -140,7 +140,7 @@ begin
 			flash_oe <= '1';
 			memory_read_enable <= '0';
 			memory_write_enable <= '0';
-		elsif rising_edge(clk) then
+		elsif (clk'event and clk = '1') then
 			case next_state is
 				when flash_init =>
 					flash_we <= '1';
@@ -160,11 +160,9 @@ begin
 					flash_data <= "ZZZZZZZZZZZZZZZZ";
 				when flash_read3 =>
 					data <= flash_data;
-					
 					mem_addr <= next_addr;
 				when flash_read_done =>
 					flash_oe <= '1';
-					
 				when mem_write =>
 					memory_write_enable <= '1';
 					memory_read_enable <= '0';
