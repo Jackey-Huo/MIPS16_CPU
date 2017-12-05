@@ -1,6 +1,7 @@
-NET "ps2clk" LOC = U6;
-NET "ps2data" LOC = V6;
-
+NET "ps2_clk" LOC = U6;
+NET "ps2_data" LOC = V6;
+NET "clk" LOC = B9;
+NET "rst" LOC = U10;
 NET "led[0]" LOC = D10;
 NET "led[1]" LOC = E10;
 NET "led[2]" LOC = A11;

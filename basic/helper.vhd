@@ -9,7 +9,8 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.all;
-
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_arith.all;
 package helper is
 	-- OP
     constant INT_OP	: std_logic_vector (4 downto 0) := "11111";
@@ -175,10 +176,83 @@ package helper is
     function zero_extend3(imm : std_logic_vector(2 downto 0))
                             return std_logic_vector;
 
-
+    ------ keyboard
+    function get_ascii_keycode(key_code : std_logic_vector(7 downto 0))
+        return std_logic_vector;
 end helper;
 
 package body helper is
+
+    function get_ascii_keycode(key_code : std_logic_vector(7 downto 0))
+        return std_logic_vector is
+        variable temp : std_logic_vector (15 downto 0) := x"0000";
+    begin
+        case key_code is
+            when "00011100" => temp(5 downto 0) := "000001";
+            when "00110010" => temp(5 downto 0) := "000010"; 
+            when "00100001" => temp(5 downto 0) := "000011"; 
+            when "00100011" => temp(5 downto 0) := "000100"; 
+            when "00100100" => temp(5 downto 0) := "000101"; 
+            when "00101011" => temp(5 downto 0) := "000110"; 
+            when "00110100" => temp(5 downto 0) := "000111"; 
+            when "00110011" => temp(5 downto 0) := "001000"; 
+            when "01000011" => temp(5 downto 0) := "001001"; 
+            when "00111011" => temp(5 downto 0) := "001010"; 
+            when "01000010" => temp(5 downto 0) := "001011"; 
+            when "01001011" => temp(5 downto 0) := "001100"; 
+            when "00111010" => temp(5 downto 0) := "001101"; 
+            when "00110001" => temp(5 downto 0) := "001110"; 
+            when "01000100" => temp(5 downto 0) := "001111"; 
+            when "01001101" => temp(5 downto 0) := "010000"; 
+            when "00010101" => temp(5 downto 0) := "010001"; 
+            when "00101101" => temp(5 downto 0) := "010010"; 
+            when "00011011" => temp(5 downto 0) := "010011"; 
+            when "00101100" => temp(5 downto 0) := "010100"; 
+            when "00111100" => temp(5 downto 0) := "010101"; 
+            when "00101010" => temp(5 downto 0) := "010110"; 
+            when "00011101" => temp(5 downto 0) := "010111"; 
+            when "00100010" => temp(5 downto 0) := "011000"; 
+            when "00110101" => temp(5 downto 0) := "011001"; 
+            when "00011010" => temp(5 downto 0) := "011010";
+            when others     => temp(5 downto 0) := "111111";
+                --"011011" when "01000001" , -- ,
+                --"011100" when "01001001" , -- .
+        end case;
+        if temp(5 downto 0) = "11111" then
+            case key_code is
+                when "01000101" => temp(5 downto 0) := "110000"; -- 0
+                when "00010110" => temp(5 downto 0) := "110001"; 
+                when "00011110" => temp(5 downto 0) := "110010"; 
+                when "00100110" => temp(5 downto 0) := "110011"; 
+                when "00100101" => temp(5 downto 0) := "110100"; 
+                when "00101110" => temp(5 downto 0) := "110101"; 
+                when "00110110" => temp(5 downto 0) := "110110"; 
+                when "00111101" => temp(5 downto 0) := "110111"; 
+                when "00111110" => temp(5 downto 0) := "111000"; 
+                when "01000110" => temp(5 downto 0) := "111001"; -- 9
+                when others     => temp(5 downto 0) := "111111";
+            end case;
+        else
+            -- The ascii of a - 1 : 96
+            temp := temp + x"0060";
+        end if;
+			
+        if temp(5 downto 0) = "11111" then
+			temp := temp + x"0000";
+        else
+            -- The ascii of 0 -1 : 47
+            temp := temp + x"002F";
+        end if;
+			
+        --"100100" when "01001110" , -- -
+        --"100101" when "01010101" , -- =
+        --"100110" when "01110110" , -- ESC
+        --"100111" when "01100110" , -- BKSP
+        --"011110" when "01011010" , -- ENTER
+        --"000000" when "00101001" , -- SPACE
+        --"111111" when others;
+        return temp;
+    end get_ascii_keycode;
 
     function sign_extend11(imm : std_logic_vector(10 downto 0))
                                 return std_logic_vector is

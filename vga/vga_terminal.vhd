@@ -49,6 +49,16 @@ end vga_terminal;
 
 architecture Behavioral of vga_terminal is
 
+component VGARAM IS
+  PORT (
+    clka : IN STD_LOGIC;
+    wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+    addra : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+    dina : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+    douta : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
+  );
+END component;
+
 signal char_x, char_y : integer := 0;
 signal rt, gt, bt : std_logic_vector (2 downto 0) := "000";
 shared variable ascii_code : integer := 0;
@@ -71,19 +81,6 @@ begin
 			bt <= (others => fontROMData(dx));
 		end if;
 	end process;
-	
-	-- debug increase ascii
-	process(char_x, rst)
-	begin
-		if rst = '0' then
-			ascii_code := 0;
-		elsif ascii_code > 126 then
-			ascii_code := 0;
-		else
-			ascii_code := ascii_code + 1;
-		end if;
-	end process;
-
 
 end Behavioral;
 

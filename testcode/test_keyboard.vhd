@@ -59,12 +59,13 @@ component keyboard_ctrl is
 		-- default to 0; set to 1 and last for 2 periods when data is ready
 		data_ready  : out std_logic; 
 
-		key_value   : out std_logic_vector(15 downto 0)
+		cur_key_value   : out std_logic_vector(15 downto 0);
+		hold_key_value	: out std_logic_vector(15 downto 0)
 	);
 end component;
 
 signal kb_data_ready : std_logic := '0';
-signal kb_key_value : std_logic_vector (15 downto 0) := x"0000";
+signal kb_key_value, kb_key_hold : std_logic_vector (15 downto 0) := x"0000";
 
 begin
     keyboard_controller : keyboard_ctrl port map(
@@ -77,10 +78,11 @@ begin
 		-- default to 0; set to 1 and last for 2 periods when data is ready
 		data_ready => kb_data_ready,
 
-		key_value => kb_key_value
+		cur_key_value => kb_key_value,
+		hold_key_value => kb_key_hold
     );
 
-    led <= kb_key_value;
+    led <= kb_key_hold(7 downto 0) & kb_key_value(7 downto 0);
 
 end Behavioral;
 

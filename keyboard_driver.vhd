@@ -53,10 +53,10 @@ architecture Behavioral of keyboard_driver is
     signal paral_data : std_logic_vector(7 downto 0);
     signal count : integer range 0 to 1000000;
 begin
-	clk1 <= ps2clk when rising_edge(clk);
+	clk1 <= ps2_clk when rising_edge(clk);
 	clk2 <= clk1 when rising_edge(clk);
 	clean_clk <= (not clk1) and clk2;
-	clean_data <= ps2data when rising_edge(clk);
+	clean_data <= ps2_data when rising_edge(clk);
 	key_code <= paral_data;
 	process(clk)
 	begin
