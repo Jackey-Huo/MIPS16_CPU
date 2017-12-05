@@ -112,6 +112,7 @@ signal fontROMAddr : std_logic_vector (10 downto 0) := "00000000000";
 signal fontROMData : std_logic_vector (7 downto 0) := x"00";
 signal dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7 : std_logic_vector(15 downto 0) := x"0000";
 signal dSP, dIH, dT, d_CM, dPC : std_logic_vector(15 downto 0) := x"0000";
+signal x, y : integer := 0;
 
 begin
 
@@ -123,6 +124,7 @@ begin
 	dr5<=r5;
 	dr6<=r6;
 	dr7<=r7;
+
 
 	get_font : fontROM port map(
 		clka => clk,

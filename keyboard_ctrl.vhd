@@ -29,7 +29,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
-entity kerboard_ctrl is
+entity keyboard_ctrl is
 	port (
 		rst         : in std_logic;
 		clk         : in std_logic;
@@ -42,11 +42,11 @@ entity kerboard_ctrl is
 
 		key_value   : out std_logic_vector(15 downto 0)
 	);
-end kerboard_ctrl;
+end keyboard_ctrl;
 
-architecture Behavioral of kerboard_ctrl is
+architecture Behavioral of keyboard_ctrl is
 
-component keyboard_drv
+component keyboard_driver
 port(
 	clk, rst : in std_logic;
 	ps2_clk, ps2_data : in std_logic;
@@ -54,11 +54,10 @@ port(
 );
 end component;
 
-signal stat : std_logic_vector(1 downto 0);
+signal keyboard_state : std_logic_vector(1 downto 0);
 signal key_code_hold : std_logic_vector(7 downto 0);
-signal tmp_key_code : std_logic_vector(7 downto 0);
 -- Convert key_value to standard code
-signal key_code : std_logic_vector(7 downto 0);
+signal stable_key_code : std_logic_vector(7 downto 0);
 signal tmp_key_value : std_logic_vector(5 downto 0);
 signal hold_time : integer range 0 to 15;
 
@@ -66,7 +65,7 @@ begin
 	--debug_key_code_hold <= key_code_hold;
 	key_value(15 downto 6) <= (others => '0');
 	--key_value(15 downto 8) <= key_code_hold;
-	with key_code select
+	with stable_key_code select
 		key_value(5 downto 0) <= 
 			"000001" when "00011100" , -- a
 			"000010" when "00110010" , 
@@ -116,7 +115,7 @@ begin
 			"000000" when "00101001" , -- SPACE
 			"111111" when others;
 
-	keyboard_drv_obj : keyboard_drv port map(
+	get_keyboard_data : keyboard_driver port map(
 		rst => rst,
 		clk => clk,
 		ps2clk => ps2clk,
@@ -127,10 +126,9 @@ begin
 	process(rst, clk)
 	begin
 		if rst = '0' then
-			stat <= "00";
+			keyboard_state <= "00";
 			data_ready <= '0';
-			key_code <= (others => '0');
-			tmp_key_code <= key_code_hold;
+			stable_key_code <= (others => '0');
 		elsif clk'event and clk = '1' then
 			if hold_time > 0 then
 				hold_time <= hold_time - 1;
@@ -138,18 +136,18 @@ begin
 			else
 				data_ready <= '0';
 			end if;
-			case stat is
+			case keyboard_state is
 				when "00" =>
 					if key_code_hold = "11110000" then
-						stat <= "01";
+						keyboard_state <= "01";
 					end if;
 				when "01" =>
 					if key_code_hold = "11110000" then
-						stat <= "01";
+						keyboard_state <= "01";
 					else
 						if not(key_code_hold = "00000000") then
-							key_code <= key_code_hold;
-							stat <= "00";
+							stable_key_code <= key_code_hold;
+							keyboard_state <= "00";
 							hold_time <= 8;
 						end if;
 					end if;

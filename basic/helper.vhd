@@ -118,12 +118,16 @@ package helper is
 
     ------ VGA Section ------
     -------------------------
+    constant char_width         : integer := 8;
+    constant char_height        : integer := 8;
+
     constant vga_disp_480       : std_logic_vector (2 downto 0) := "000";
     constant vga_disp_768       : std_logic_vector (2 downto 0) := "001";
 
     constant vga480_full_w : integer := 799;
     constant vga480_full_h : integer := 524;
     constant vga480_w : integer := 640;
+    constant vga480_div : integer := 300;
     constant vga480_h : integer := 480;
     constant vga480_hs_start : integer := 656;
     constant vga480_hs_end : integer := 752;

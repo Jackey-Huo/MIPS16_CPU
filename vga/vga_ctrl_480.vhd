@@ -38,7 +38,7 @@ entity vga_ctrl_480 is
 		
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
-		
+
 		fontROMAddr : out std_logic_vector (10 downto 0);
 		fontROMData : in std_logic_vector (7 downto 0);
 
@@ -97,11 +97,27 @@ port(
 	);
 end component;
 
+component vga_terminal is
+    port(
+		-- if the current pixel is colored in this app
+		occupy_flag		: out std_logic;
+		color			: out std_logic_vector (8 downto 0);
+		
+		vga_clk			: in std_logic;
+		rst				: in std_logic;
+		x, y			: in integer;
+
+		fontROMAddr 	: out std_logic_vector (10 downto 0);
+		fontROMData 	: in std_logic_vector (7 downto 0)
+    );
+end component;
+
 -- clock used in computation
 signal vga_clk_c : std_logic := '0';
 
 -- column/x and row/y coordinates
 signal x, y : integer range 0 to 4048;
+signal right_x : integer range -2048 to 2048;
 
 -- Hs, Vs used in computation
 signal Hs_c, Vs_c : std_logic := '0';
@@ -109,8 +125,17 @@ signal Hs_c, Vs_c : std_logic := '0';
 -- verbose module variables
 signal color_verbose : std_logic_vector (8 downto 0) := "000000000";
 signal ocp_verbose : std_logic := '0';
+-- terminal module variables
+signal color_terminal : std_logic_vector (8 downto 0) := "000000000";
+signal ocp_terminal : std_logic := '0';
 
+signal fontROMAddr1, fontROMAddr2 : std_logic_vector (10 downto 0) := "00000000000";
 begin
+	-- Mux font ROM address access
+	fontROMAddr <= fontROMAddr1 when (x < vga480_div) else fontROMAddr2;
+
+	right_x <= x - vga480_div;
+
 	-- halve the 50M clock
 	vga_clk_producer : process (clk)
 	begin
@@ -129,7 +154,7 @@ begin
 		pos_y => y
 	);
 
-	-- show variables
+	-- show variables : on left side
 	verbose_variable : vga_verbose port map(
 		-- out
 		occupy_flag => ocp_verbose,
@@ -139,7 +164,7 @@ begin
 		rst => rst,
 		x => x,
 		y => y,
-		fontROMAddr => fontROMAddr,
+		fontROMAddr => fontROMAddr1,
 		fontROMData => fontROMData,
 		r0=>r0,
 		r1=>r1,
@@ -156,6 +181,20 @@ begin
 		IHdata => IHdata, --: in std_logic_vector(15 downto 0);
 		instruction => instruction
 	);
+
+	-- show terminal : on right side
+	vga_character_terminal : vga_terminal port map(
+		-- out
+		occupy_flag => ocp_terminal,
+		color => color_terminal,
+		-- in
+		vga_clk =>vga_clk_c,
+		rst => rst,
+		x => right_x,
+		y => y,
+		fontROMAddr => fontROMAddr2,
+		fontROMData => fontROMData
+	);
 	
 	-- mux pixel color
 	process(vga_clk_c, rst)
@@ -165,10 +204,14 @@ begin
 			G <= "000";
 			B <= "000";
 		else
-			if ocp_verbose = '1' then
+			if ocp_verbose = '1' and x < vga480_div then
 				R <= color_verbose(8 downto 6);
 				G <= color_verbose(5 downto 3);
 				B <= color_verbose(2 downto 0);
+			elsif ocp_terminal = '1' and x >= vga480_div then
+				R <= color_terminal(8 downto 6);
+				G <= color_terminal(5 downto 3);
+				B <= color_terminal(2 downto 0);
 			else
 				R <= "000";
 				G <= "000";
