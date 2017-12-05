@@ -169,6 +169,10 @@ begin
 				R <= color_verbose(8 downto 6);
 				G <= color_verbose(5 downto 3);
 				B <= color_verbose(2 downto 0);
+			else
+				R <= "000";
+				G <= "000";
+				B <= "000";
 			end if;
 		end if;
 	end process;
