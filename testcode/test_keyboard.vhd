@@ -78,11 +78,10 @@ begin
 		-- default to 0; set to 1 and last for 2 periods when data is ready
 		data_ready => kb_data_ready,
 
-		cur_key_value => kb_key_value,
 		hold_key_value => kb_key_hold
     );
 
-    led <= kb_key_hold(7 downto 0) & kb_key_value(7 downto 0);
+    led <= kb_key_hold(7 downto 0) & x"00";
 
 end Behavioral;
 

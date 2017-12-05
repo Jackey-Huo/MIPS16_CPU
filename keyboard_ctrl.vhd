@@ -43,7 +43,6 @@ entity keyboard_ctrl is
 		-- default to 0; set to 1 and last for 2 periods when data is ready
 		data_ready  : out std_logic; 
 
-		cur_key_value   : out std_logic_vector(15 downto 0);
 		hold_key_value	: out std_logic_vector (15 downto 0)
 	);
 end keyboard_ctrl;
@@ -67,8 +66,6 @@ signal tmp_key_value : std_logic_vector(5 downto 0);
 signal hold_time : integer range 0 to 15;
 
 begin
-	--debug_key_code_hold <= key_code_hold;
-	cur_key_value <= get_ascii_keycode(key_code);
 	hold_key_value <= get_ascii_keycode(stable_key_code);
 
 	get_keyboard_data : keyboard_driver port map(

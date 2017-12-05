@@ -49,7 +49,7 @@ end vga_terminal;
 
 architecture Behavioral of vga_terminal is
 
-component VGARAM IS
+component VGARAM_ctrl IS
   PORT (
     clka : IN STD_LOGIC;
     wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
