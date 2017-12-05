@@ -81,9 +81,7 @@ component vga_ctrl_480 is
 		Tdata : in std_logic_vector(15 downto 0);
 		SPdata : in std_logic_vector(15 downto 0);
 		IHdata : in std_logic_vector(15 downto 0);
-
-		-- Concatenated color definition for input
-		color : in std_logic_vector (8 downto 0);
+		instruction : in std_logic_vector (15 downto 0);
 
 		-- Separate color definition for output
 		R : out std_logic_vector(2 downto 0);
@@ -152,7 +150,7 @@ begin
 		Tdata => TData, -- : in std_logic_vector(15 downto 0);
 		SPdata => SPdata, -- : in std_logic_vector(15 downto 0);
 		IHdata => IHdata, --: in std_logic_vector(15 downto 0);
-		color => color,
+		instruction => instruction,
 		R => R,
 		G => G,
 		B => B
