@@ -11,7 +11,8 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.all;
 
 package helper is
-
+	-- OP
+    constant INT_OP	: std_logic_vector (4 downto 0) := "11111";
     constant LI_op       : std_logic_vector (4 downto 0) := "01101";
     constant LW_op       : std_logic_vector (4 downto 0) := "10011";
     constant LW_SP_op    : std_logic_vector (4 downto 0) := "10010";
@@ -107,8 +108,13 @@ package helper is
     constant T_index  : std_logic_vector (3 downto 0) := "1010";
     constant reg_none : std_logic_vector (3 downto 0) := "1111";
 
+    ------ INT section ------
+    -------------------------
+    constant monitor_delint_addr    : std_logic_vector (15 downto 0)    := x"0003";
 
-
+    constant int_debug              : std_logic_vector (3 downto 0)     := x"1";
+    constant int_monitor_default    : std_logic_vector (3 downto 0)     := x"2";
+    constant int_keyboard           : std_logic_vector (3 downto 0)     := x"3";
 
     ------ VGA Section ------
     -------------------------

@@ -36,7 +36,7 @@ use basic.helper.all;
 entity cpu is
     port (
         click : in std_logic;
-          clk_50M : in std_logic;
+        clk_50M : in std_logic;
         rst : in std_logic;
 
         -- ram1, Instruction memory
@@ -160,16 +160,21 @@ architecture Behavioral of cpu is
 
     signal wb_reg_data                     : std_logic_vector (15 downto 0) := zero16;
 
-     -- VGA signals
-     signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
+    -- VGA signals
+    signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
 
-     -- flash signals
-     signal clk_flash : std_logic := '0';
-     signal boot_finish : std_logic := '0';
-     signal boot_write_addr : std_logic_vector(17 downto 0) := zero18;
-     signal boot_write_data : std_logic_vector(15 downto 0) := zero16;
-     signal boot_write_enable, boot_read_enable : std_logic := '0';
-     
+    -- flash signals
+    signal clk_flash : std_logic := '0';
+    signal boot_finish : std_logic := '0';
+    signal boot_write_addr : std_logic_vector(17 downto 0) := zero18;
+    signal boot_write_data : std_logic_vector(15 downto 0) := zero16;
+    signal boot_write_enable, boot_read_enable : std_logic := '0';
+
+    -- INT module signals
+    signal int_flag     : std_logic := '0';                         -- if there is INT op
+    signal int_num      : std_logic_vector (3 downto 0) := x"0";    -- INT op number
+	 signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
+
     -- component
     component alu is
         port (
@@ -196,27 +201,27 @@ architecture Behavioral of cpu is
     end component mux7to1;
 
     component bootloader is
-         Port (
-                click   : in std_logic;
-                clk : in  std_logic;
-                rst : in  std_logic;
-                boot_finish_flag : out std_logic;
-                flash_byte : out  std_logic;
-                flash_vpen : out  std_logic;
-                flash_ce : out  std_logic;
-                flash_oe : out  std_logic;
-                flash_we : out  std_logic;
-                flash_rp : out  std_logic;
-                flash_addr : out  std_logic_vector (22 downto 0);
-                flash_data : inout  std_logic_vector (15 downto 0);
+        Port (
+            click   : in std_logic;
+            clk : in  std_logic;
+            rst : in  std_logic;
+            boot_finish_flag : out std_logic;
+            flash_byte : out  std_logic;
+            flash_vpen : out  std_logic;
+            flash_ce : out  std_logic;
+            flash_oe : out  std_logic;
+            flash_we : out  std_logic;
+            flash_rp : out  std_logic;
+            flash_addr : out  std_logic_vector (22 downto 0);
+            flash_data : inout  std_logic_vector (15 downto 0);
 
-                memory_address : out std_logic_vector(17 downto 0);
-                memory_data_bus : inout std_logic_vector(15 downto 0);
+            memory_address : out std_logic_vector(17 downto 0);
+            memory_data_bus : inout std_logic_vector(15 downto 0);
 
-                memory_write_enable : out std_logic;
-                memory_read_enable : out std_logic;
-                digit : out  std_logic_vector (6 downto 0)
-            );
+            memory_write_enable : out std_logic;
+            memory_read_enable : out std_logic;
+            digit : out  std_logic_vector (6 downto 0)
+        );
     end component;
 
 
@@ -256,9 +261,20 @@ architecture Behavioral of cpu is
         );
     end component;
 
+    component int_ctrl is
+        port(
+            clk             : in std_logic;
+            rst             : in std_logic;
+            -- current instruction for software INT
+            cur_instruc     : in std_logic_vector (15 downto 0);
+            int_instruc     : out std_logic_vector (15 downto 0);
+            int_flag        : out std_logic
+        );
+    end component;
+
 begin
-     ------------- Clock selector ----------
-     clk_selector   : clock_select port map(
+    ------------- Clock selector ----------
+    clk_selector   : clock_select port map(
         click => click,
         clk_50M => clk_50M,
         selector => instruct(2 downto 0), --25M
@@ -289,8 +305,8 @@ begin
             digit => dyp0 --: out  STD_LOGIC_VECTOR (6 downto 0)
     );
  
-     ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
-     vga_disp : vga_ctrl port map(
+    ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
+    vga_disp : vga_ctrl port map(
         clk => clk_50M,
         rst => rst,
         Hs => Hs,
@@ -313,6 +329,15 @@ begin
         R => VGA_R,
         G => VGA_G,
         B => VGA_B
+    );
+
+    ---------------- INT -------------------------
+    INT_unit : int_ctrl port map (
+        clk => clk,
+        rst => rst,
+        cur_instruc => ifid_instruc,
+        int_instruc => int_preset_instruc,
+        int_flag => int_flag
     );
 
     ------------- Memory and Serial Control Unit, pure combinational logic
@@ -356,15 +381,19 @@ begin
 
 
 
+
     ---------------- IF --------------------------
     IF_unit: process(clk, rst)
     begin
         if (rst = '0' or boot_finish = '0') then
             pc <= zero16;
         elsif ( clk'event and clk='1' ) then
-            -- TODO: the update of PC has 3 ways
-            -- (1) pc <= pc + 1; (2) JR (3) BEQZ
-            if (ctrl_insert_bubble = '1') then
+            if (int_flag = '1') then
+                -- execute the instruction given by INT module
+                ifid_instruc <= int_preset_instruc;
+                -- stop PC : the INT program will increase PC by 1
+                pc <= pc_real;
+            elsif (ctrl_insert_bubble = '1') then
                 ifid_instruc <= ifid_instruc;
                 pc <= pc_real;
             elsif ((me_read_enable = '1') or (me_write_enable = '1')) then
@@ -379,6 +408,7 @@ begin
             end if;
         end if;
     end process IF_unit;
+
     -- mux for real pc, TODO: block pc increase with IF MEM conflict
     pc_real <= zero16 when (rst = '0') else
                id_branch_value when ((id_pc_branch = '1') and (ctrl_insert_bubble = '0')) else
@@ -552,6 +582,7 @@ begin
                         id_pc_branch <= '1';
                         -- immediate sign extend
                         idex_reg_a_data <= sign_extend11(ifid_instruc(10 downto 0));
+
                     when others =>
                         idex_reg_a_data <= zero16;
                         idex_reg_b_data <= zero16;
@@ -626,6 +657,7 @@ begin
     Rg_bypass: mux7to1 port map (idex_bypass_real, ctrl_mux_bypass, idex_bypass, exme_result,
                         mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
 
+
 --                 ---                                  ---                                  ---
 --    idex_reg_a--|   |                    idex_reg_b--|   |     ^_^           idex_bypass--|   |
 --    alu_result--| M |                    alu_result--| M |                    alu_result--| M |
@@ -636,7 +668,7 @@ begin
 --   mewb_bypass--|   |                   mewb_bypass--|   |                   mewb_bypass--|   |
 --                 ---                                  ---                                  ---                
 
-
+    
     ---------------- EX --------------------------
     EX_unit: process(clk, rst)
         variable ex_instruc : std_logic_vector (15 downto 0) := NOP_instruc;
