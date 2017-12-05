@@ -85,7 +85,6 @@ begin
             addr <= x"0000";
         elsif not_boot = '1' then
             state <= boot_finish;
-            addr <= x"0200";
         elsif (state_clk'event and state_clk = '1') then
             state <= next_state;
             addr <= next_addr;
