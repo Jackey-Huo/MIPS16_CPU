@@ -40,15 +40,17 @@ entity int_ctrl is
         -- current instruction for software INT
         cur_instruc     : in std_logic_vector (15 downto 0);
         int_instruc     : out std_logic_vector (15 downto 0);
-        int_flag        : out std_logic
+        int_flag        : out std_logic;
+        led             : out std_logic_vector (2 downto 0)
     );
 end int_ctrl;
 
 architecture Behavioral of int_ctrl is
 
-type INTStateMachine is (int_idle, int_busy, int_save1, int_save2, int_exe1, int_exe2, int_exe3, int_exe4, int_restore1);
+type INTStateMachine is (int_idle, int_busy, int_save1, int_save2,
+    int_exe1, int_exe2, int_exe3, int_exe4, int_exe5, int_exe6,
+    int_restore1);
 
-signal saved_r0, saved_r1 : std_logic_vector (15 downto 0) := x"0000";
 signal int_state : INTStateMachine := int_idle;
 begin
 
@@ -62,7 +64,6 @@ begin
             if int_state = int_idle and cur_instruc (15 downto 11) = INT_op then
                 -- enter INT mode
                 int_state <= int_busy;
-
             end if;
 
             case int_state is
@@ -74,36 +75,46 @@ begin
 
             case int_state is
                 when int_busy =>
-                    int_state <= int_save1;
-                when int_save1 => -- save R0
-                    -- SW_SP R0
-                    int_instruc <= "11010" & "000" & x"00";
-                    int_state <= int_save2;
-                when int_save2 =>
-                    -- ADDSP 0x01
-                    int_instruc <= "01100" & "011" & x"01";
+                    --int_state <= int_save1;
                     int_state <= int_exe1;
+                --when int_save1 => -- save R0 | R6 do not need to be restored
+                --    -- SW_SP R0
+                --    int_instruc <= "11010" & "000" & x"00";
+                --    int_state <= int_save2;
+                --when int_save2 =>
+                --    -- ADDSP 0x01
+                --    int_instruc <= "01100" & "011" & x"01";
+                --    int_state <= int_exe1;
                 when int_exe1 =>
-                    -- LI R0 Imm
+                    -- LI R6 Imm
                     imm := x"0" & cur_instruc(3 downto 0);
-                    int_instruc <= "01101" & "000" & imm;
+                    int_instruc <= "01101" & "110" & imm;
                     int_state <= int_exe2;
                 when int_exe2 =>
-                    -- SW_SP R0 0x00
-                    int_instruc <= "11010" & "000" & x"00";
+                    -- SW_SP R6 0x00
+                    int_instruc <= "11010" & "110" & x"00";
                     int_state <= int_exe3;
                 when int_exe3 =>
-                    -- MFPC R0
-                    int_instruc <= "11101" & "001" & "01000000";
+                    -- MFPC R6
+                    int_instruc <= "11101" & "110" & "01000000";
                     int_state <= int_exe4;
                 when int_exe4 =>
-                    -- SW_SP R1 0x01
-                    int_instruc <= "11010" & "001" & x"01";
-                    int_state <= int_restore1;
-                when int_restore1 =>
-                    -- LW_SP R0 0xFF
-                    int_instruc <= "10010" & "000" & x"FF";
+                    -- SW_SP R6 0x01
+                    int_instruc <= "11010" & "110" & x"01";
+                    int_state <= int_exe5;
+                when int_exe5 =>
+                    -- LI R6 monitor : Set R6 to be target address
+                    int_instruc <= "01101" & "110" & monitor_delint_addr(7 downto 0);
+                    int_state <= int_exe6;
+                when int_exe6 =>
+                    -- JR R6
+                    int_instruc <= "11101" & "110" & x"00";
                     int_state <= int_idle;
+                    led <= "111";
+                --when int_restore1 =>
+                --    -- LW_SP R0 0xFF
+                --    int_instruc <= "10010" & "000" & x"FF";
+                --    int_state <= int_idle;
                 when others =>
                     int_instruc <= (others => '0');
                     int_state <= int_idle;

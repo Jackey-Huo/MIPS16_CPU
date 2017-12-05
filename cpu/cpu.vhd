@@ -202,7 +202,7 @@ architecture Behavioral of cpu is
 
     component bootloader is
         Port (
-            click   : in std_logic;
+            not_boot  : in std_logic;
             clk : in  std_logic;
             rst : in  std_logic;
             boot_finish_flag : out std_logic;
@@ -268,7 +268,8 @@ architecture Behavioral of cpu is
             -- current instruction for software INT
             cur_instruc     : in std_logic_vector (15 downto 0);
             int_instruc     : out std_logic_vector (15 downto 0);
-            int_flag        : out std_logic
+            int_flag        : out std_logic;
+            led             : out std_logic_vector (2 downto 0)
         );
     end component;
 
@@ -280,11 +281,11 @@ begin
         selector => instruct(2 downto 0), --25M
         clk => clk,
         clk_flash => clk_flash
-     );
+    );
 
     -- bootloader : load monitor program from flash
     bl  :   bootloader port map(
-            click   => click,
+            not_boot => instruct(15),
             clk => clk_flash,
             rst => rst,
             boot_finish_flag => boot_finish,
@@ -337,7 +338,8 @@ begin
         rst => rst,
         cur_instruc => ifid_instruc,
         int_instruc => int_preset_instruc,
-        int_flag => int_flag
+        int_flag => int_flag,
+        led => led(10 downto 8)
     );
 
     ------------- Memory and Serial Control Unit, pure combinational logic
@@ -1230,7 +1232,7 @@ begin
     led(13) <= seri_tbre;
     led(12) <= seri_tsre;
     led(11) <= seri_data_ready;
-    led(10 downto 8) <= "000";
+
     led(7 downto 0) <= data_ram1(15 downto 8);
 
     --led <= r6;

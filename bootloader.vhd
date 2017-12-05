@@ -33,7 +33,7 @@ use IEEE.std_logic_ARITH.ALL;
 
 entity bootloader is
     Port (
-            click   : in std_logic;
+            not_boot  : in std_logic;
             clk : in  std_logic;
             rst : in  std_logic;
             
@@ -83,6 +83,9 @@ begin
         if rst = '0' then
             state <= flash_init;
             addr <= x"0000";
+        elsif not_boot = '1' then
+            state <= boot_finish;
+            addr <= x"0200";
         elsif (state_clk'event and state_clk = '1') then
             state <= next_state;
             addr <= next_addr;
