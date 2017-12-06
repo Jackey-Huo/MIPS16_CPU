@@ -61,6 +61,8 @@ begin
                 int_flag <= '1';
                 epc <= cur_pc;
                 cause <= "00000" & cur_instruc (10 downto 0);
+            else
+                int_flag <= '0';
             end if;
         end if;
     end process;

@@ -587,7 +587,7 @@ begin
                     when MFEX_op =>
                         case ifid_instruc(7 downto 5) is
                             when "000" => idex_bypass <= EPC;
-                            when "000" => idex_bypass <= Cause;
+                            when "001" => idex_bypass <= Cause;
                             when others =>
                         end case;
                         idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
@@ -1252,7 +1252,7 @@ begin
     led(13) <= seri_tbre;
     led(12) <= seri_tsre;
     led(11) <= seri_data_ready;
-
+	 led(10 downto 8) <= "0" & int_flag & "0";
     led(7 downto 0) <= data_ram1(15 downto 8);
 
     --led <= r6;
