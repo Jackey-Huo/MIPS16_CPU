@@ -59,6 +59,7 @@ component vga_ctrl is
 		
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
+		cache_wea	: out std_logic;
 
 		disp_en		: in std_logic;
 		-- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
@@ -101,8 +102,7 @@ signal R_r, G_r, B_r : std_logic_vector(2 downto 0) := "000";
 signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := x"10AF";
 signal SP, IH, T, CM, PC : std_logic_vector(15 downto 0) := x"0000";
 
-signal WE_ram1 : std_logic := '0';
-signal testmem_wea : std_logic := '0';
+signal WE_ram1, cache_wea, testmem_wea : std_logic := '0';
 signal addr_ram1 : std_logic_vector(17 downto 0);
 signal disp_addr : std_logic_vector (12 downto 0) := "0000000000000";
 signal disp_data : std_logic_vector (15 downto 0) := x"0000";
@@ -110,10 +110,22 @@ begin
 
 	ctrl_color <= "000000111";
 
+	process(clk)
+		variable sit : std_logic_vector (1 downto 0) := "00";
+	begin
+		sit := testmem_wea & cache_wea;
+		case sit is
+			when "00" => WE_ram1 <= '0';
+			when "10" => WE_ram1 <= '1';
+			when "01" => WE_ram1 <= '0';
+			when others => WE_ram1 <= '1';
+		end case;
+	end process;
+
 	test_mem : test_memwriter port map(
 		clk => click,
 		rst => rst,
-		wea => WE_ram1,
+		wea => testmem_wea,
 		addr => addr_ram1,
 		data => disp_data
 	);
@@ -124,6 +136,7 @@ begin
 		rst => rst,
 		Hs => Hs,
 		Vs => Vs,
+		cache_wea => cache_wea,
 		disp_en => WE_ram1,
 		disp_addr => disp_addr,
 		disp_data => disp_data,

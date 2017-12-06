@@ -41,6 +41,7 @@ entity vga_image is
         rst				: in std_logic;
         x, y			: in integer;
 
+        cache_wea   : out std_logic;
         cacheAddr	: out std_logic_vector (12 downto 0);
         cacheData	: in std_logic_vector (15 downto 0)
     );
@@ -60,16 +61,18 @@ begin
         by := y / disp_scale_factor;
         if rst = '0' then
             intern_color <= "000000000";
-            
+            cache_wea <= '0';
         elsif vga_clk'event and vga_clk = '1' then
             if x >= vga480_center_x - half_width and vga480_center_x + half_width > x and
                 y >= vga480_center_y - half_height and vga480_center_y + half_width > y then
                 -- in window :
                 ind := by * half_width * 2 + bx;
+                cache_wea <= '1';
                 cacheAddr <= conv_std_logic_vector(ind, 13);
                 intern_color <= cacheData (8 downto 0);
                 --intern_color <= "111000000";
             else
+                cache_wea <= '0';
                 intern_color <= "000000000";
             end if;
             

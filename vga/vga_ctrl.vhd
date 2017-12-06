@@ -35,6 +35,7 @@ entity vga_ctrl is
 		rst			: in std_logic;
 		Hs			: out std_logic; -- line sync
 		Vs			: out std_logic; -- field sync
+		cache_wea	: out std_logic;
 
 		disp_en		: in std_logic;
 		-- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
@@ -94,6 +95,7 @@ component vga_ctrl_480 is
 
 		cacheAddr	: out std_logic_vector (12 downto 0);
 		cacheData	: in std_logic_vector (15 downto 0);
+		cache_wea	: out std_logic;
 
 		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);
@@ -136,6 +138,7 @@ signal x, y : integer := 0;
 
 signal cacheReadAddr : std_logic_vector (12 downto 0) := "0000000000000";
 signal cacheReadData : std_logic_vector (15 downto 0) := x"0000";
+
 begin
 
 	dr0<=r0;
@@ -146,7 +149,6 @@ begin
 	dr5<=r5;
 	dr6<=r6;
 	dr7<=r7;
-
 
 	get_font : fontROM port map(
 		clka => clk,
@@ -173,6 +175,7 @@ begin
 		fontROMData => fontROMData,
 		cacheAddr => cacheReadAddr,
 		cacheData => cacheReadData,
+		cache_wea => cache_wea,
 		r0=>dr0,
 		r1=>dr1,
 		r2=>dr2,

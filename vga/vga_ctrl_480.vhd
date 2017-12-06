@@ -42,6 +42,7 @@ entity vga_ctrl_480 is
 		fontROMAddr : out std_logic_vector (10 downto 0);
 		fontROMData : in std_logic_vector (7 downto 0);
 
+		cache_wea	: out std_logic;
 		cacheAddr	: out std_logic_vector (12 downto 0);
 		cacheData	: in std_logic_vector (15 downto 0);
 
@@ -125,6 +126,7 @@ component vga_image is
         rst				: in std_logic;
         x, y			: in integer;
 
+		cache_wea	: out std_logic;
         cacheAddr	: out std_logic_vector (12 downto 0);
         cacheData	: in std_logic_vector (15 downto 0)
     );
@@ -183,6 +185,7 @@ begin
 		rst => rst,
 		x => x,
 		y => y,
+		cache_wea => cache_wea,
 		cacheAddr => cacheAddr,
 		cacheData => cacheData
 	);
