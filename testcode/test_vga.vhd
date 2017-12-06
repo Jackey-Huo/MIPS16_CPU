@@ -32,6 +32,7 @@ use basic.helper.all;
 
 entity test_vga is
 	port(
+		click : in std_logic;
 		clk : in std_logic;
 		rst : in std_logic;
 
@@ -41,10 +42,10 @@ entity test_vga is
 		-- Separate color definition for output
 		R : out std_logic_vector(2 downto 0);
 		G : out std_logic_vector(2 downto 0);
-		B : out std_logic_vector(2 downto 0)
+		B : out std_logic_vector(2 downto 0);
 		
 		-- debug
-		--led : out std_logic_vector(15 downto 0)
+		led : out std_logic_vector(15 downto 0)
 	);
 
 end test_vga;
@@ -58,6 +59,11 @@ component vga_ctrl is
 		
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
+
+		disp_en		: in std_logic;
+		-- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
+		disp_addr	: in std_logic_vector (12 downto 0);
+		disp_data	: in std_logic_vector (15 downto 0);
 
 		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);
@@ -76,6 +82,16 @@ component vga_ctrl is
 	);
 end component;
 
+component test_memwriter is
+    port(
+        clk     : in std_logic;
+        rst     : in std_logic;
+        wea     : out std_logic;
+        addr    : out std_logic_vector (17 downto 0);
+        data    : out std_logic_vector (15 downto 0)
+    );
+end component;
+
 -- signal ctrl_Hs, ctrl_Vs : std_logic := '0';
 signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
 signal ctrl_color : std_logic_vector (8 downto 0) := "000000000";
@@ -84,16 +100,33 @@ signal R_r, G_r, B_r : std_logic_vector(2 downto 0) := "000";
 -- simulated signals for debugging
 signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := x"10AF";
 signal SP, IH, T, CM, PC : std_logic_vector(15 downto 0) := x"0000";
--- CM if memory reading address
+
+signal WE_ram1 : std_logic := '0';
+signal testmem_wea : std_logic := '0';
+signal addr_ram1 : std_logic_vector(17 downto 0);
+signal disp_addr : std_logic_vector (12 downto 0) := "0000000000000";
+signal disp_data : std_logic_vector (15 downto 0) := x"0000";
 begin
 
 	ctrl_color <= "000000111";
 
+	test_mem : test_memwriter port map(
+		clk => click,
+		rst => rst,
+		wea => WE_ram1,
+		addr => addr_ram1,
+		data => disp_data
+	);
+
+	disp_addr <= addr_ram1 (12 downto 0);
 	vga_ctrl_comp : vga_ctrl port map(
 		clk => clk,
 		rst => rst,
 		Hs => Hs,
 		Vs => Vs,
+		disp_en => WE_ram1,
+		disp_addr => disp_addr,
+		disp_data => disp_data,
 		r0=>r0,
 		r1=>r1,
 		r2=>r2,
@@ -125,6 +158,9 @@ begin
 			B_r <= ctrl_B;
 		end if;
 	end process;
+
+	led(15 downto 8) <= addr_ram1(7 downto 0);
+	led(7 downto 0) <= disp_data(7 downto 0);
 	
 end Behavioral;
 

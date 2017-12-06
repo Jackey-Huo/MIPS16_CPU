@@ -177,7 +177,7 @@ architecture Behavioral of cpu is
     -- INT module signals
     signal int_flag     : std_logic := '0';                         -- if there is INT op
     signal int_num      : std_logic_vector (3 downto 0) := x"0";    -- INT op number
-	 signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
+    signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
 
     -- component
     component alu is

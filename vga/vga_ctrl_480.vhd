@@ -42,6 +42,9 @@ entity vga_ctrl_480 is
 		fontROMAddr : out std_logic_vector (10 downto 0);
 		fontROMData : in std_logic_vector (7 downto 0);
 
+		cacheAddr	: out std_logic_vector (12 downto 0);
+		cacheData	: in std_logic_vector (15 downto 0);
+
 		r0, r1, r2, r3, r4,r5,r6,r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);
 		CM : in std_logic_vector(15 downto 0);
@@ -112,6 +115,21 @@ component vga_terminal is
     );
 end component;
 
+component vga_image is 
+    port (
+        -- if the current pixel is colored in this app
+        occupy_flag		: out std_logic;
+        color			: out std_logic_vector (8 downto 0);
+        
+        vga_clk			: in std_logic;
+        rst				: in std_logic;
+        x, y			: in integer;
+
+        cacheAddr	: out std_logic_vector (12 downto 0);
+        cacheData	: in std_logic_vector (15 downto 0)
+    );
+end component;
+
 -- clock used in computation
 signal vga_clk_c : std_logic := '0';
 
@@ -128,6 +146,9 @@ signal ocp_verbose : std_logic := '0';
 -- terminal module variables
 signal color_terminal : std_logic_vector (8 downto 0) := "000000000";
 signal ocp_terminal : std_logic := '0';
+-- image display
+signal color_image		: std_logic_vector (8 downto 0) := "000000000";
+signal ocp_image		: std_logic := '0';
 
 signal fontROMAddr1, fontROMAddr2 : std_logic_vector (10 downto 0) := "00000000000";
 begin
@@ -154,13 +175,25 @@ begin
 		pos_y => y
 	);
 
+	-- show image : on the screen
+	vga_disp_image : vga_image port map(
+		occupy_flag => ocp_image,
+		color => color_image,
+		vga_clk => vga_clk_c,
+		rst => rst,
+		x => x,
+		y => y,
+		cacheAddr => cacheAddr,
+		cacheData => cacheData
+	);
+
 	-- show variables : on left side
 	verbose_variable : vga_verbose port map(
 		-- out
 		occupy_flag => ocp_verbose,
 		color => color_verbose,
 		-- in
-		vga_clk =>vga_clk_c,
+		vga_clk => vga_clk_c,
 		rst => rst,
 		x => x,
 		y => y,
@@ -204,7 +237,11 @@ begin
 			G <= "000";
 			B <= "000";
 		else
-			if ocp_verbose = '1' and x < vga480_div then
+			if ocp_image = '1' then
+				R <= color_image(8 downto 6);
+				G <= color_image(5 downto 3);
+				B <= color_image(2 downto 0);
+			elsif ocp_verbose = '1' and x < vga480_div then
 				R <= color_verbose(8 downto 6);
 				G <= color_verbose(5 downto 3);
 				B <= color_verbose(2 downto 0);

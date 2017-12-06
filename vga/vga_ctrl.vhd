@@ -31,10 +31,15 @@ use BASIC.HELPER.ALL;
 
 entity vga_ctrl is
 	Port(
-		clk : in std_logic; -- clock forced to be 50M
-		rst : in std_logic;
-		Hs : out std_logic; -- line sync
-		Vs : out std_logic; -- field sync
+		clk			: in std_logic; -- clock forced to be 50M
+		rst			: in std_logic;
+		Hs			: out std_logic; -- line sync
+		Vs			: out std_logic; -- field sync
+
+		disp_en		: in std_logic;
+		-- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
+		disp_addr	: in std_logic_vector (12 downto 0);
+		disp_data	: in std_logic_vector (15 downto 0);
 
 		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
 
@@ -64,6 +69,18 @@ component fontROM is
 	douta: out std_logic_vector(7 downto 0));
 end component;
 
+component VGARAM is
+	PORT (
+		clka : IN STD_LOGIC;
+		wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+		addra : IN STD_LOGIC_VECTOR(12 DOWNTO 0);
+		dina : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+		clkb : IN STD_LOGIC;
+		addrb : IN STD_LOGIC_VECTOR(12 DOWNTO 0);
+		doutb : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
+	);
+end component;
+
 component vga_ctrl_480 is 
 	Port(
 		clk : in std_logic; -- clock forced to be 50M
@@ -74,6 +91,9 @@ component vga_ctrl_480 is
 
 		fontROMAddr : out std_logic_vector (10 downto 0);
 		fontROMData : in std_logic_vector (7 downto 0);
+
+		cacheAddr	: out std_logic_vector (12 downto 0);
+		cacheData	: in std_logic_vector (15 downto 0);
 
 		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);
@@ -114,6 +134,8 @@ signal dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7 : std_logic_vector(15 downto 0) :=
 signal dSP, dIH, dT, d_CM, dPC : std_logic_vector(15 downto 0) := x"0000";
 signal x, y : integer := 0;
 
+signal cacheReadAddr : std_logic_vector (12 downto 0) := "0000000000000";
+signal cacheReadData : std_logic_vector (15 downto 0) := x"0000";
 begin
 
 	dr0<=r0;
@@ -132,6 +154,16 @@ begin
 		douta => fontROMData
 		);
 
+	vga_cache : VGARAM port map(
+		clka 	=> clk,
+		wea(0) 	=> disp_en,
+		addra 	=> disp_addr,
+		dina 	=> disp_data,
+		clkb 	=> clk,
+		addrb 	=> cacheReadAddr,
+		doutb 	=> cacheReadData
+	);
+
 	vga480_disp : vga_ctrl_480 port map(
 		clk => clk,
 		rst => rst,
@@ -139,6 +171,8 @@ begin
 		Vs => Vs,
 		fontROMAddr => fontROMAddr,
 		fontROMData => fontROMData,
+		cacheAddr => cacheReadAddr,
+		cacheData => cacheReadData,
 		r0=>dr0,
 		r1=>dr1,
 		r2=>dr2,
