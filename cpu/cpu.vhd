@@ -91,11 +91,15 @@ architecture Behavioral of cpu is
     -- register
     signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := zero16;
     signal SP, IH, T : std_logic_vector(15 downto 0) := zero16;
-     -- clocks
-     -- main clock
-     signal clk : std_logic;
-     -- vga_clk
-     signal clk50 : std_logic;
+
+    -- Exception or interrupt
+    signal EPC, Cause : std_logic_vector (15 downto 0) := zero16;
+
+    -- clocks
+    -- main clock
+    signal clk : std_logic;
+    -- vga_clk
+    signal clk50 : std_logic;
     -- pc
     signal pc                              : std_logic_vector (15 downto 0) := zero16;
     signal pc_real                         : std_logic_vector (15 downto 0) := zero16;
@@ -336,10 +340,10 @@ begin
     INT_unit : int_ctrl port map (
         clk => clk,
         rst => rst,
-        cur_instruc => ifid_instruc,
-        int_instruc => int_preset_instruc,
+        cur_pc => pc_real,
         int_flag => int_flag,
-        led => led(10 downto 8)
+        epc => EPC,
+        cause => Cause
     );
 
     ------------- Memory and Serial Control Unit, pure combinational logic
@@ -390,12 +394,7 @@ begin
         if (rst = '0' or boot_finish = '0') then
             pc <= zero16;
         elsif ( clk'event and clk='1' ) then
-            if (int_flag = '1') then
-                -- execute the instruction given by INT module
-                ifid_instruc <= int_preset_instruc;
-                -- stop PC : the INT program will increase PC by 1
-                pc <= pc_real;
-            elsif (ctrl_insert_bubble = '1') then
+            if (ctrl_insert_bubble = '1') then
                 ifid_instruc <= ifid_instruc;
                 pc <= pc_real;
             elsif ((me_read_enable = '1') or (me_write_enable = '1')) then
@@ -1209,13 +1208,18 @@ begin
             conflict_detect(ctrl_fake_nop, ctrl_mux_reg_a, ctrl_mux_reg_b, ctrl_mux_bypass,
                             ctrl_rd_reg_a, ctrl_rd_reg_b, ctrl_rd_bypass, ctrl_wb_reg_1, ctrl_wb_reg_2, ctrl_wb_reg_3,
                             ctrl_instruc_0, ctrl_instruc_1, ctrl_instruc_2, ctrl_instruc_3);
-            if (ctrl_fake_nop = true) then
+            
+            -- INTTERUPPT : insert bubble
+            if int_flag = '1' then
+                ctrl_insert_bubble <= '1';
+            elsif (ctrl_fake_nop = true) then
                 ctrl_insert_bubble <= '1';
                 ctrl_wb_reg_0 := reg_none;
                 ctrl_instruc_0 := NOP_instruc;
             else
                 ctrl_insert_bubble <= '0';
             end if;
+
         end if;
     end process Control_unit;
 
