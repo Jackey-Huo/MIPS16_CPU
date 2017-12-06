@@ -43,8 +43,8 @@ entity int_ctrl is
         cur_instruc     : in std_logic_vector (15 downto 0);
         --int_instruc     : out std_logic_vector (15 downto 0);
         int_flag        : out std_logic;
-        epc             : out std_logic;
-        cause           : out std_logic
+        epc             : out std_logic_vector (15 downto 0);
+        cause           : out std_logic_vector (15 downto 0)
     );
 end int_ctrl;
 
@@ -59,7 +59,7 @@ begin
         elsif clk'event and clk = '1' then
             if cur_instruc (15 downto 11) = INT_op then
                 int_flag <= '1';
-                epc <= pc;
+                epc <= cur_pc;
                 cause <= "00000" & cur_instruc (10 downto 0);
             end if;
         end if;

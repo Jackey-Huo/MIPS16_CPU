@@ -270,10 +270,10 @@ architecture Behavioral of cpu is
             clk             : in std_logic;
             rst             : in std_logic;
             -- current instruction for software INT
-            cur_instruc     : in std_logic_vector (15 downto 0);
-            int_instruc     : out std_logic_vector (15 downto 0);
+            cur_pc          : in std_logic_vector (15 downto 0);
             int_flag        : out std_logic;
-            led             : out std_logic_vector (2 downto 0)
+            epc             : out std_logic_vector (15 downto 0);
+            cause           : out std_logic_vector (15 downto 0)
         );
     end component;
 
@@ -341,6 +341,7 @@ begin
         clk => clk,
         rst => rst,
         cur_pc => pc_real,
+		  
         int_flag => int_flag,
         epc => EPC,
         cause => Cause
@@ -583,7 +584,13 @@ begin
                         id_pc_branch <= '1';
                         -- immediate sign extend
                         idex_reg_a_data <= sign_extend11(ifid_instruc(10 downto 0));
-
+                    when MFEX_op =>
+                        case ifid_instruc(7 downto 5) is
+                            when "000" => idex_bypass <= EPC;
+                            when "000" => idex_bypass <= Cause;
+                            when others =>
+                        end case;
+                        idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
                     when others =>
                         idex_reg_a_data <= zero16;
                         idex_reg_b_data <= zero16;
@@ -647,7 +654,7 @@ begin
             end case;
         end if;
     end process;
-
+ 
     -- TODO input will be change to 7, current is not good
     -- combination logic multiplexer unit for conflict solve
     -- multiplexer map
@@ -795,6 +802,9 @@ begin
                         when others =>
                             ex_alu_op <= alu_nop;
                     end case;
+                when MFEX_op =>
+                    exme_bypass <= idex_bypass_real;
+                    exme_reg_wb <= idex_reg_wb;
                 when others =>
                     ex_alu_op <= alu_nop;
             end case;
@@ -900,6 +910,9 @@ begin
                             mewb_reg_wb <= exme_reg_wb;
                         when others =>
                     end case;
+                when MFEX_op =>
+                    mewb_reg_wb <= exme_reg_wb;
+                    mewb_bypass <= exme_bypass;
                 when NOP_op =>
                     mewb_instruc <= NOP_instruc;
                 when others =>
@@ -974,6 +987,9 @@ begin
                             wb_enable := true;
                         when others =>
                     end case;
+                when MFEX_op =>
+                    wb_data := mewb_bypass;
+                    wb_enable := true;
                 when NOP_op =>
                     wb_enable := false;
                 when others =>

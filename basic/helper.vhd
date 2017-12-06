@@ -13,7 +13,11 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 package helper is
 	-- OP
-    constant INT_OP	: std_logic_vector (4 downto 0) := "11111";
+    constant INT_op      : std_logic_vector (4 downto 0) := "11111";
+    -- ADDED op 
+    constant MFEX_op     : std_logic_vector (4 downto 0) := "00111";
+    -- "00111" & "000" - "111" & "000" / "001" (EPC/Cause) & "00000";
+
     constant LI_op       : std_logic_vector (4 downto 0) := "01101";
     constant LW_op       : std_logic_vector (4 downto 0) := "10011";
     constant LW_SP_op    : std_logic_vector (4 downto 0) := "10010";
