@@ -60,7 +60,7 @@ begin
             if cur_instruc (15 downto 11) = INT_op then
                 int_flag <= '1';
                 epc <= cur_pc;
-                cause <= "00000" & cur_instruc (10 downto 0);
+                cause <= "0000000000000" & cur_instruc (3 downto 0);
             else
                 int_flag <= '0';
             end if;

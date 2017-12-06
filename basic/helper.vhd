@@ -58,9 +58,12 @@ package helper is
     constant EX_SRL_sf_op       : std_logic_vector (1 downto 0) := "10";
 
 
-    constant EXTEND_IH_op         : std_logic_vector (4 downto 0) := "11110";
+    constant EXTEND_IH_op       : std_logic_vector (4 downto 0) := "11110";
     constant EX_MFIH_sf_op      : std_logic_vector (7 downto 0) := "00000000";
     constant EX_MTIH_sf_op      : std_logic_vector (7 downto 0) := "00000001";
+    -- add new fetch instruction for interrupt jump
+    constant EX_MFEPC_sf_op     : std_logic_vector (7 downto 0) := "00000010";
+    constant EX_MFCAS_sf_op     : std_logic_vector (7 downto 0) := "00000011";
 
 
     constant NOP_instruc : std_logic_vector (15 downto 0) := "0000100000000000";
@@ -100,18 +103,20 @@ package helper is
     constant chs_mewb_bypass  : std_logic_vector (2 downto 0) := "110";
 
 
-    constant r0_index : std_logic_vector (3 downto 0) := "0000";
-    constant r1_index : std_logic_vector (3 downto 0) := "0001";
-    constant r2_index : std_logic_vector (3 downto 0) := "0010";
-    constant r3_index : std_logic_vector (3 downto 0) := "0011";
-    constant r4_index : std_logic_vector (3 downto 0) := "0100";
-    constant r5_index : std_logic_vector (3 downto 0) := "0101";
-    constant r6_index : std_logic_vector (3 downto 0) := "0110";
-    constant r7_index : std_logic_vector (3 downto 0) := "0111";
-    constant SP_index : std_logic_vector (3 downto 0) := "1000";
-    constant IH_index : std_logic_vector (3 downto 0) := "1001";
-    constant T_index  : std_logic_vector (3 downto 0) := "1010";
-    constant reg_none : std_logic_vector (3 downto 0) := "1111";
+    constant r0_index   : std_logic_vector (3 downto 0) := "0000";
+    constant r1_index   : std_logic_vector (3 downto 0) := "0001";
+    constant r2_index   : std_logic_vector (3 downto 0) := "0010";
+    constant r3_index   : std_logic_vector (3 downto 0) := "0011";
+    constant r4_index   : std_logic_vector (3 downto 0) := "0100";
+    constant r5_index   : std_logic_vector (3 downto 0) := "0101";
+    constant r6_index   : std_logic_vector (3 downto 0) := "0110";
+    constant r7_index   : std_logic_vector (3 downto 0) := "0111";
+    constant SP_index   : std_logic_vector (3 downto 0) := "1000";
+    constant IH_index   : std_logic_vector (3 downto 0) := "1001";
+    constant T_index    : std_logic_vector (3 downto 0) := "1010";
+    constant EPC_index  : std_logic_vector (3 downto 0) := "1011";
+    constant Case_index : std_logic_vector (3 downto 0) := "1100";
+    constant reg_none   : std_logic_vector (3 downto 0) := "1111";
 
     ------ INT section ------
     -------------------------
