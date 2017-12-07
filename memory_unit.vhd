@@ -118,6 +118,10 @@ begin
 
     --ifid_instruc_mem <= instruct when ((me_read_enable = '0') and (me_write_enable = '0') and
                                         --(seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
-
+    EN_ram2 <= '1';
+    OE_ram2 <= '1';
+    WE_ram2 <= '1';
+    data_ram2 <= "ZZZZZZZZZZZZZZZZ";
+    addr_ram2 <= zero18;
 end Behavioral;
 

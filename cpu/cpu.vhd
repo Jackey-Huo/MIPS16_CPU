@@ -1141,21 +1141,15 @@ begin
 
     dyp1 <= "1111111";
 
-    EN_ram2 <= '1';
-    OE_ram2 <= '1';
-    WE_ram2 <= '1';
-    data_ram2 <= "ZZZZZZZZZZZZZZZZ";
-    addr_ram2 <= zero18;
+
 
     led(15) <= seri_wrn_t;
     led(14) <= seri_rdn_t;
     led(13) <= seri_tbre;
     led(12) <= seri_tsre;
     led(11) <= seri_data_ready;
-	 led(10 downto 8) <= "0" & int_flag & "0";
+    led(10 downto 8) <= "0" & int_flag & "0";
     led(7 downto 0) <= data_ram1(15 downto 8);
-
-    --led <= r6;
 
 end Behavioral;
 
