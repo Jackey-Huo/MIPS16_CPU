@@ -39,12 +39,14 @@ entity vga_ctrl_480 is
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
 
-		fontROMAddr : out std_logic_vector (10 downto 0);
-		fontROMData : in std_logic_vector (7 downto 0);
-
-		cache_wea	: out std_logic;
-		cacheAddr	: out std_logic_vector (12 downto 0);
-		cacheData	: in std_logic_vector (15 downto 0);
+		fontROMAddr 		: out std_logic_vector (10 downto 0);
+		fontROMData 		: in std_logic_vector (7 downto 0);
+		-- cache request
+		cache_wea			: out std_logic;
+		-- ram2 request
+		ram2_read_enable	: out std_logic;
+		cacheAddr			: out std_logic_vector (17 downto 0);
+		cacheData			: in std_logic_vector (15 downto 0);
 
 		r0, r1, r2, r3, r4,r5,r6,r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);
@@ -53,9 +55,6 @@ entity vga_ctrl_480 is
 		SPdata : in std_logic_vector(15 downto 0);
 		IHdata : in std_logic_vector(15 downto 0);
 		instruction : in std_logic_vector(15 downto 0);
-
-		-- Concatenated color definition for input
-		color : in std_logic_vector (8 downto 0);
 
 		-- Separate color definition for output
 		R : out std_logic_vector(2 downto 0);
@@ -132,6 +131,22 @@ component vga_image is
     );
 end component;
 
+component vga_image_ram2 is
+    port (
+        -- if the current pixel is colored in this app
+        occupy_flag		: out std_logic;
+        color			: out std_logic_vector (8 downto 0);
+        
+        vga_clk			: in std_logic;
+        rst				: in std_logic;
+        x, y			: in integer;
+
+        ram2_read_enable         : out std_logic;
+        cacheAddr	: out std_logic_vector (17 downto 0);
+        cacheData	: in std_logic_vector (15 downto 0)
+    );
+end component;
+
 -- clock used in computation
 signal vga_clk_c : std_logic := '0';
 
@@ -177,15 +192,28 @@ begin
 		pos_y => y
 	);
 
-	-- show image : on the screen
-	vga_disp_image : vga_image port map(
+--	-- show image : on the screen
+--	vga_disp_image : vga_image port map(
+--		occupy_flag => ocp_image,
+--		color => color_image,
+--		vga_clk => vga_clk_c,
+--		rst => rst,
+--		x => x,
+--		y => y,
+--		cache_wea => cache_wea,
+--		cacheAddr => cacheAddr,
+--		cacheData => cacheData
+--	);
+--
+	cache_wea <= '1';
+	vga_disp_image : vga_image_ram2 port map(
 		occupy_flag => ocp_image,
 		color => color_image,
 		vga_clk => vga_clk_c,
 		rst => rst,
 		x => x,
 		y => y,
-		cache_wea => cache_wea,
+		ram2_read_enable => ram2_read_enable,
 		cacheAddr => cacheAddr,
 		cacheData => cacheData
 	);

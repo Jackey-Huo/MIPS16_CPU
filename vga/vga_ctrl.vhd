@@ -36,10 +36,11 @@ entity vga_ctrl is
 		Hs			: out std_logic; -- line sync
 		Vs			: out std_logic; -- field sync
 		cache_wea	: out std_logic;
-
-		disp_en		: in std_logic;
+		ram2_read_enable		: out std_logic;
+		
+		cache_WE	: in std_logic;
 		-- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
-		disp_addr	: in std_logic_vector (12 downto 0);
+		disp_addr	: out std_logic_vector (17 downto 0);
 		disp_data	: in std_logic_vector (15 downto 0);
 
 		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
@@ -50,9 +51,6 @@ entity vga_ctrl is
 		SPdata : in std_logic_vector(15 downto 0);
 		IHdata : in std_logic_vector(15 downto 0);
 		instruction : in std_logic_vector(15 downto 0);
-
-		-- Concatenated color definition for input
-		color : in std_logic_vector (8 downto 0);
 
 		-- Separate color definition for output
 		R : out std_logic_vector(2 downto 0);
@@ -86,24 +84,26 @@ component vga_ctrl_480 is
 	Port(
 		clk : in std_logic; -- clock forced to be 50M
 		rst : in std_logic;
-
+		
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
 
 		fontROMAddr : out std_logic_vector (10 downto 0);
 		fontROMData : in std_logic_vector (7 downto 0);
-
-		cacheAddr	: out std_logic_vector (12 downto 0);
-		cacheData	: in std_logic_vector (15 downto 0);
+		-- cache request
 		cache_wea	: out std_logic;
+		-- ram2 request
+		ram2_read_enable		: out std_logic;
+		cacheAddr	: out std_logic_vector (17 downto 0);
+		cacheData	: in std_logic_vector (15 downto 0);
 
-		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
+		r0, r1, r2, r3, r4,r5,r6,r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);
 		CM : in std_logic_vector(15 downto 0);
 		Tdata : in std_logic_vector(15 downto 0);
 		SPdata : in std_logic_vector(15 downto 0);
 		IHdata : in std_logic_vector(15 downto 0);
-		instruction : in std_logic_vector (15 downto 0);
+		instruction : in std_logic_vector(15 downto 0);
 
 		-- Separate color definition for output
 		R : out std_logic_vector(2 downto 0);
@@ -156,15 +156,15 @@ begin
 		douta => fontROMData
 	);
 
-	vga_cache : VGARAM port map(
-		clka 	=> clk,
-		wea(0) 	=> disp_en,
-		addra 	=> disp_addr,
-		dina 	=> disp_data,
-		clkb 	=> clk,
-		addrb 	=> cacheReadAddr,
-		doutb 	=> cacheReadData
-	);
+--	vga_cache : VGARAM port map(
+--		clka 	=> clk,
+--		wea(0) 	=> cache_WE,
+--		addra 	=> disp_addr,
+--		dina 	=> disp_data,
+--		clkb 	=> clk,
+--		addrb 	=> cacheReadAddr,
+--		doutb 	=> cacheReadData
+--	);
 
 	vga480_disp : vga_ctrl_480 port map(
 		clk => clk,
@@ -173,9 +173,10 @@ begin
 		Vs => Vs,
 		fontROMAddr => fontROMAddr,
 		fontROMData => fontROMData,
-		cacheAddr => cacheReadAddr,
-		cacheData => cacheReadData,
+		cacheAddr => disp_addr,
+		cacheData => disp_data,
 		cache_wea => cache_wea,
+		ram2_read_enable => ram2_read_enable,
 		r0=>dr0,
 		r1=>dr1,
 		r2=>dr2,

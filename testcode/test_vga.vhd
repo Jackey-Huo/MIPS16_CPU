@@ -91,7 +91,13 @@ architecture Behavioral of test_vga is
 	signal SP, IH, T, CM, PC : std_logic_vector(15 downto 0) := x"0000";
 
 	-- VGA signals
-	signal disp_en, cache_wea       : std_logic := '0';
+	signal cache_WE, cache_wea, disp_en       : std_logic := '0';
+    signal ram2_readout        : std_logic_vector (15 downto 0);
+    signal ram2_write_enable   : std_logic;
+    signal ram2_read_enable    : std_logic;
+    signal ram2_read_addr      : std_logic_vector (17 downto 0);
+    signal ram2_write_addr     : std_logic_vector (17 downto 0);
+    signal ram2_write_data     : std_logic_vector (15 downto 0);
 
     -- MEM variables
     signal me_read_enable, me_write_enable : std_logic                      := '0';
@@ -104,6 +110,54 @@ architecture Behavioral of test_vga is
     signal seri1_write_enable              : std_logic                      := '0';
     signal seri1_write_enable_real         : std_logic                      := '0';
     signal seri1_ctrl_read_en              : std_logic                      := '0';
+    component memory_unit is
+        port(
+            clk         : in std_logic;
+            rst         : in std_logic;
+
+            -- ram1, Instruction memory
+            data_ram1   : inout std_logic_vector(15 downto 0);
+            addr_ram1   : out std_logic_vector(17 downto 0);
+            OE_ram1     : out std_logic;
+            WE_ram1     : out std_logic;
+            EN_ram1     : out std_logic;
+
+            -- ram2, Data memory
+            data_ram2   : inout std_logic_vector(15 downto 0);
+            addr_ram2   : out std_logic_vector(17 downto 0);
+            OE_ram2     : out std_logic := '1';
+            WE_ram2     : out std_logic := '1';
+            EN_ram2     : out std_logic := '1';
+
+            -- serial
+            seri_rdn        : out std_logic := '1';
+            seri_wrn        : out std_logic := '1';
+            seri_data_ready : in std_logic;
+            seri_tbre       : in std_logic;
+            seri_tsre       : in std_logic;
+
+            disp_en             : out std_logic;
+            mewb_readout        : out std_logic_vector (15 downto 0);
+            ifid_instruc_mem    : out std_logic_vector (15 downto 0);
+            me_write_enable     : in std_logic;
+            me_read_enable      : in std_logic;
+            me_read_addr        : in std_logic_vector (17 downto 0);
+            me_write_addr       : in std_logic_vector (17 downto 0);
+            me_write_data       : in std_logic_vector (15 downto 0);
+            pc_real             : in std_logic_vector (15 downto 0);
+            seri1_write_enable  : in std_logic;
+            seri1_read_enable   : in std_logic;
+            seri1_ctrl_read_en  : in std_logic;
+            
+            ram2_readout        : out std_logic_vector (15 downto 0);
+            ram2_write_enable   : in std_logic;
+            ram2_read_enable    : in std_logic;
+            ram2_read_addr      : in std_logic_vector (17 downto 0);
+            ram2_write_addr     : in std_logic_vector (17 downto 0);
+            ram2_write_data		: in std_logic_vector (15 downto 0);
+            led                 : out std_logic_vector (3 downto 0)
+        );
+    end component;
 begin
 
 	ctrl_color <= "000000111";
@@ -132,7 +186,7 @@ begin
         seri_data_ready => seri_data_ready,
         seri_tbre       => seri_tbre      ,
         seri_tsre       => seri_tsre      ,
-        
+        -- useless
         disp_en            => disp_en             ,
         mewb_readout       => mewb_readout        , 
         ifid_instruc_mem   => ifid_instruc_mem    , 
@@ -144,7 +198,14 @@ begin
         pc_real            => pc_real             , 
         seri1_write_enable => seri1_write_enable  , 
         seri1_read_enable  => seri1_read_enable   , 
-        seri1_ctrl_read_en => seri1_ctrl_read_en  
+        seri1_ctrl_read_en => seri1_ctrl_read_en  ,
+        ram2_readout       => ram2_readout        ,
+        ram2_write_enable  => ram2_write_enable   ,
+        ram2_read_enable   => ram2_read_enable    ,
+        ram2_read_addr     => ram2_read_addr      ,
+        ram2_write_addr    => ram2_write_addr     ,
+        ram2_write_data    => ram2_write_data     ,
+        led                => led(15 downto 12)    
     );
 
     ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
@@ -154,9 +215,10 @@ begin
         Hs => Hs,
         Vs => Vs,
         cache_wea => cache_wea,
-        disp_en => disp_en,
-        disp_addr => me_write_addr(12 downto 0),
-        disp_data => me_write_data,
+        ram2_read_enable => ram2_read_enable,
+        cache_WE => cache_WE,
+        disp_addr => ram2_read_addr,
+        disp_data => ram2_readout,
         r0=>r0,
         r1=>r1,
         r2=>r2,
@@ -171,15 +233,13 @@ begin
         SPdata => SP, -- : in std_logic_vector(15 downto 0);
         IHdata => IH, --: in std_logic_vector(15 downto 0);
         instruction => ifid_instruc,
-        color => "000000000",
         R => VGA_R,
         G => VGA_G,
         B => VGA_B
     );
 
-	led(12 downto 0) <= me_write_addr(12 downto 0);
-	led(13) <= disp_en;
-	led(15 downto 14) <= "00";
+	led(7 downto 0) <= ram2_readout(7 downto 0);
+	led(11 downto 8) <= "0000";
 	
 end Behavioral;
 

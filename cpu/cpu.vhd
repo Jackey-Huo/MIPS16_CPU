@@ -164,8 +164,18 @@ architecture Behavioral of cpu is
     signal wb_reg_data                     : std_logic_vector (15 downto 0) := zero16;
 
     -- VGA signals
-    signal disp_en, cache_wea       : std_logic := '0';
+    -- cache_WE is formal cache control
+    -- cache_wea is cache control signal requested by VGA controller
+    -- ram2_read_enable
+    signal cache_WE, vga_ram2_we, cache_wea : std_logic := '0';
     signal ctrl_R, ctrl_G, ctrl_B   : std_logic_vector(2 downto 0) := "000";
+
+    signal ram2_readout        : std_logic_vector (15 downto 0);
+    signal ram2_write_enable   : std_logic;
+    signal ram2_read_enable    : std_logic;
+    signal ram2_read_addr      : std_logic_vector (17 downto 0);
+    signal ram2_write_addr     : std_logic_vector (17 downto 0);
+    signal ram2_write_data     : std_logic_vector (15 downto 0);
 
     -- flash signals
     signal clk_flash : std_logic := '0';
@@ -179,7 +189,6 @@ architecture Behavioral of cpu is
     signal int_num      : std_logic_vector (3 downto 0) := x"0";    -- INT op number
 
 	signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
-
 
 begin
     dyp1 <= "1111111";
@@ -231,7 +240,8 @@ begin
         Hs => Hs,
         Vs => Vs,
         cache_wea => cache_wea,
-        disp_en => disp_en,
+        ram2_we => ram2_read_enable,
+        cache_WE => cache_WE,
         disp_addr => me_write_addr(12 downto 0),
         disp_data => me_write_data,
         r0=>r0,
@@ -248,7 +258,6 @@ begin
         SPdata => SP, -- : in std_logic_vector(15 downto 0);
         IHdata => IH, --: in std_logic_vector(15 downto 0);
         instruction => ifid_instruc,
-        color => "000000000",
         R => VGA_R,
         G => VGA_G,
         B => VGA_B
@@ -290,8 +299,8 @@ begin
         seri_data_ready => seri_data_ready,
         seri_tbre       => seri_tbre      ,
         seri_tsre       => seri_tsre      ,
-        
-        disp_en            => disp_en             ,
+
+        disp_en            => cache_WE            ,
         mewb_readout       => mewb_readout        , 
         ifid_instruc_mem   => ifid_instruc_mem    , 
         me_write_enable    => me_write_enable     , 
@@ -302,7 +311,12 @@ begin
         pc_real            => pc_real             , 
         seri1_write_enable => seri1_write_enable  , 
         seri1_read_enable  => seri1_read_enable   , 
-        seri1_ctrl_read_en => seri1_ctrl_read_en  
+        seri1_ctrl_read_en => seri1_ctrl_read_en  ,
+        ram2_readout       => ram2_readout        ,
+        ram2_write_enable  => ram2_write_enable   ,
+        ram2_read_enable   => ram2_read_enable    ,
+        ram2_read_addr     => ram2_read_addr      ,
+        ram2_write_addr    => ram2_write_addr     
     );
 
     ---------------- IF --------------------------

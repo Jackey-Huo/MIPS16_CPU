@@ -51,7 +51,14 @@ package interface is
             pc_real             : in std_logic_vector (15 downto 0);
             seri1_write_enable  : in std_logic;
             seri1_read_enable   : in std_logic;
-            seri1_ctrl_read_en  : in std_logic
+            seri1_ctrl_read_en  : in std_logic;
+            
+            ram2_readout        : out std_logic_vector (15 downto 0);
+            ram2_write_enable   : in std_logic;
+            ram2_read_enable    : in std_logic;
+            ram2_read_addr      : in std_logic_vector (17 downto 0);
+            ram2_write_addr     : in std_logic_vector (17 downto 0);
+            ram2_write_data		: in std_logic_vector (15 downto 0)
         );
     end component;
 
@@ -112,10 +119,10 @@ package interface is
             Hs			: out std_logic; -- line sync
             Vs			: out std_logic; -- field sync
             cache_wea	: out std_logic;
-
-            disp_en		: in std_logic;
+		    ram2_read_enable 	: out std_logic;
+            cache_WE		: in std_logic;
             -- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
-            disp_addr	: in std_logic_vector (12 downto 0);
+            disp_addr	: out std_logic_vector (17 downto 0);
             disp_data	: in std_logic_vector (15 downto 0);
 
             r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
@@ -126,9 +133,6 @@ package interface is
             SPdata : in std_logic_vector(15 downto 0);
             IHdata : in std_logic_vector(15 downto 0);
             instruction : in std_logic_vector(15 downto 0);
-
-            -- Concatenated color definition for input
-            color : in std_logic_vector (8 downto 0);
 
             -- Separate color definition for output
             R : out std_logic_vector(2 downto 0);
