@@ -94,8 +94,8 @@ component vga_ctrl_480 is
 		cache_wea	: out std_logic;
 		-- ram2 request
 		ram2_read_enable		: out std_logic;
-		cacheAddr	: out std_logic_vector (17 downto 0);
-		cacheData	: in std_logic_vector (15 downto 0);
+		read_addr	: out std_logic_vector (17 downto 0);
+		read_out	: in std_logic_vector (15 downto 0);
 
 		r0, r1, r2, r3, r4,r5,r6,r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);
@@ -173,8 +173,8 @@ begin
 		Vs => Vs,
 		fontROMAddr => fontROMAddr,
 		fontROMData => fontROMData,
-		cacheAddr => disp_addr,
-		cacheData => disp_data,
+		read_addr => disp_addr,
+		read_out => disp_data,
 		cache_wea => cache_wea,
 		ram2_read_enable => ram2_read_enable,
 		r0=>dr0,

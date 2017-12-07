@@ -34,6 +34,7 @@ NET "led[15]" LOC = A14;
 NET "OE_ram1" LOC = M16;
 NET "WE_ram1" LOC = M18;
 NET "EN_ram1" LOC = M15;
+
 NET "OE_ram2" LOC = R9;
 NET "WE_ram2" LOC = M9;
 NET "EN_ram2" LOC = N10;
@@ -56,6 +57,7 @@ NET "addr_ram1[14]" LOC = H14;
 NET "addr_ram1[15]" LOC = H15;
 NET "addr_ram1[16]" LOC = H16;
 NET "addr_ram1[17]" LOC = H17;
+
 NET "data_ram1[0]" LOC = J12;
 NET "data_ram1[1]" LOC = J13;
 NET "data_ram1[2]" LOC = J14;
@@ -91,6 +93,7 @@ NET "addr_ram2[14]" LOC = V12;
 NET "addr_ram2[15]" LOC = V9;
 NET "addr_ram2[16]" LOC = U16;
 NET "addr_ram2[17]" LOC = U15;
+
 NET "data_ram2[0]" LOC = U13;
 NET "data_ram2[1]" LOC = T16;
 NET "data_ram2[2]" LOC = T15;

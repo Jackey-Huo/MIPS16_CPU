@@ -110,6 +110,17 @@ architecture Behavioral of test_vga is
     signal seri1_write_enable              : std_logic                      := '0';
     signal seri1_write_enable_real         : std_logic                      := '0';
     signal seri1_ctrl_read_en              : std_logic                      := '0';
+    component refresh is
+        port (
+            click : in std_logic;
+            clk : in std_logic;
+            rst : in std_logic;
+            
+            addr        : out std_logic_vector (17 downto 0);
+            data        : out std_logic_vector (15 downto 0);
+            ram2_write_enable   : out std_logic
+        ); 
+    end component;
     component memory_unit is
         port(
             clk         : in std_logic;
@@ -208,6 +219,15 @@ begin
         led                => led(15 downto 12)    
     );
 
+    fresh_ram2 : refresh port map(
+        click => click,
+        clk => clk,
+        rst => rst,
+        addr => ram2_write_addr,
+        data => ram2_write_data,
+        ram2_write_enable => ram2_write_enable
+    );
+
     ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
     vga_disp : vga_ctrl port map(
         clk => clk,
@@ -238,8 +258,7 @@ begin
         B => VGA_B
     );
 
-	led(7 downto 0) <= ram2_readout(7 downto 0);
-	led(11 downto 8) <= "0000";
+	led(11 downto 0) <= ram2_read_addr(17 downto 6);
 	
 end Behavioral;
 

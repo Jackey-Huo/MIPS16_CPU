@@ -45,8 +45,8 @@ entity vga_ctrl_480 is
 		cache_wea			: out std_logic;
 		-- ram2 request
 		ram2_read_enable	: out std_logic;
-		cacheAddr			: out std_logic_vector (17 downto 0);
-		cacheData			: in std_logic_vector (15 downto 0);
+		read_addr			: out std_logic_vector (17 downto 0);
+		read_out			: in std_logic_vector (15 downto 0);
 
 		r0, r1, r2, r3, r4,r5,r6,r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);
@@ -142,8 +142,8 @@ component vga_image_ram2 is
         x, y			: in integer;
 
         ram2_read_enable         : out std_logic;
-        cacheAddr	: out std_logic_vector (17 downto 0);
-        cacheData	: in std_logic_vector (15 downto 0)
+        read_addr	: out std_logic_vector (17 downto 0);
+        read_out : in std_logic_vector (15 downto 0)
     );
 end component;
 
@@ -214,8 +214,8 @@ begin
 		x => x,
 		y => y,
 		ram2_read_enable => ram2_read_enable,
-		cacheAddr => cacheAddr,
-		cacheData => cacheData
+		read_addr => read_addr,
+		read_out  => read_out
 	);
 
 	-- show variables : on left side

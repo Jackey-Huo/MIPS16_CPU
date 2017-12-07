@@ -43,8 +43,8 @@ entity vga_image_ram2 is
         x, y			: in integer;
 
         ram2_read_enable: out std_logic;
-        cacheAddr	: out std_logic_vector (17 downto 0);
-        cacheData	: in std_logic_vector (15 downto 0)
+        read_addr	: out std_logic_vector (17 downto 0);
+        read_out	: in std_logic_vector (15 downto 0)
     );
 end vga_image_ram2;
 
@@ -56,20 +56,22 @@ begin
     color <= intern_color;
     --occupy_flag <= '1' when (intern_color /= "000000000") else '0';
     process(vga_clk, rst)
-        variable bx, by, ind : integer := 0;
+        variable bx, by, ind : integer range -1000000 to 1000000 := 0;
     begin
         if rst = '0' then
             intern_color <= "000000000";
             ram2_read_enable <= '0';
         elsif vga_clk'event and vga_clk = '1' then
             occupy_flag <= '1';
-            if x >= 100 and vga480_w > x and y >= 200 and vga480_h > y then
-                bx := x / disp_scale_factor;
-                by := y / disp_scale_factor;
+            bx := x / disp_scale_factor;
+            by := y / disp_scale_factor;
+            if x >= 0 and vga480_w > x and y >= 0 and vga480_h > y
+                and bx >= 0 and by >= 0 then
+
                 ind := by * vga480_w + bx;
                 ram2_read_enable <= '1';
-                cacheAddr <= conv_std_logic_vector(ind, 18);
-                intern_color <= cacheData (8 downto 0);
+                read_addr <= conv_std_logic_vector(ind, 18);
+                intern_color <= read_out (8 downto 0);
             else
                 ram2_read_enable <= '0';
                 intern_color <= "000000000";
