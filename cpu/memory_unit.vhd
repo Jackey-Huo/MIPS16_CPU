@@ -74,8 +74,7 @@ entity memory_unit is
         ram2_read_enable    : in std_logic;
         ram2_read_addr      : in std_logic_vector (17 downto 0);
         ram2_write_addr     : in std_logic_vector (17 downto 0);
-		ram2_write_data		: in std_logic_vector (15 downto 0);
-        led                 : out std_logic_vector (3 downto 0)
+		ram2_write_data		: in std_logic_vector (15 downto 0)
     );
 end memory_unit;
 
@@ -157,9 +156,9 @@ begin
     data_ram2 <= ram2_write_data when ((ram2_write_enable_real = '1') or (seri1_write_enable = '1'))
                                 else "ZZZZZZZZZZZZZZZZ";
     
-    led(3) <= WE_ram2_t;
-    led(2) <= OE_ram2_t;
-    led(1) <= ram2_write_enable;
-    led(0) <= ram2_read_enable;
+--    led(3) <= WE_ram2_t;
+--    led(2) <= OE_ram2_t;
+--    led(1) <= ram2_write_enable;
+--    led(0) <= ram2_read_enable;
 end Behavioral;
 

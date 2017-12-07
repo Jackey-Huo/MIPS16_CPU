@@ -84,7 +84,7 @@ package helper is
     constant seri2_data_addr  : std_logic_vector (15 downto 0) := "1011111100000010"; -- 0xBF02
     constant seri2_ctrl_addr  : std_logic_vector (15 downto 0) := "1011111100000011"; -- 0xBF03
 
-
+    constant zero22   : std_logic_vector (21 downto 0) := "0000000000000000000000";
     constant zero16   : std_logic_vector (15 downto 0) := "0000000000000000";
     constant zero17   : std_logic_vector (16 downto 0) := "00000000000000000";
     constant zero18   : std_logic_vector (17 downto 0) := "000000000000000000";

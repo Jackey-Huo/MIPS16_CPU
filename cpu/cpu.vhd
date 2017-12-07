@@ -169,6 +169,12 @@ architecture Behavioral of cpu is
     -- ram2_read_enable
     signal cache_WE, vga_ram2_we, cache_wea : std_logic := '0';
     signal ctrl_R, ctrl_G, ctrl_B   : std_logic_vector(2 downto 0) := "000";
+    signal vga_ram2_readout        : std_logic_vector (15 downto 0);
+    signal vga_ram2_write_enable   : std_logic;
+    signal vga_ram2_read_enable    : std_logic;
+    signal vga_ram2_read_addr      : std_logic_vector (17 downto 0);
+    signal vga_ram2_write_addr     : std_logic_vector (17 downto 0);
+    signal vga_ram2_write_data     : std_logic_vector (15 downto 0);
 
     signal ram2_readout        : std_logic_vector (15 downto 0);
     signal ram2_write_enable   : std_logic;
@@ -180,9 +186,15 @@ architecture Behavioral of cpu is
     -- flash signals
     signal clk_flash : std_logic := '0';
     signal boot_finish : std_logic := '0';
-    signal boot_write_addr : std_logic_vector(17 downto 0) := zero18;
-    signal boot_write_data : std_logic_vector(15 downto 0) := zero16;
-    signal boot_write_enable, boot_read_enable : std_logic := '0';
+    signal boot_ram1_write_addr : std_logic_vector(17 downto 0) := zero18;
+    signal boot_ram1_write_data : std_logic_vector(15 downto 0) := zero16;
+    signal boot_ram1_write_enable, boot_ram1_read_enable : std_logic := '0';
+    signal boot_ram2_read_addr  : std_logic_vector (17 downto 0) := zero18;
+    signal boot_ram2_readout    : std_logic_vector (15 downto 0) := zero16;
+    signal boot_ram2_write_addr : std_logic_vector(17 downto 0) := zero18;
+    signal boot_ram2_write_data : std_logic_vector(15 downto 0) := zero16;
+    signal boot_ram2_write_enable, boot_ram2_read_enable : std_logic := '0';
+
 
     -- INT module signals
     signal int_flag     : std_logic := '0';                         -- if there is INT op
@@ -210,27 +222,31 @@ begin
         clk_flash => clk_flash
     );
 
-    -- bootloader : load monitor program from flash
-    bl  :   bootloader port map(
-            not_boot => instruct(15),
-            clk => clk_flash,
-            rst => rst,
-            boot_finish_flag => boot_finish,
-            flash_byte => flash_byte, --: out  std_logic;
-            flash_vpen =>flash_vpen, --: out  std_logic;
-            flash_ce => flash_ce, --: out  std_logic;
-            flash_oe => flash_oe, --: out  std_logic;
-            flash_we => flash_we, --: out  std_logic;
-            flash_rp => flash_rp, --: out  std_logic;
-            flash_addr => flash_addr, -- : out  std_logic_vector (22 downto 0);
-            flash_data => flash_data, --: inout  std_logic_vector (15 downto 0);
+    ------------- Flash Manager : boot and load data from flash -------
+    flash_file_manager : flash_manager port map(
+            not_boot            => instruct(15),
+            clk                 => clk_flash,
+            event_clk           => click,
+            rst                 => rst,
 
-            memory_address => boot_write_addr, -- : out std_logic_vector(17 downto 0);
-            memory_data_bus => boot_write_data, --: inout std_logic_vector(15 downto 0);
+            boot_finish_flag    => boot_finish,
+            flash_byte          => flash_byte, --: out  std_logic;
+            flash_vpen          => flash_vpen, --: out  std_logic;
+            flash_ce            => flash_ce, --: out  std_logic;
+            flash_oe            => flash_oe, --: out  std_logic;
+            flash_we            => flash_we, --: out  std_logic;
+            flash_rp            => flash_rp, --: out  std_logic;
+            flash_addr          => flash_addr, -- : out  std_logic_vector (22 downto 0);
+            flash_data          => flash_data, --: inout  std_logic_vector (15 downto 0);
 
-            memory_write_enable => boot_write_enable, -- : out std_logic;
-            memory_read_enable => boot_read_enable, --: out std_logic;
-            digit => dyp0 --: out  STD_LOGIC_VECTOR (6 downto 0)
+            ram1_addr           => boot_ram1_write_addr     , 
+            ram2_addr           => boot_ram2_write_addr     ,
+            ram1_data           => boot_ram1_write_data     ,
+            ram2_data           => boot_ram2_write_data     ,
+            ram1_write_enable   => boot_ram1_write_enable   ,
+            ram1_read_enable    => boot_ram1_read_enable    ,
+            ram2_write_enable   => boot_ram2_write_enable   ,
+            ram2_read_enable    => boot_ram2_read_enable    
     );
  
     ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
@@ -240,10 +256,10 @@ begin
         Hs => Hs,
         Vs => Vs,
         cache_wea => cache_wea,
-        ram2_we => ram2_read_enable,
+        ram2_read_enable => vga_ram2_read_enable,
         cache_WE => cache_WE,
-        disp_addr => me_write_addr(12 downto 0),
-        disp_data => me_write_data,
+        disp_addr => vga_ram2_read_addr,
+        disp_data => vga_ram2_readout,
         r0=>r0,
         r1=>r1,
         r2=>r2,
@@ -316,7 +332,8 @@ begin
         ram2_write_enable  => ram2_write_enable   ,
         ram2_read_enable   => ram2_read_enable    ,
         ram2_read_addr     => ram2_read_addr      ,
-        ram2_write_addr    => ram2_write_addr     
+        ram2_write_addr    => ram2_write_addr     ,
+        ram2_write_data    => ram2_write_data     
     );
 
     ---------------- IF --------------------------
@@ -749,6 +766,7 @@ begin
     ---------------- ME --------------------------
     ME_unit: process(clk, rst)
     begin
+        
         if (rst = '0') then
             mewb_instruc <= NOP_instruc;
             me_read_enable <= '0';
@@ -757,11 +775,23 @@ begin
             seri1_write_enable <= '0';
             seri1_ctrl_read_en <= '0';
         elsif boot_finish = '0' then
-            me_read_enable <= boot_read_enable;
-            me_write_enable <= boot_write_enable;
-            me_write_addr <= boot_write_addr;
-            me_write_data <= boot_write_data;
+            mewb_instruc <= NOP_instruc;
+            me_read_enable  <= boot_ram1_read_enable;
+            me_write_enable <= boot_ram1_write_enable;
+            me_write_addr   <= boot_ram1_write_addr;
+            me_write_data   <= boot_ram1_write_data;
+            -- when booting RAM2 is reserved for flash
+            ram2_read_addr      <= boot_ram2_read_addr;
+            ram2_readout        <= boot_ram2_readout;
+            ram2_read_enable    <= boot_ram2_read_enable;
+            ram2_write_enable   <= boot_ram2_write_enable;
         elsif (clk'event and clk='1') then
+            -- except for flash, RAM2 is reserved for VGA
+            ram2_read_addr      <= vga_ram2_read_addr;
+            ram2_readout        <= vga_ram2_readout;
+            ram2_read_enable    <= vga_ram2_read_enable;
+            ram2_write_enable   <= vga_ram2_write_enable;
+            
             mewb_instruc <= exme_instruc;
             me_read_enable <= '0';
             me_write_enable <= '0';

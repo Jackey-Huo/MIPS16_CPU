@@ -14,6 +14,30 @@ use BASIC.HELPER.ALL;
 
 package interface is
 
+    component flash_manager is
+        port(
+            not_boot            : in std_logic;
+            clk                 : in  std_logic;
+            event_clk           : in std_logic;
+            rst                 : in  std_logic;
+            
+            boot_finish_flag    : out std_logic := '0';
+            flash_byte : out  std_logic;
+            flash_vpen : out  std_logic;
+            flash_ce : out  std_logic;
+            flash_oe : out  std_logic;
+            flash_we : out  std_logic;
+            flash_rp : out  std_logic;
+            flash_addr : out  std_logic_vector (22 downto 0);
+            flash_data : inout  std_logic_vector (15 downto 0);
+
+            ram1_addr, ram2_addr    : out std_logic_vector (17 downto 0);
+            ram1_data, ram2_data    : out std_logic_vector (15 downto 0);
+            ram1_write_enable, ram1_read_enable : out std_logic;
+            ram2_write_enable, ram2_read_enable : out std_logic
+        );
+    end component;
+
     component memory_unit is
         port(
             clk         : in std_logic;
@@ -110,7 +134,6 @@ package interface is
             digit : out  std_logic_vector (6 downto 0)
         );
     end component;
-
 
     component vga_ctrl is
         Port(
