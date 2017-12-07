@@ -210,7 +210,7 @@ begin
     led(13) <= seri_tbre;
     led(12) <= seri_tsre;
     led(11) <= seri_data_ready;
-    led(10 downto 8) <= "0" & int_flag & "0";
+    led(10 downto 8) <= boot_finish & int_flag & "0";
     led(7 downto 0) <= data_ram1(15 downto 8);
     
     ------------- Clock selector ----------
@@ -246,7 +246,8 @@ begin
             ram1_write_enable   => boot_ram1_write_enable   ,
             ram1_read_enable    => boot_ram1_read_enable    ,
             ram2_write_enable   => boot_ram2_write_enable   ,
-            ram2_read_enable    => boot_ram2_read_enable    
+            ram2_read_enable    => boot_ram2_read_enable    ,
+            digit               			=> dyp0                     
     );
  
     ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----

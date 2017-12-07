@@ -36,6 +36,8 @@ entity flash_loader is
     port(
         clk : in  std_logic;
         rst : in  std_logic;
+
+        load_done           : out std_logic;
         -- start addr in flash
         start_addr          : in std_logic_vector (21 downto 0);
         load_len            : in std_logic_vector (17 downto 0);
@@ -54,6 +56,7 @@ entity flash_loader is
 
         memory_write_enable : out std_logic;
         memory_read_enable  : out std_logic
+        
     );
 end flash_loader;
 
@@ -78,6 +81,7 @@ begin
     flash_rp <= '1';
     state_clk <= clk;
     end_addr <= start_addr + load_len;
+    load_done <= '1' when state = load_finish else '0';
 
     process (clk, rst)
     begin
@@ -90,6 +94,11 @@ begin
             memory_read_enable <= '0';
             memory_write_enable <= '0';
         elsif (clk'event and clk = '1') then
+            -- needed to load different content :
+            -- change start_addr or load_len to make cur_flash_addr different
+            if state = load_finish and cur_flash_addr /= end_addr then
+                state <= flash_init;
+            end if;
             case state is
                 when flash_init =>
                     flash_we <= '1';

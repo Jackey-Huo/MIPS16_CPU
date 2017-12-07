@@ -52,7 +52,8 @@ entity flash_manager is
         ram1_addr, ram2_addr    : out std_logic_vector (17 downto 0);
         ram1_data, ram2_data    : out std_logic_vector (15 downto 0);
         ram1_write_enable, ram1_read_enable : out std_logic;
-        ram2_write_enable, ram2_read_enable : out std_logic
+        ram2_write_enable, ram2_read_enable : out std_logic;
+        digit : out  std_logic_vector (6 downto 0)
     );
 end flash_manager;
 
@@ -62,7 +63,9 @@ component flash_loader is
     port(
         clk : in  std_logic;
         rst : in  std_logic;
-        
+
+        load_done           : out std_logic;
+
         start_addr          : in std_logic_vector (21 downto 0);
         load_len            : in std_logic_vector (17 downto 0);
 
@@ -80,6 +83,7 @@ component flash_loader is
 
         memory_write_enable : out std_logic;
         memory_read_enable  : out std_logic
+
     );
 end component;
 
@@ -96,29 +100,63 @@ signal mem_addr_real : std_logic_vector (17 downto 0) := zero18;
 signal mem_data_real : std_logic_vector (15 downto 0) := x"0000";
 signal mem_write_enable_real, mem_read_enable_real : std_logic := '0';
 
+signal load_done    : std_logic := '0';
+
 begin
     state_clk <= event_clk;
+
+    process(state)
+    begin
+        case state is
+            when not_booted => digit <= not "0000001";
+            when booting    => digit <= not "1001111";
+            when idle       => digit <= not "0010010";
+            when loading    => digit <= not "0000110";
+            when others     => digit <=     "1111111";
+        end case;
+    end process;
+
     -- first test in click
-    process (state_clk, rst)
+    process (state, clk, state_clk, rst)
     begin
         if rst = '0' then
             boot_finish_flag <= '0';
             state <= not_booted;
             start_addr <= zero22;
             load_len <= zero18;
-        elsif state /= not_booted then
-            boot_finish_flag <= '0';
-            start_addr <= zero22;
-            load_len <= "00" & x"0200";
-            ram_choose <= '0'; --chose ram1
-        elsif state = idle and state_clk'event and state_clk = '1' then
-            -- loading image
-            -- !NOTICE : problematic
-            boot_finish_flag <= '0';
+        elsif clk'event and clk = '1' then
+            if state = not_booted then
+                boot_finish_flag <= '0';
+                start_addr <= zero22;
+                load_len <= "00" & x"0200";
+                ram_choose <= '0'; --chose ram1
+                state <= booting;
+            elsif state = booting then
+                if load_done = '1' then
+                    state <= booted;
+                end if;
+            elsif state = booted then
+                state <= idle;
+            elsif state = idle then
+                if state_clk = '0' then
+                    -- loading image
+                    -- !NOTICE : problematic
+                    boot_finish_flag <= '0';
 
-            ram_choose <= '1'; --chose ram2
-            start_addr <= "0000000000000000000000"; -- the addr of first image
-            load_len <= "11" & x"FFFF"; -- load on the whole ram2
+                    ram_choose <= '1'; --chose ram2
+                    start_addr <= "0000000000000000000000"; -- the addr of first image
+                    load_len <= "11" & x"FFFF"; -- load on the whole ram2
+                    state <= loading;
+                else
+                    boot_finish_flag <= '1';
+                end if;
+            elsif state = loading then
+                if load_done = '1' then
+                    state <= loaded;
+                end if;
+            elsif state = loaded then
+                state <= idle;
+            end if;
         end if;
     end process;
 
@@ -141,7 +179,7 @@ begin
     flash_reader : flash_loader port map(
         clk => clk,
         rst => rst,
-
+        load_done => load_done,
         start_addr  => start_addr,
         load_len    => load_len,
 

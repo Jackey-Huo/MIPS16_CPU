@@ -34,7 +34,8 @@ package interface is
             ram1_addr, ram2_addr    : out std_logic_vector (17 downto 0);
             ram1_data, ram2_data    : out std_logic_vector (15 downto 0);
             ram1_write_enable, ram1_read_enable : out std_logic;
-            ram2_write_enable, ram2_read_enable : out std_logic
+            ram2_write_enable, ram2_read_enable : out std_logic;
+            digit  : out std_logic_vector (6 downto 0)
         );
     end component;
 
