@@ -118,7 +118,7 @@ begin
 			when "00" => WE_ram1 <= '0';
 			when "10" => WE_ram1 <= '1';
 			when "01" => WE_ram1 <= '0';
-			when others => WE_ram1 <= '1';
+			when others => WE_ram1 <= '0';
 		end case;
 	end process;
 
@@ -131,6 +131,7 @@ begin
 	);
 
 	disp_addr <= addr_ram1 (12 downto 0);
+	
 	vga_ctrl_comp : vga_ctrl port map(
 		clk => clk,
 		rst => rst,
@@ -172,7 +173,8 @@ begin
 		end if;
 	end process;
 
-	led(15 downto 8) <= addr_ram1(7 downto 0);
+	led(15 downto 9) <= addr_ram1(6 downto 0);
+	led(8) <= WE_ram1;
 	led(7 downto 0) <= disp_data(7 downto 0);
 	
 end Behavioral;

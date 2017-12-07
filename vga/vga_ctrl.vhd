@@ -154,7 +154,7 @@ begin
 		clka => clk,
 		addra => fontROMAddr,
 		douta => fontROMData
-		);
+	);
 
 	vga_cache : VGARAM port map(
 		clka 	=> clk,
