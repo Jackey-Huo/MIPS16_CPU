@@ -57,14 +57,14 @@ begin
     process(vga_clk, rst)
         variable bx, by, ind : integer := 0;
     begin
-        bx := x / disp_scale_factor;
-        by := y / disp_scale_factor;
         if rst = '0' then
             intern_color <= "000000000";
             cache_wea <= '0';
         elsif vga_clk'event and vga_clk = '1' then
             if x >= vga480_center_x - half_width and vga480_center_x + half_width > x and
                 y >= vga480_center_y - half_height and vga480_center_y + half_width > y then
+                bx := (x - vga480_center_x + half_width) / disp_scale_factor;
+                by := (y - vga480_center_y + half_height) / disp_scale_factor;
                 -- in window :
                 ind := by * half_width * 2 + bx;
                 cache_wea <= '1';

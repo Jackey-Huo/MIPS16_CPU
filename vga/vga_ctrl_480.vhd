@@ -79,7 +79,7 @@ component vga_sweep is
 end component;
 
 component vga_verbose is
-port(
+	port(
 		-- if the current pixel is colored in this app
 		occupy_flag	: out std_logic;
 		color				: out std_logic_vector (8 downto 0);

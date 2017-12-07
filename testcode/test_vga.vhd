@@ -21,6 +21,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 library basic;
 use basic.helper.all;
+use basic.interface.all;
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
 --use IEEE.NUMERIC_STD.ALL;
@@ -39,10 +40,31 @@ entity test_vga is
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
 
+        -- ram1, Instruction memory
+        data_ram1 : inout std_logic_vector(15 downto 0);
+        addr_ram1 : out std_logic_vector(17 downto 0);
+        OE_ram1   : out std_logic;
+        WE_ram1   : out std_logic;
+        EN_ram1   : out std_logic;
+
+        -- ram2, Data memory
+        data_ram2 : inout std_logic_vector(15 downto 0);
+        addr_ram2 : out std_logic_vector(17 downto 0);
+        OE_ram2   : out std_logic := '1';
+        WE_ram2   : out std_logic := '1';
+        EN_ram2   : out std_logic := '1';
+
+        -- serial
+        seri_rdn        : out std_logic := '1';
+        seri_wrn        : out std_logic := '1';
+        seri_data_ready : in std_logic;
+        seri_tbre       : in std_logic;
+        seri_tsre       : in std_logic;
+
 		-- Separate color definition for output
-		R : out std_logic_vector(2 downto 0);
-		G : out std_logic_vector(2 downto 0);
-		B : out std_logic_vector(2 downto 0);
+		VGA_R : out std_logic_vector(2 downto 0);
+		VGA_G : out std_logic_vector(2 downto 0);
+		VGA_B : out std_logic_vector(2 downto 0);
 		
 		-- debug
 		led : out std_logic_vector(15 downto 0)
@@ -52,130 +74,112 @@ end test_vga;
 
 architecture Behavioral of test_vga is
 
-component vga_ctrl is
-	Port(
-		clk : in std_logic; -- clock forced to be 50M
-		rst : in std_logic;
-		
-		Hs : out std_logic; -- line sync
-		Vs : out std_logic; -- field sync
-		cache_wea	: out std_logic;
+    -- IF/ID pipeline storage
+    signal ifid_instruc                    : std_logic_vector (15 downto 0) := zero16;
+    signal ifid_instruc_mem                : std_logic_vector (15 downto 0) := zero16;
+    signal pc_real                         : std_logic_vector (15 downto 0) := zero16;
+    signal mewb_result                     : std_logic_vector (15 downto 0) := zero16;
+    signal mewb_readout                    : std_logic_vector (15 downto 0) := zero16;
+	
+	-- signal ctrl_Hs, ctrl_Vs : std_logic := '0';
+	signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
+	signal ctrl_color : std_logic_vector (8 downto 0) := "000000000";
+	signal R_r, G_r, B_r : std_logic_vector(2 downto 0) := "000";
 
-		disp_en		: in std_logic;
-		-- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
-		disp_addr	: in std_logic_vector (12 downto 0);
-		disp_data	: in std_logic_vector (15 downto 0);
+	-- simulated signals for debugging
+	signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := x"10AF";
+	signal SP, IH, T, CM, PC : std_logic_vector(15 downto 0) := x"0000";
 
-		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
-		PC : in std_logic_vector(15 downto 0);
-		CM : in std_logic_vector(15 downto 0);
-		Tdata : in std_logic_vector(15 downto 0);
-		SPdata : in std_logic_vector(15 downto 0);
-		IHdata : in std_logic_vector(15 downto 0);
-		
-		-- Concatenated color definition for input
-		color : in std_logic_vector (8 downto 0);
+	-- VGA signals
+	signal disp_en, cache_wea       : std_logic := '0';
 
-		-- Separate color definition for output
-		R : out std_logic_vector(2 downto 0);
-		G : out std_logic_vector(2 downto 0);
-		B : out std_logic_vector(2 downto 0)
-	);
-end component;
+    -- MEM variables
+    signal me_read_enable, me_write_enable : std_logic                      := '0';
+    signal me_write_enable_real            : std_logic                      := '0';
+    signal me_read_addr, me_write_addr     : std_logic_vector (17 downto 0) := zero18;
+    signal me_write_data                   : std_logic_vector (15 downto 0) := zero16;
 
-component test_memwriter is
-    port(
-        clk     : in std_logic;
-        rst     : in std_logic;
-        wea     : out std_logic;
-        addr    : out std_logic_vector (17 downto 0);
-        data    : out std_logic_vector (15 downto 0)
-    );
-end component;
-
--- signal ctrl_Hs, ctrl_Vs : std_logic := '0';
-signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
-signal ctrl_color : std_logic_vector (8 downto 0) := "000000000";
-signal R_r, G_r, B_r : std_logic_vector(2 downto 0) := "000";
-
--- simulated signals for debugging
-signal r0, r1, r2, r3, r4, r5, r6, r7 : std_logic_vector(15 downto 0) := x"10AF";
-signal SP, IH, T, CM, PC : std_logic_vector(15 downto 0) := x"0000";
-
-signal WE_ram1, cache_wea, testmem_wea : std_logic := '0';
-signal addr_ram1 : std_logic_vector(17 downto 0);
-signal disp_addr : std_logic_vector (12 downto 0) := "0000000000000";
-signal disp_data : std_logic_vector (15 downto 0) := x"0000";
+    signal seri_wrn_t, seri_rdn_t          : std_logic                      := '0';
+    signal seri1_read_enable               : std_logic                      := '0';
+    signal seri1_write_enable              : std_logic                      := '0';
+    signal seri1_write_enable_real         : std_logic                      := '0';
+    signal seri1_ctrl_read_en              : std_logic                      := '0';
 begin
 
 	ctrl_color <= "000000111";
+    ------------- Memory and Serial Control Unit, pure combinational logic
+    memory_IO : memory_unit port map(
+        clk         => clk,
+        rst         => rst,
 
-	process(clk)
-		variable sit : std_logic_vector (1 downto 0) := "00";
-	begin
-		sit := testmem_wea & cache_wea;
-		case sit is
-			when "00" => WE_ram1 <= '0';
-			when "10" => WE_ram1 <= '1';
-			when "01" => WE_ram1 <= '0';
-			when others => WE_ram1 <= '0';
-		end case;
-	end process;
+        -- ram1, Instruction memory
+        data_ram1   => data_ram1,
+        addr_ram1   => addr_ram1,
+        OE_ram1     => OE_ram1,
+        WE_ram1     => WE_ram1,
+        EN_ram1     => EN_ram1,
 
-	test_mem : test_memwriter port map(
-		clk => click,
-		rst => rst,
-		wea => testmem_wea,
-		addr => addr_ram1,
-		data => disp_data
-	);
+        -- ram2, Data memory
+        data_ram2   => data_ram2,
+        addr_ram2   => addr_ram2,
+        OE_ram2     => OE_ram2, 
+        WE_ram2     => WE_ram2, 
+        EN_ram2     => EN_ram2, 
 
-	disp_addr <= addr_ram1 (12 downto 0);
-	
-	vga_ctrl_comp : vga_ctrl port map(
-		clk => clk,
-		rst => rst,
-		Hs => Hs,
-		Vs => Vs,
-		cache_wea => cache_wea,
-		disp_en => WE_ram1,
-		disp_addr => disp_addr,
-		disp_data => disp_data,
-		r0=>r0,
-		r1=>r1,
-		r2=>r2,
-		r3=>r3,
-		r4=>r4,
-		r5=>r5,
-		r6=>r6,
-		r7=>r7,
-		PC => PC, -- : in std_logic_vector(15 downto 0);
-		CM => CM, -- in std_logic_vector(15 downto 0);
-		Tdata => T, -- : in std_logic_vector(15 downto 0);
-		SPdata => SP, -- : in std_logic_vector(15 downto 0);
-		IHdata => IH, --: in std_logic_vector(15 downto 0);
-		color => "000000000",
-		R => ctrl_R,
-		G => ctrl_G,
-		B => ctrl_B
-	);
+        -- serial
+        seri_rdn        => seri_rdn       ,
+        seri_wrn        => seri_wrn       ,
+        seri_data_ready => seri_data_ready,
+        seri_tbre       => seri_tbre      ,
+        seri_tsre       => seri_tsre      ,
+        
+        disp_en            => disp_en             ,
+        mewb_readout       => mewb_readout        , 
+        ifid_instruc_mem   => ifid_instruc_mem    , 
+        me_write_enable    => me_write_enable     , 
+        me_read_enable     => me_read_enable      , 
+        me_read_addr       => me_read_addr        , 
+        me_write_addr      => me_write_addr       , 
+        me_write_data      => me_write_data       ,
+        pc_real            => pc_real             , 
+        seri1_write_enable => seri1_write_enable  , 
+        seri1_read_enable  => seri1_read_enable   , 
+        seri1_ctrl_read_en => seri1_ctrl_read_en  
+    );
 
-	R <= ctrl_R;
-	G <= ctrl_G;
-	B <= ctrl_B;
-	
-	process(clk)
-	begin
-		if clk'event and clk = '1' then
-			R_r <= ctrl_R;
-			G_r <= ctrl_G;
-			B_r <= ctrl_B;
-		end if;
-	end process;
+    ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
+    vga_disp : vga_ctrl port map(
+        clk => clk,
+        rst => rst,
+        Hs => Hs,
+        Vs => Vs,
+        cache_wea => cache_wea,
+        disp_en => disp_en,
+        disp_addr => me_write_addr(12 downto 0),
+        disp_data => me_write_data,
+        r0=>r0,
+        r1=>r1,
+        r2=>r2,
+        r3=>r3,
+        r4=>r4,
+        r5=>r5,
+        r6=>r6,
+        r7=>r7,
+        PC => PC, -- : in std_logic_vector(15 downto 0);
+        CM => me_read_addr(15 downto 0), -- in std_logic_vector(15 downto 0);
+        Tdata => T, -- : in std_logic_vector(15 downto 0);
+        SPdata => SP, -- : in std_logic_vector(15 downto 0);
+        IHdata => IH, --: in std_logic_vector(15 downto 0);
+        instruction => ifid_instruc,
+        color => "000000000",
+        R => VGA_R,
+        G => VGA_G,
+        B => VGA_B
+    );
 
-	led(15 downto 9) <= addr_ram1(6 downto 0);
-	led(8) <= WE_ram1;
-	led(7 downto 0) <= disp_data(7 downto 0);
+	led(12 downto 0) <= me_write_addr(12 downto 0);
+	led(13) <= disp_en;
+	led(15 downto 14) <= "00";
 	
 end Behavioral;
 

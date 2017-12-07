@@ -164,7 +164,8 @@ architecture Behavioral of cpu is
     signal wb_reg_data                     : std_logic_vector (15 downto 0) := zero16;
 
     -- VGA signals
-    signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
+    signal disp_en, cache_wea       : std_logic := '0';
+    signal ctrl_R, ctrl_G, ctrl_B   : std_logic_vector(2 downto 0) := "000";
 
     -- flash signals
     signal clk_flash : std_logic := '0';
@@ -229,6 +230,10 @@ begin
         rst => rst,
         Hs => Hs,
         Vs => Vs,
+        cache_wea => cache_wea,
+        disp_en => disp_en,
+        disp_addr => me_write_addr(12 downto 0),
+        disp_data => me_write_data,
         r0=>r0,
         r1=>r1,
         r2=>r2,
@@ -285,7 +290,8 @@ begin
         seri_data_ready => seri_data_ready,
         seri_tbre       => seri_tbre      ,
         seri_tsre       => seri_tsre      ,
-
+        
+        disp_en            => disp_en             ,
         mewb_readout       => mewb_readout        , 
         ifid_instruc_mem   => ifid_instruc_mem    , 
         me_write_enable    => me_write_enable     , 

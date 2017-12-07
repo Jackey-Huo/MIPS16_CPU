@@ -40,6 +40,7 @@ package interface is
             seri_tbre       : in std_logic;
             seri_tsre       : in std_logic;
 
+            disp_en             : out std_logic;
             mewb_readout        : out std_logic_vector (15 downto 0);
             ifid_instruc_mem    : out std_logic_vector (15 downto 0);
             me_write_enable     : in std_logic;
@@ -106,20 +107,26 @@ package interface is
 
     component vga_ctrl is
         Port(
-            clk : in std_logic; -- clock forced to be 50M
-            rst : in std_logic;
-            
-            Hs : out std_logic; -- line sync
-            Vs : out std_logic; -- field sync
+            clk			: in std_logic; -- clock forced to be 50M
+            rst			: in std_logic;
+            Hs			: out std_logic; -- line sync
+            Vs			: out std_logic; -- field sync
+            cache_wea	: out std_logic;
+
+            disp_en		: in std_logic;
+            -- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
+            disp_addr	: in std_logic_vector (12 downto 0);
+            disp_data	: in std_logic_vector (15 downto 0);
 
             r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
+
             PC : in std_logic_vector(15 downto 0);
             CM : in std_logic_vector(15 downto 0);
             Tdata : in std_logic_vector(15 downto 0);
             SPdata : in std_logic_vector(15 downto 0);
             IHdata : in std_logic_vector(15 downto 0);
             instruction : in std_logic_vector(15 downto 0);
-            
+
             -- Concatenated color definition for input
             color : in std_logic_vector (8 downto 0);
 

@@ -56,6 +56,7 @@ entity memory_unit is
         seri_tbre       : in std_logic;
         seri_tsre       : in std_logic;
 
+        disp_en             : out std_logic;
         mewb_readout        : out std_logic_vector (15 downto 0);
         ifid_instruc_mem    : out std_logic_vector (15 downto 0);
         me_write_enable     : in std_logic;
@@ -77,7 +78,7 @@ architecture Behavioral of memory_unit is
     signal me_write_enable_real            : std_logic                      := '0';
     signal seri_wrn_t, seri_rdn_t          : std_logic                      := '0';
     signal seri1_write_enable_real         : std_logic                      := '0';
-
+    signal WE_ram1_t                       : std_logic                      := '0';
 begin
 
     ------------- Memory and Serial Control Unit, pure combinational logic
@@ -95,10 +96,13 @@ begin
     seri_wrn <= seri_wrn_t;
 
     EN_ram1 <= '1' when ((rst = '0') or (seri1_read_enable = '1') or (seri1_write_enable = '1')) else '0';
-    WE_ram1 <= '1' when (rst = '0') else
+    WE_ram1_t <= '1' when (rst = '0') else
                '1' when ((seri1_read_enable = '1') or (seri1_write_enable = '1')) else
                '0' when (me_write_enable_real = '1') else
                '1' when (me_read_enable = '1') else '1';
+    WE_ram1 <= WE_ram1_t;
+    disp_en <= WE_ram1_t when (me_write_addr(15 downto 13) = "111") else '1';
+
     OE_ram1 <= '1' when (rst = '0') else
                '1' when ((seri1_read_enable = '1') or (seri1_write_enable = '1')) else
                '0' when (me_read_enable = '1') else
