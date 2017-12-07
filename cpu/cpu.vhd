@@ -17,13 +17,12 @@
 -- Additional Comments: 
 --
 ----------------------------------------------------------------------------------
-library IEEE;
+library IEEE, BASIC;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.NUMERIC_STD.ALL;
-library basic;
-use basic.helper.all;
-
+use BASIC.HELPER.ALL;
+use BASIC.INTERFACE.ALL;
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
 --use IEEE.NUMERIC_STD.ALL;
@@ -177,107 +176,21 @@ architecture Behavioral of cpu is
     -- INT module signals
     signal int_flag     : std_logic := '0';                         -- if there is INT op
     signal int_num      : std_logic_vector (3 downto 0) := x"0";    -- INT op number
-    signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
 
-    -- component
-    component alu is
-        port (
-            rst                             : in std_logic;
-            reg_a, reg_b                    : in std_logic_vector(15 downto 0);
-            alu_op                          : in std_logic_vector(3 downto 0);
-            result                          : out std_logic_vector(15 downto 0);
-            carry_flag, zero_flag, ovr_flag : out std_logic
-        );
-    end component alu;
+	signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
 
-    component mux7to1 is
-        port (
-            output       : out std_logic_vector (15 downto 0) := zero16;
-            ctrl_mux     : in std_logic_vector (2 downto 0);
-            default_data : in std_logic_vector (15 downto 0);
-            alu_result   : in std_logic_vector (15 downto 0);
-            mewb_result  : in std_logic_vector (15 downto 0);
-            mewb_readout : in std_logic_vector (15 downto 0);
-            wb_reg_data  : in std_logic_vector (15 downto 0);
-            exme_bypass  : in std_logic_vector (15 downto 0);
-            mewb_bypass  : in std_logic_vector (15 downto 0)
-        );
-    end component mux7to1;
-
-    component bootloader is
-        Port (
-            not_boot  : in std_logic;
-            clk : in  std_logic;
-            rst : in  std_logic;
-            boot_finish_flag : out std_logic;
-            flash_byte : out  std_logic;
-            flash_vpen : out  std_logic;
-            flash_ce : out  std_logic;
-            flash_oe : out  std_logic;
-            flash_we : out  std_logic;
-            flash_rp : out  std_logic;
-            flash_addr : out  std_logic_vector (22 downto 0);
-            flash_data : inout  std_logic_vector (15 downto 0);
-
-            memory_address : out std_logic_vector(17 downto 0);
-            memory_data_bus : inout std_logic_vector(15 downto 0);
-
-            memory_write_enable : out std_logic;
-            memory_read_enable : out std_logic;
-            digit : out  std_logic_vector (6 downto 0)
-        );
-    end component;
-
-
-    component vga_ctrl is
-        Port(
-            clk : in std_logic; -- clock forced to be 50M
-            rst : in std_logic;
-            
-            Hs : out std_logic; -- line sync
-            Vs : out std_logic; -- field sync
-
-            r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
-            PC : in std_logic_vector(15 downto 0);
-            CM : in std_logic_vector(15 downto 0);
-            Tdata : in std_logic_vector(15 downto 0);
-            SPdata : in std_logic_vector(15 downto 0);
-            IHdata : in std_logic_vector(15 downto 0);
-            instruction : in std_logic_vector(15 downto 0);
-            
-            -- Concatenated color definition for input
-            color : in std_logic_vector (8 downto 0);
-
-            -- Separate color definition for output
-            R : out std_logic_vector(2 downto 0);
-            G : out std_logic_vector(2 downto 0);
-            B : out std_logic_vector(2 downto 0)
-        );
-    end component;
-
-    component clock_select is
-        port(
-            click       : in std_logic;
-            clk_50M : in std_logic;
-            selector    : in std_logic_vector(2 downto 0);
-            clk     : out std_logic;
-            clk_flash: out std_logic
-        );
-    end component;
-
-    component int_ctrl is
-        port(
-            clk             : in std_logic;
-            rst             : in std_logic;
-            -- current instruction for software INT
-            cur_pc          : in std_logic_vector (15 downto 0);
-            int_flag        : out std_logic;
-            epc             : out std_logic_vector (15 downto 0);
-            cause           : out std_logic_vector (15 downto 0)
-        );
-    end component;
 
 begin
+    dyp1 <= "1111111";
+
+    led(15) <= seri_wrn_t;
+    led(14) <= seri_rdn_t;
+    led(13) <= seri_tbre;
+    led(12) <= seri_tsre;
+    led(11) <= seri_data_ready;
+    led(10 downto 8) <= "0" & int_flag & "0";
+    led(7 downto 0) <= data_ram1(15 downto 8);
+    
     ------------- Clock selector ----------
     clk_selector   : clock_select port map(
         click => click,
@@ -348,46 +261,43 @@ begin
     );
 
     ------------- Memory and Serial Control Unit, pure combinational logic
-    me_write_enable_real <= '0' when (rst = '0') else (me_write_enable and clk);
-    seri1_write_enable_real <= '0' when (rst = '0') else (seri1_write_enable and not(clk));
+    memory_IO : memory_unit port map(
+        clk         => clk,
+        rst         => rst,
 
-    -- TODO: serial read & write need further implementation, tbre tsre and data_ready not used now
-    seri_rdn_t <= '1' when (rst = '0') else
-                '0' when (seri1_read_enable = '1') else
-                '1';
-    seri_rdn <= seri_rdn_t;
-    seri_wrn_t <= '1' when (rst = '0') else
-                '0' when (seri1_write_enable_real = '1') else
-                '1';
-    seri_wrn <= seri_wrn_t;
+        -- ram1, Instruction memory
+        data_ram1   => data_ram1,
+        addr_ram1   => addr_ram1,
+        OE_ram1     => OE_ram1,
+        WE_ram1     => WE_ram1,
+        EN_ram1     => EN_ram1,
 
-    EN_ram1 <= '1' when ((rst = '0') or (seri1_read_enable = '1') or (seri1_write_enable = '1')) else '0';
-    WE_ram1 <= '1' when (rst = '0') else
-               '1' when ((seri1_read_enable = '1') or (seri1_write_enable = '1')) else
-               '0' when (me_write_enable_real = '1') else
-               '1' when (me_read_enable = '1') else '1';
-    OE_ram1 <= '1' when (rst = '0') else
-               '1' when ((seri1_read_enable = '1') or (seri1_write_enable = '1')) else
-               '0' when (me_read_enable = '1') else
-               '1' when (me_write_enable = '1') else '0';
-    addr_ram1 <= zero18 when(rst = '0') else
-                 me_read_addr when (me_read_enable = '1') else
-                 me_write_addr when (me_write_enable = '1') else
-                 "00" & pc_real;
-    data_ram1 <= me_write_data when ((me_write_enable_real = '1') or (seri1_write_enable = '1'))else "ZZZZZZZZZZZZZZZZ";
-    mewb_readout <= data_ram1 when (me_read_enable = '1') else
-                    "00000000" & data_ram1(7 downto 0) when (seri1_read_enable = '1') else
-                    "00000000000000" &  seri_data_ready & (seri_tbre and seri_tsre) when (seri1_ctrl_read_en = '1') else
-                    "ZZZZZZZZZZZZZZZZ";
-    -- if MEM is using SRAM, insert a NOP into pipeline
-     ifid_instruc_mem <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0') and
-                                        (seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
+        -- ram2, Data memory
+        data_ram2   => data_ram2,
+        addr_ram2   => addr_ram2,
+        OE_ram2     => OE_ram2, 
+        WE_ram2     => WE_ram2, 
+        EN_ram2     => EN_ram2, 
 
-    --ifid_instruc_mem <= instruct when ((me_read_enable = '0') and (me_write_enable = '0') and
-                                        --(seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
+        -- serial
+        seri_rdn        => seri_rdn       ,
+        seri_wrn        => seri_wrn       ,
+        seri_data_ready => seri_data_ready,
+        seri_tbre       => seri_tbre      ,
+        seri_tsre       => seri_tsre      ,
 
-
-
+        mewb_readout       => mewb_readout        , 
+        ifid_instruc_mem   => ifid_instruc_mem    , 
+        me_write_enable    => me_write_enable     , 
+        me_read_enable     => me_read_enable      , 
+        me_read_addr       => me_read_addr        , 
+        me_write_addr      => me_write_addr       , 
+        me_write_data      => me_write_data       ,
+        pc_real            => pc_real             , 
+        seri1_write_enable => seri1_write_enable  , 
+        seri1_read_enable  => seri1_read_enable   , 
+        seri1_ctrl_read_en => seri1_ctrl_read_en  
+    );
 
     ---------------- IF --------------------------
     IF_unit: process(clk, rst)
@@ -664,17 +574,18 @@ begin
                         mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
     Rg_bypass: mux7to1 port map (idex_bypass_real, ctrl_mux_bypass, idex_bypass, exme_result,
                         mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
+    --
 
 
---                 ---                                  ---                                  ---
---    idex_reg_a--|   |                    idex_reg_b--|   |     ^_^           idex_bypass--|   |
---    alu_result--| M |                    alu_result--| M |                    alu_result--| M |
---   mewb_result--|   |                   mewb_result--|   |                   mewb_result--|   |
---  mewb_readout--| U |--ex_alu_reg_a    mewb_readout--| U |--ex_alu_reg_b    mewb_readout--| U |--ex_bypass
---   wb_reg_data--|   |                   wb_reg_data--|   |                   wb_reg_data--|   |
---   exme_bypass--| X |                   exme_bypass--| X |                   exme_bypass--| X |
---   mewb_bypass--|   |                   mewb_bypass--|   |                   mewb_bypass--|   |
---                 ---                                  ---                                  ---                
+    --                 ---                                  ---                                  ---
+    --    idex_reg_a--|   |                    idex_reg_b--|   |     ^_^           idex_bypass--|   |
+    --    alu_result--| M |                    alu_result--| M |                    alu_result--| M |
+    --   mewb_result--|   |                   mewb_result--|   |                   mewb_result--|   |
+    --  mewb_readout--| U |--ex_alu_reg_a    mewb_readout--| U |--ex_alu_reg_b    mewb_readout--| U |--ex_bypass
+    --   wb_reg_data--|   |                   wb_reg_data--|   |                   wb_reg_data--|   |
+    --   exme_bypass--| X |                   exme_bypass--| X |                   exme_bypass--| X |
+    --   mewb_bypass--|   |                   mewb_bypass--|   |                   mewb_bypass--|   |
+    --                 ---                                  ---                                  ---                
 
     
     ---------------- EX --------------------------
@@ -1238,24 +1149,6 @@ begin
 
         end if;
     end process Control_unit;
-
-    dyp1 <= "1111111";
-
-    EN_ram2 <= '1';
-    OE_ram2 <= '1';
-    WE_ram2 <= '1';
-    data_ram2 <= "ZZZZZZZZZZZZZZZZ";
-    addr_ram2 <= zero18;
-
-    led(15) <= seri_wrn_t;
-    led(14) <= seri_rdn_t;
-    led(13) <= seri_tbre;
-    led(12) <= seri_tsre;
-    led(11) <= seri_data_ready;
-	 led(10 downto 8) <= "0" & int_flag & "0";
-    led(7 downto 0) <= data_ram1(15 downto 8);
-
-    --led <= r6;
 
 end Behavioral;
 
