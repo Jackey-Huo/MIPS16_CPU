@@ -93,45 +93,51 @@ begin
     
     process (state, addr)
     begin
-        case state is
-            when flash_init =>
-                next_state <= flash_read0;
-                digit <= not "0000001";     -- 0
-            when flash_read0 =>
-                next_state <= flash_read1;
-                digit <= not "1001111";     -- 2
-            when flash_read1 =>
-                next_state <= flash_read2;
-                digit <= not "0010010";     -- 3
-            when flash_read2 =>
-                next_state <= flash_read3;
-                digit <= not "0000110";    
-            when flash_read3 =>
-                next_state <= flash_read_done;
-                digit <= not "1001100";
-            when flash_read_done =>
-                next_state <= mem_write;
-                digit <= not "0100100";
-            when mem_write =>
-                -- slightly larger than monitor program
-                if addr < x"0200" then
-                    next_state <= flash_read2;
-                else
-                    next_state <= boot_finish;
-                end if;
-                digit <= not "0100000";
-            when boot_finish =>
-                boot_finish_flag <= '1';
-                next_state <= boot_finish;
-                digit <= not "0001111";     -- 7
-            when others =>
-                next_state <= flash_init;
-                digit <= not "1111111";
-        end case;
-        if state = mem_write then
-            next_addr <= addr + 1;
+        if (rst = '0') then
+            boot_finish_flag <= '0';
+            next_state <= flash_init;
+            digit <= not "0000001";             -- 0
         else
-            next_addr <= addr;
+            case state is
+                when flash_init =>
+                    next_state <= flash_read0;
+                    digit <= not "0000001";     -- 0
+                when flash_read0 =>
+                    next_state <= flash_read1;
+                    digit <= not "1001111";     -- 2
+                when flash_read1 =>
+                    next_state <= flash_read2;
+                    digit <= not "0010010";     -- 3
+                when flash_read2 =>
+                    next_state <= flash_read3;
+                    digit <= not "0000110";    
+                when flash_read3 =>
+                    next_state <= flash_read_done;
+                    digit <= not "1001100";
+                when flash_read_done =>
+                    next_state <= mem_write;
+                    digit <= not "0100100";
+                when mem_write =>
+                    -- slightly larger than monitor program
+                    if addr < x"0200" then
+                        next_state <= flash_read2;
+                    else
+                        next_state <= boot_finish;
+                    end if;
+                    digit <= not "0100000";
+                when boot_finish =>
+                    boot_finish_flag <= '1';
+                    next_state <= boot_finish;
+                    digit <= not "0001111";     -- 7
+                when others =>
+                    next_state <= flash_init;
+                    digit <= not "1111111";
+            end case;
+            if state = mem_write then
+                next_addr <= addr + 1;
+            else
+                next_addr <= addr;
+            end if;
         end if;
     end process;
     

@@ -52,7 +52,7 @@ architecture Behavioral of int_ctrl is
 
 begin
 
-    process(clk, rst)
+    process(clk, rst, cur_instruc)
     begin
         if rst = '0' then
             int_flag <= '0';
@@ -60,7 +60,7 @@ begin
             if cur_instruc (15 downto 11) = INT_op then
                 int_flag <= '1';
                 epc <= cur_pc;
-                cause <= "0000000000000" & cur_instruc (3 downto 0);
+                cause <= "000000000000" & cur_instruc (3 downto 0);
             else
                 int_flag <= '0';
             end if;

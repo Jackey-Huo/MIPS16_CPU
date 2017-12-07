@@ -179,7 +179,7 @@ architecture Behavioral of cpu is
     signal int_num      : std_logic_vector (3 downto 0) := x"0";    -- INT op number
     signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
     -- absolute interrupt headle address, changed by the kernel development
-    constant delint_addr   : std_logic_vector (15 downto 0) := zero16;
+    constant delint_addr   : std_logic_vector (15 downto 0) := x"0006";
 
     -- component
     component alu is
@@ -273,6 +273,7 @@ architecture Behavioral of cpu is
             rst             : in std_logic;
             -- current instruction for software INT
             cur_pc          : in std_logic_vector (15 downto 0);
+            cur_instruc     : in std_logic_vector (15 downto 0);
             int_flag        : out std_logic;
             epc             : out std_logic_vector (15 downto 0);
             cause           : out std_logic_vector (15 downto 0)
@@ -343,6 +344,7 @@ begin
         clk => clk,
         rst => rst,
         cur_pc => pc_real,
+        cur_instruc => ifid_instruc,
 		  
         int_flag => int_flag,
         epc => EPC,
@@ -353,7 +355,6 @@ begin
     me_write_enable_real <= '0' when (rst = '0') else (me_write_enable and clk);
     seri1_write_enable_real <= '0' when (rst = '0') else (seri1_write_enable and not(clk));
 
-    -- TODO: serial read & write need further implementation, tbre tsre and data_ready not used now
     seri_rdn_t <= '1' when (rst = '0') else
                 '0' when (seri1_read_enable = '1') else
                 '1';
@@ -413,7 +414,7 @@ begin
         end if;
     end process IF_unit;
 
-    -- mux for real pc, TODO: block pc increase with IF MEM conflict
+    -- mux for real pc
     pc_real <= zero16 when (rst = '0') else
                id_branch_value when ((id_pc_branch = '1') and (ctrl_insert_bubble = '0')) else
                pc;
@@ -465,7 +466,7 @@ begin
                         idex_reg_wb <= reg_none;
                     when EXTEND_TSP_op =>
                         case ifid_instruc(10 downto 8) is
-                            when EX_ADDSP_pf_op =>  -- TODO: conflict detection
+                            when EX_ADDSP_pf_op =>
                                 idex_reg_a_data <= SP;
                                 idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
                                 idex_reg_wb <= SP_index;
@@ -577,7 +578,7 @@ begin
                         idex_reg_a_data <= SP;
                         -- immediate sign extend
                         idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
-                        -- rx value  TODO: control unit for bypass value
+                        -- rx value
                         reg_decode(idex_bypass, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
                     when BNEZ_op =>
                         id_pc_branch <= '1';
@@ -612,7 +613,7 @@ begin
         end if;
     end process ID_unit;
 
-    -- combination logic multiplexer unit for branch TODO: maybe we need bubble handle, fix it later
+    -- combination logic multiplexer unit for branch
     process(pc, id_instruc, idex_reg_b_data_real, idex_reg_a_data_real)
     begin
         if (id_pc_branch = '1') then
@@ -1198,6 +1199,16 @@ begin
                             ctrl_rd_reg_a  := reg_none;
                             ctrl_rd_reg_b  := reg_none;
                             ctrl_rd_bypass := "0" & ctrl_instruc_0(10 downto 8);
+                        when EX_MFEPC_sf_op =>
+                            ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_reg_a  := reg_none;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := EPC_index;
+                        when EX_MFCAS_sf_op =>
+                            ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_reg_a  := reg_none;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := Case_index;
                         when others =>
                             ctrl_wb_reg_0  := reg_none;
                             ctrl_rd_reg_a  := reg_none;
@@ -1261,15 +1272,15 @@ begin
     data_ram2 <= "ZZZZZZZZZZZZZZZZ";
     addr_ram2 <= zero18;
 
-    led(15) <= seri_wrn_t;
-    led(14) <= seri_rdn_t;
-    led(13) <= seri_tbre;
-    led(12) <= seri_tsre;
-    led(11) <= seri_data_ready;
-	 led(10 downto 8) <= "0" & int_flag & "0";
-    led(7 downto 0) <= data_ram1(15 downto 8);
+--    led(15) <= seri_wrn_t;
+--    led(14) <= seri_rdn_t;
+--    led(13) <= seri_tbre;
+--    led(12) <= seri_tsre;
+--    led(11) <= seri_data_ready;
+--	 led(10 downto 8) <= "0" & int_flag & "0";
+--    led(7 downto 0) <= data_ram1(15 downto 8);
 
-    --led <= r6;
+    led <= r6;
 
 end Behavioral;
 

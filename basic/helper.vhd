@@ -519,7 +519,7 @@ package body helper is
                 end case;
             when EXTEND_IH_op =>
                 case conflict_instruc_a(7 downto 0) is
-                    when EX_MFIH_sf_op | EX_MTIH_sf_op =>
+                    when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op =>
                         case conflict_instruc_number_a is
                             when 1 =>
                                 ctrl_mux_reg_a <= chs_exme_bypass;
@@ -635,7 +635,7 @@ package body helper is
                 end case;
             when EXTEND_IH_op =>
                 case conflict_instruc_b(7 downto 0) is
-                    when EX_MFIH_sf_op | EX_MTIH_sf_op =>
+                    when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op =>
                         case conflict_instruc_number_b is
                             when 1 =>
                                 ctrl_mux_reg_b <= chs_exme_bypass;
@@ -751,7 +751,7 @@ package body helper is
                 end case;
             when EXTEND_IH_op =>
                 case conflict_instruc_bypass(7 downto 0) is
-                    when EX_MFIH_sf_op | EX_MTIH_sf_op =>
+                    when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op =>
                         case conflict_instruc_number_bypass is
                             when 1 =>
                                 ctrl_mux_bypass <= chs_exme_bypass;

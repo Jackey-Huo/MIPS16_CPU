@@ -17,8 +17,7 @@ DELINT:
 	; 保存用户程序现场
 	SW_SP R6 0x0000
 	LI R6 0xBF
-	SLL R6 R6 0x0000
-	; R6=0xBF10
+	SLL R6 R6 0x0000 ; R6=0xBF10
 	ADDIU R6 0x10					
 	SW R6 R0 0x0000
 	SW R6 R1 0x0001
@@ -27,15 +26,15 @@ DELINT:
 	SW R6 R4 0x0004
 	SW R6 R5 0x0005
 	SW R6 R7 0x0007
-	LW_SP R6 0x0000
+    LW_SP R6 0x0000
 	
 	; R1=中断号
-	; MFEX R1 Cause
+	; MFCAS R1
 
 	NOP 
 
 	; R2=应用程序的pc
-	; MFEX R2 EPC
+	; MFEPC R2
 
 	NOP 
 	
@@ -62,7 +61,7 @@ DELINT:
 	NOP
 	
 	;提示终端，中断处理结束
-	LI R3 0x000F
+	LI R3 0x0f
 	MFPC R7 
 	ADDIU R7 0x0003  
 	NOP
@@ -83,6 +82,15 @@ DELINT:
 	OR R3 R0
 	MTIH R3
 	
+
+INTLOOP:
+	NOP
+    NOP
+
+    B INTLOOP
+    NOP
+
+
 	;恢复现场
 	LI R7 0xBF
 	SLL R7 R7 0x0000
@@ -96,11 +104,11 @@ DELINT:
 	LW R7 R7 0x0007
 	;r7=用户程序返回地址
 	
-	B 0xF0 ; debug
 	NOP
 	NOP
 	NOP
 	NOP
+    NOP
 
 	JR R6
 	NOP
