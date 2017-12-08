@@ -140,6 +140,8 @@ package interface is
         Port(
             clk			: in std_logic; -- clock forced to be 50M
             rst			: in std_logic;
+    		disp_mode			: in std_logic; -- select between different display app
+            
             Hs			: out std_logic; -- line sync
             Vs			: out std_logic; -- field sync
             cache_wea	: out std_logic;

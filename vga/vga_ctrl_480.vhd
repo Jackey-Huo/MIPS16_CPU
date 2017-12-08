@@ -33,11 +33,12 @@ use BASIC.HELPER.ALL;
 
 entity vga_ctrl_480 is
 	Port(
-		clk : in std_logic; -- clock forced to be 50M
-		rst : in std_logic;
+		clk					: in std_logic; -- clock forced to be 50M
+		rst					: in std_logic;
+		disp_mode			: in std_logic_vector (2 downto 0); -- select between different display app
 		
-		Hs : out std_logic; -- line sync
-		Vs : out std_logic; -- field sync
+		Hs 					: out std_logic; -- line sync
+		Vs 					: out std_logic; -- field sync
 
 		fontROMAddr 		: out std_logic_vector (10 downto 0);
 		fontROMData 		: in std_logic_vector (7 downto 0);
@@ -268,15 +269,15 @@ begin
 			G <= "000";
 			B <= "000";
 		else
-			if ocp_image = '1' then
+			if disp_mode = "000" and ocp_image = '1' then
 				R <= color_image(8 downto 6);
 				G <= color_image(5 downto 3);
 				B <= color_image(2 downto 0);
-			elsif ocp_verbose = '1' and x < vga480_div then
+			elsif disp_mode = "001" and ocp_verbose = '1' and x < vga480_div then
 				R <= color_verbose(8 downto 6);
 				G <= color_verbose(5 downto 3);
 				B <= color_verbose(2 downto 0);
-			elsif ocp_terminal = '1' and x >= vga480_div then
+			elsif disp_mode = "010" and ocp_terminal = '1' and x >= vga480_div then
 				R <= color_terminal(8 downto 6);
 				G <= color_terminal(5 downto 3);
 				B <= color_terminal(2 downto 0);

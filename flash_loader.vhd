@@ -63,7 +63,7 @@ end flash_loader;
 architecture Behavioral of flash_loader is
 
     signal mem_write_en: std_logic;
-    type flash_read_state is (flash_init, flash_read0, flash_read1, flash_read2, flash_read3, flash_read_done, mem_write, load_finish);
+    type flash_read_state is (flash_init, flash_read0, flash_read1, flash_read2, flash_read3, flash_read_done, mem_write, mem_write_done, load_finish);
 
     signal state: flash_read_state := flash_init;
     signal next_flash_addr : std_logic_vector (21 downto 0) := zero22;
@@ -86,11 +86,14 @@ begin
     process (clk, rst)
     begin
         if rst = '0' then
+            state <= flash_init;
+
             cur_mem_addr <= zero18;
             cur_flash_addr <= start_addr;
-            state <= flash_init;
+
             flash_we <= '1';
             flash_oe <= '1';
+
             memory_read_enable <= '0';
             memory_write_enable <= '0';
         elsif (clk'event and clk = '1') then
@@ -99,15 +102,19 @@ begin
             if state = load_finish and cur_flash_addr /= end_addr then
                 state <= flash_init;
             end if;
+
             case state is
                 when flash_init =>
                     flash_we <= '1';
                     flash_oe <= '1';
+
                     memory_write_enable <= '0';
                     memory_read_enable <= '0';
-                    state <= flash_read0;
+                    
                     cur_flash_addr <= start_addr;
                     cur_mem_addr <= zero18;
+
+                    state <= flash_read0;
                 when flash_read0 =>
                     flash_we <= '0';
                     state <= flash_read1;
@@ -134,6 +141,8 @@ begin
                 when mem_write =>
                     memory_write_enable <= '1';
                     memory_read_enable <= '0';
+                    state <= mem_write_done;
+                when mem_write_done =>
                     if cur_flash_addr < end_addr then
                         state <= flash_read2;
                         cur_mem_addr <= cur_mem_addr + 1;

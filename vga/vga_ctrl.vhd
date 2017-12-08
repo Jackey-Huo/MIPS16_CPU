@@ -33,6 +33,8 @@ entity vga_ctrl is
 	Port(
 		clk			: in std_logic; -- clock forced to be 50M
 		rst			: in std_logic;
+		disp_mode	: in std_logic_vector (2 downto 0);
+
 		Hs			: out std_logic; -- line sync
 		Vs			: out std_logic; -- field sync
 		cache_wea	: out std_logic;
@@ -84,7 +86,8 @@ component vga_ctrl_480 is
 	Port(
 		clk : in std_logic; -- clock forced to be 50M
 		rst : in std_logic;
-		
+		disp_mode	: in std_logic_vector (2 downto 0);
+	
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
 
@@ -159,7 +162,7 @@ begin
 --	vga_cache : VGARAM port map(
 --		clka 	=> clk,
 --		wea(0) 	=> cache_WE,
---		addra 	=> disp_addr,
+--		addra 	=> disp_addr (12 downto 0),
 --		dina 	=> disp_data,
 --		clkb 	=> clk,
 --		addrb 	=> cacheReadAddr,
@@ -169,6 +172,7 @@ begin
 	vga480_disp : vga_ctrl_480 port map(
 		clk => clk,
 		rst => rst,
+		disp_mode => disp_mode,
 		Hs => Hs,
 		Vs => Vs,
 		fontROMAddr => fontROMAddr,

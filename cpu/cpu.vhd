@@ -96,6 +96,7 @@ architecture Behavioral of cpu is
 
     -- clocks
     -- main clock
+    signal clock_mode                       : std_logic_vector (2 downto 0) := "000";
     signal clk : std_logic;
     -- vga_clk
     signal clk50 : std_logic;
@@ -167,6 +168,7 @@ architecture Behavioral of cpu is
     -- cache_WE is formal cache control
     -- cache_wea is cache control signal requested by VGA controller
     -- ram2_read_enable
+    signal disp_mode                : std_logic_vector (2 downto 0) := "000";
     signal cache_WE, vga_ram2_we, cache_wea : std_logic := '0';
     signal ctrl_R, ctrl_G, ctrl_B   : std_logic_vector(2 downto 0) := "000";
     signal vga_ram2_readout        : std_logic_vector (15 downto 0);
@@ -184,6 +186,7 @@ architecture Behavioral of cpu is
     signal ram2_write_data     : std_logic_vector (15 downto 0);
 
     -- flash signals
+    signal boot_mode    : std_logic := '1';
     signal clk_flash : std_logic := '0';
     signal boot_finish : std_logic := '0';
     signal boot_ram1_write_addr : std_logic_vector(17 downto 0) := zero18;
@@ -203,6 +206,11 @@ architecture Behavioral of cpu is
 	signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
 
 begin
+    -- '0' for normal boot ; '1' for not boot
+    boot_mode <= instruct (15);
+    clock_mode <= instruct (2 downto 0);
+    disp_mode <= instruct (5 downto 3);
+    
     dyp1 <= "1111111";
 
     led(15) <= seri_wrn_t;
@@ -217,43 +225,44 @@ begin
     clk_selector   : clock_select port map(
         click => click,
         clk_50M => clk_50M,
-        selector => instruct(2 downto 0), --25M
+        selector => clock_mode, --25M
         clk => clk,
         clk_flash => clk_flash
     );
 
     ------------- Flash Manager : boot and load data from flash -------
     flash_file_manager : flash_manager port map(
-            not_boot            => instruct(15),
-            clk                 => clk_flash,
-            event_clk           => click,
-            rst                 => rst,
+        not_boot            => boot_mode,
+        clk                 => clk_flash,
+        event_clk           => click,
+        rst                 => rst,
 
-            boot_finish_flag    => boot_finish,
-            flash_byte          => flash_byte, --: out  std_logic;
-            flash_vpen          => flash_vpen, --: out  std_logic;
-            flash_ce            => flash_ce, --: out  std_logic;
-            flash_oe            => flash_oe, --: out  std_logic;
-            flash_we            => flash_we, --: out  std_logic;
-            flash_rp            => flash_rp, --: out  std_logic;
-            flash_addr          => flash_addr, -- : out  std_logic_vector (22 downto 0);
-            flash_data          => flash_data, --: inout  std_logic_vector (15 downto 0);
+        boot_finish_flag    => boot_finish,
+        flash_byte          => flash_byte, --: out  std_logic;
+        flash_vpen          => flash_vpen, --: out  std_logic;
+        flash_ce            => flash_ce, --: out  std_logic;
+        flash_oe            => flash_oe, --: out  std_logic;
+        flash_we            => flash_we, --: out  std_logic;
+        flash_rp            => flash_rp, --: out  std_logic;
+        flash_addr          => flash_addr, -- : out  std_logic_vector (22 downto 0);
+        flash_data          => flash_data, --: inout  std_logic_vector (15 downto 0);
 
-            ram1_addr           => boot_ram1_write_addr     , 
-            ram2_addr           => boot_ram2_write_addr     ,
-            ram1_data           => boot_ram1_write_data     ,
-            ram2_data           => boot_ram2_write_data     ,
-            ram1_write_enable   => boot_ram1_write_enable   ,
-            ram1_read_enable    => boot_ram1_read_enable    ,
-            ram2_write_enable   => boot_ram2_write_enable   ,
-            ram2_read_enable    => boot_ram2_read_enable    ,
-            digit               			=> dyp0                     
+        ram1_addr           => boot_ram1_write_addr     , 
+        ram2_addr           => boot_ram2_write_addr     ,
+        ram1_data           => boot_ram1_write_data     ,
+        ram2_data           => boot_ram2_write_data     ,
+        ram1_write_enable   => boot_ram1_write_enable   ,
+        ram1_read_enable    => boot_ram1_read_enable    ,
+        ram2_write_enable   => boot_ram2_write_enable   ,
+        ram2_read_enable    => boot_ram2_read_enable    ,
+        digit               => dyp0                     
     );
  
     ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
     vga_disp : vga_ctrl port map(
         clk => clk_50M,
         rst => rst,
+        disp_mode => disp_mode,
         Hs => Hs,
         Vs => Vs,
         cache_wea => cache_wea,

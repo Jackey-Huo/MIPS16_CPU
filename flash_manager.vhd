@@ -108,10 +108,10 @@ begin
     process(state)
     begin
         case state is
-            when not_booted => digit <= not "0000001";
-            when booting    => digit <= not "1001111";
-            when idle       => digit <= not "0010010";
-            when loading    => digit <= not "0000110";
+            when not_booted => digit <= not "0000001"; -- 0
+            when booting    => digit <= not "1001111"; -- 1
+            when idle       => digit <= not "0010010"; -- 2
+            when loading    => digit <= not "0000110"; -- 3
             when others     => digit <=     "1111111";
         end case;
     end process;
@@ -129,9 +129,11 @@ begin
                 boot_finish_flag <= '0';
                 start_addr <= zero22;
                 load_len <= "00" & x"0200";
-                ram_choose <= '0'; --chose ram1
                 state <= booting;
+                -- use ram1
+                ram_choose <= '0';
             elsif state = booting then
+                ram_choose <= '0';
                 if load_done = '1' then
                     state <= booted;
                 end if;
@@ -151,6 +153,7 @@ begin
                     boot_finish_flag <= '1';
                 end if;
             elsif state = loading then
+                ram_choose <= '1';
                 if load_done = '1' then
                     state <= loaded;
                 end if;
@@ -179,18 +182,18 @@ begin
     flash_reader : flash_loader port map(
         clk => clk,
         rst => rst,
-        load_done => load_done,
+        load_done   => load_done,
         start_addr  => start_addr,
         load_len    => load_len,
 
-        flash_byte => flash_byte, --: out  std_logic;
-        flash_vpen =>flash_vpen, --: out  std_logic;
-        flash_ce => flash_ce, --: out  std_logic;
-        flash_oe => flash_oe, --: out  std_logic;
-        flash_we => flash_we, --: out  std_logic;
-        flash_rp => flash_rp, --: out  std_logic;
-        flash_addr => flash_addr, -- : out  std_logic_vector (22 downto 0);
-        flash_data => flash_data, --: inout  std_logic_vector (15 downto 0);
+        flash_byte  => flash_byte, --: out  std_logic;
+        flash_vpen  => flash_vpen, --: out  std_logic;
+        flash_ce    => flash_ce, --: out  std_logic;
+        flash_oe    => flash_oe, --: out  std_logic;
+        flash_we    => flash_we, --: out  std_logic;
+        flash_rp    => flash_rp, --: out  std_logic;
+        flash_addr  => flash_addr, -- : out  std_logic_vector (22 downto 0);
+        flash_data  => flash_data, --: inout  std_logic_vector (15 downto 0);
 
         memory_address => mem_addr_real, -- : out std_logic_vector(17 downto 0);
         memory_data_bus => mem_data_real, --: inout std_logic_vector(15 downto 0);
