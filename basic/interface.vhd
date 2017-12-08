@@ -182,6 +182,29 @@ package interface is
         );
     end component;
 
+    component Control is
+        port (
+            clk, rst                   : in std_logic;
+
+            id_instruc                 : in std_logic_vector (15 downto 0);
+            ifid_instruc               : in std_logic_vector (15 downto 0);
+
+            boot_finish                : in std_logic;
+
+            -- hard int signal
+            hard_int_flag              : in std_logic;
+
+            -- Control Unit output
+            ctrl_mux_reg_a             : out std_logic_vector (2 downto 0) := "000";
+            ctrl_mux_reg_b             : out std_logic_vector (2 downto 0) := "000";
+            ctrl_mux_bypass            : out std_logic_vector (2 downto 0) := "000";
+            ctrl_insert_bubble         : out std_logic                     := '0'
+
+        );
+    end component;
+
+
+
     -- component
     component alu is
         port (
