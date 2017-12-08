@@ -94,7 +94,9 @@ begin
             -- needed to load different content :
             -- change start_addr or load_len to make cur_flash_addr different
             if state = load_finish and cur_flash_addr /= end_addr then
-                state <= flash_init;
+                state <= flash_read2;
+                cur_flash_addr <= start_addr;
+                cur_mem_addr <= zero18;
             end if;
 
             case state is
@@ -145,6 +147,8 @@ begin
                         state <= load_finish;
                     end if;
                 when load_finish =>
+                    flash_we <= '1';
+                    flash_oe <= '1';
                     memory_write_enable <= '0';
                     memory_read_enable <= '0';
                 when others =>

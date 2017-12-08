@@ -792,8 +792,6 @@ begin
     ME_unit: process(clk, rst)
     begin
         if flash_load_finish = '0' then
-            boot_ram2_readout   <= ram2_readout;
-            ram2_read_addr      <= zero18;
             ram2_read_enable    <= boot_ram2_read_enable;
             ram2_write_enable   <= boot_ram2_write_enable;
             ram2_write_addr     <= boot_ram2_write_addr;

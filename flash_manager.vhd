@@ -108,16 +108,16 @@ signal load_done    : std_logic := '0';
 begin
     state_clk <= event_clk;
 
-    process(state)
+    process(state, ppt_slide_index)
     begin
-        case state is
-            when not_booted => digit <= not "0000001"; -- 0
-            when booting    => digit <= not "1001111"; -- 1
-            when idle       => digit <= not "0010010"; -- 2
-            when loading    => digit <= not "0000110"; -- 3
-            when loaded     => digit <= not "0000110"; -- 4
-            when others     => digit <=     "1111111";
-        end case;
+--        case state is
+--            when not_booted => digit <= not "0000001"; -- 0
+--            when booting    => digit <= not "1001111"; -- 1
+--            when idle       => digit <= not "0010010"; -- 2
+--            when loading    => digit <= not "0000110"; -- 3
+--            when loaded     => digit <= not "0000110"; -- 4
+--            when others     => digit <=     "1111111";
+--        end case;
     end process;
 
     -- first test in click
@@ -153,13 +153,16 @@ begin
                     load_len <= "11" & x"FFFF"; -- load on the whole ram2
 
                     case ppt_slide_index is
-                        when "00000" =>
+                        when "00001" =>
+                            digit <= not "0000001";
                             start_addr <= "00" & x"10000";
                             ppt_slide_index <= ppt_slide_index + 1;
-                        when "00001" =>
+                        when "00010" =>
+                            digit <= not "1001111";
                             start_addr <= "00" & x"60000";
                             ppt_slide_index <= ppt_slide_index + 1;
-                        when "00010" =>
+                        when "00011" =>
+                            digit <= not "0010010";
                             start_addr <= "00" & x"A0000";
                             ppt_slide_index <= ppt_slide_index + 1;
                         when others  => ppt_slide_index <= "00000";

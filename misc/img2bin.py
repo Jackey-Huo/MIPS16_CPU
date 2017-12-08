@@ -16,7 +16,7 @@ def recon(img):
     img_rec[img_rec > 255] = 255
     return img_rec
 
-def serialize(img, name, start=0x010000):
+def serialize(img, name, start=0x060000):
     f = open(name, 'w')
     cnt = 0
     print(img.shape)
