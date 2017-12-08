@@ -153,16 +153,19 @@ begin
                     load_len <= "11" & x"FFFF"; -- load on the whole ram2
 
                     case ppt_slide_index is
-                        when "00001" =>
+                        when "00000" =>
                             digit <= not "0000001";
+                            ppt_slide_index <= ppt_slide_index + 1;
+                        when "00001" =>
+                            digit <= not "1001111";
                             start_addr <= "00" & x"10000";
                             ppt_slide_index <= ppt_slide_index + 1;
                         when "00010" =>
-                            digit <= not "1001111";
+                            digit <= not "0010010";
                             start_addr <= "00" & x"60000";
                             ppt_slide_index <= ppt_slide_index + 1;
                         when "00011" =>
-                            digit <= not "0010010";
+                            digit <= not "0000110";
                             start_addr <= "00" & x"A0000";
                             ppt_slide_index <= ppt_slide_index + 1;
                         when others  => ppt_slide_index <= "00000";
