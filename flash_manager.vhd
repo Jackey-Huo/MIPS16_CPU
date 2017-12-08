@@ -39,6 +39,7 @@ entity flash_manager is
         event_clk           : in std_logic;
         rst                 : in  std_logic;
         
+        load_finish_flag    : out std_logic;
         boot_finish_flag    : out std_logic := '0';
         flash_byte : out  std_logic;
         flash_vpen : out  std_logic;
@@ -50,7 +51,7 @@ entity flash_manager is
         flash_data : inout  std_logic_vector (15 downto 0);
 
         ram1_addr, ram2_addr    : out std_logic_vector (17 downto 0);
-        ram1_data, ram2_data    : out std_logic_vector (15 downto 0);
+        ram1_data, ram2_data    : inout std_logic_vector (15 downto 0);
         ram1_write_enable, ram1_read_enable : out std_logic;
         ram2_write_enable, ram2_read_enable : out std_logic;
         digit : out  std_logic_vector (6 downto 0)
@@ -89,6 +90,8 @@ end component;
 
 type flash_manager_state_machine is (not_booted, booting, booted, idle, loading, loaded);
 
+signal ppt_slide_index : std_logic_vector (4 downto 0) := "00000";
+
 signal state_clk : std_logic := '0';
 signal state : flash_manager_state_machine := not_booted;
 signal manager_state : flash_manager_state_machine := not_booted;
@@ -112,6 +115,7 @@ begin
             when booting    => digit <= not "1001111"; -- 1
             when idle       => digit <= not "0010010"; -- 2
             when loading    => digit <= not "0000110"; -- 3
+            when loaded     => digit <= not "0000110"; -- 4
             when others     => digit <=     "1111111";
         end case;
     end process;
@@ -120,6 +124,7 @@ begin
     process (state, clk, state_clk, rst)
     begin
         if rst = '0' then
+            ppt_slide_index <= "00000";
             boot_finish_flag <= '0';
             state <= not_booted;
             start_addr <= zero22;
@@ -142,18 +147,32 @@ begin
             elsif state = idle then
                 if state_clk = '0' then
                     -- loading image
-                    -- !NOTICE : problematic
-                    boot_finish_flag <= '0';
+                    load_finish_flag <= '0';
 
                     ram_choose <= '1'; --chose ram2
-                    start_addr <= "0000000000000000000000"; -- the addr of first image
                     load_len <= "11" & x"FFFF"; -- load on the whole ram2
+
+                    case ppt_slide_index is
+                        when "00000" =>
+                            start_addr <= "00" & x"10000";
+                            ppt_slide_index <= ppt_slide_index + 1;
+                        when "00001" =>
+                            start_addr <= "00" & x"60000";
+                            ppt_slide_index <= ppt_slide_index + 1;
+                        when "00010" =>
+                            start_addr <= "00" & x"A0000";
+                            ppt_slide_index <= ppt_slide_index + 1;
+                        when others  => ppt_slide_index <= "00000";
+                    end case;
+
                     state <= loading;
                 else
+                    load_finish_flag <= '1';
                     boot_finish_flag <= '1';
                 end if;
             elsif state = loading then
                 ram_choose <= '1';
+                load_finish_flag <= '0';
                 if load_done = '1' then
                     state <= loaded;
                 end if;

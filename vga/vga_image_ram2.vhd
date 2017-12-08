@@ -44,7 +44,7 @@ entity vga_image_ram2 is
 
         ram2_read_enable: out std_logic;
         read_addr	: out std_logic_vector (17 downto 0);
-        read_out	: in std_logic_vector (15 downto 0)
+        read_out	: inout std_logic_vector (15 downto 0)
     );
 end vga_image_ram2;
 

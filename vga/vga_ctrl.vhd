@@ -44,7 +44,7 @@ entity vga_ctrl is
 		cache_WE	: in std_logic;
 		-- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
 		disp_addr	: out std_logic_vector (17 downto 0);
-		disp_data	: in std_logic_vector (15 downto 0);
+		disp_data	: inout std_logic_vector (15 downto 0);
 
 		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
 
@@ -99,7 +99,7 @@ component vga_ctrl_480 is
 		-- ram2 request
 		ram2_read_enable		: out std_logic;
 		read_addr	: out std_logic_vector (17 downto 0);
-		read_out	: in std_logic_vector (15 downto 0);
+		read_out	: inout std_logic_vector (15 downto 0);
 
 		r0, r1, r2, r3, r4,r5,r6,r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);

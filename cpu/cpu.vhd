@@ -168,6 +168,7 @@ architecture Behavioral of cpu is
     -- cache_WE is formal cache control
     -- cache_wea is cache control signal requested by VGA controller
     -- ram2_read_enable
+    signal disp_en : std_logic := '0';
     signal disp_mode                : std_logic_vector (2 downto 0) := "000";
     signal cache_WE, vga_ram2_we, cache_wea : std_logic := '0';
     signal ctrl_R, ctrl_G, ctrl_B   : std_logic_vector(2 downto 0) := "000";
@@ -189,6 +190,7 @@ architecture Behavioral of cpu is
     signal boot_mode    : std_logic := '1';
     signal clk_flash : std_logic := '0';
     signal boot_finish : std_logic := '0';
+    signal flash_load_finish    : std_logic := '0';
     signal boot_ram1_write_addr : std_logic_vector(17 downto 0) := zero18;
     signal boot_ram1_write_data : std_logic_vector(15 downto 0) := zero16;
     signal boot_ram1_write_enable, boot_ram1_read_enable : std_logic := '0';
@@ -202,14 +204,9 @@ architecture Behavioral of cpu is
     -- INT module signals
     signal int_flag     : std_logic := '0';                         -- if there is INT op
     signal int_num      : std_logic_vector (3 downto 0) := x"0";    -- INT op number
-<<<<<<< HEAD
-
-	signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
-=======
     signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
     -- absolute interrupt headle address, changed by the kernel development
     constant delint_addr   : std_logic_vector (15 downto 0) := x"0006";
->>>>>>> 0b3a3bbe70527cc3de68eb43b11ec3d276136bcd
 
 begin
     -- '0' for normal boot ; '1' for not boot
@@ -219,13 +216,13 @@ begin
     
     dyp1 <= "1111111";
 
+    led(6 downto 0) <= vga_ram2_readout(6 downto 0);
     led(15) <= seri_wrn_t;
     led(14) <= seri_rdn_t;
     led(13) <= seri_tbre;
     led(12) <= seri_tsre;
     led(11) <= seri_data_ready;
-    led(10 downto 8) <= boot_finish & int_flag & "0";
-    led(7 downto 0) <= data_ram1(15 downto 8);
+    led(10 downto 7) <= boot_finish & flash_load_finish & ram2_read_enable & ram2_write_enable;
     
     ------------- Clock selector ----------
     clk_selector   : clock_select port map(
@@ -239,10 +236,11 @@ begin
     ------------- Flash Manager : boot and load data from flash -------
     flash_file_manager : flash_manager port map(
         not_boot            => boot_mode,
-        clk                 => clk_flash,
+        clk                 => clk,
         event_clk           => click,
         rst                 => rst,
 
+        load_finish_flag    => flash_load_finish,
         boot_finish_flag    => boot_finish,
         flash_byte          => flash_byte, --: out  std_logic;
         flash_vpen          => flash_vpen, --: out  std_logic;
@@ -263,7 +261,75 @@ begin
         ram2_read_enable    => boot_ram2_read_enable    ,
         digit               => dyp0                     
     );
- 
+
+    ---------------- INT -------------------------
+    INT_unit : int_ctrl port map (
+        clk => clk,
+        rst => rst,
+        cur_pc => pc_real,
+        cur_instruc => ifid_instruc,
+        int_flag => int_flag,
+        epc => EPC,
+        cause => Cause
+    );
+
+    memory_IO : memory_unit port map(
+        clk         => clk,
+        rst         => rst,
+
+        -- ram1, Instruction memory
+        data_ram1   => data_ram1,
+        addr_ram1   => addr_ram1,
+        OE_ram1     => OE_ram1,
+        WE_ram1     => WE_ram1,
+        EN_ram1     => EN_ram1,
+
+        -- ram2, Data memory
+        data_ram2   => data_ram2,
+        addr_ram2   => addr_ram2,
+        OE_ram2     => OE_ram2, 
+        WE_ram2     => WE_ram2, 
+        EN_ram2     => EN_ram2, 
+
+        -- serial
+        seri_rdn        => seri_rdn       ,
+        seri_wrn        => seri_wrn       ,
+        seri_data_ready => seri_data_ready,
+        seri_tbre       => seri_tbre      ,
+        seri_tsre       => seri_tsre      ,
+        -- useless
+        disp_en            => disp_en             ,
+        mewb_readout       => mewb_readout        , 
+        ifid_instruc_mem   => ifid_instruc_mem    , 
+        me_write_enable    => me_write_enable     , 
+        me_read_enable     => me_read_enable      , 
+        me_read_addr       => me_read_addr        , 
+        me_write_addr      => me_write_addr       , 
+        me_write_data      => me_write_data       ,
+        pc_real            => pc_real             , 
+        seri1_write_enable => seri1_write_enable  , 
+        seri1_read_enable  => seri1_read_enable   , 
+        seri1_ctrl_read_en => seri1_ctrl_read_en  ,
+        ram2_readout       => ram2_readout        ,
+        ram2_write_enable  => ram2_write_enable   ,
+        ram2_read_enable   => ram2_read_enable    ,
+        ram2_read_addr     => ram2_read_addr      ,
+        ram2_write_addr    => ram2_write_addr     ,
+        ram2_write_data    => ram2_write_data     
+    );
+
+    --ram2_write_addr <= zero18;
+    --ram2_write_data <= zero16;
+    --ram2_write_enable <= '0';
+--    fresh_ram2 : refresh port map(
+--        click => click,
+--        clk => clk,
+--        rst => rst,
+--        addr => ram2_write_addr,
+--        data => ram2_write_data,
+--        ram2_write_enable => ram2_write_enable
+--    );
+
     ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
     vga_disp : vga_ctrl port map(
         clk => clk_50M,
@@ -293,63 +359,6 @@ begin
         R => VGA_R,
         G => VGA_G,
         B => VGA_B
-    );
-
-    ---------------- INT -------------------------
-    INT_unit : int_ctrl port map (
-        clk => clk,
-        rst => rst,
-        cur_pc => pc_real,
-        cur_instruc => ifid_instruc,
-        int_flag => int_flag,
-        epc => EPC,
-        cause => Cause
-    );
-
-    ------------- Memory and Serial Control Unit, pure combinational logic
-    memory_IO : memory_unit port map(
-        clk         => clk,
-        rst         => rst,
-
-        -- ram1, Instruction memory
-        data_ram1   => data_ram1,
-        addr_ram1   => addr_ram1,
-        OE_ram1     => OE_ram1,
-        WE_ram1     => WE_ram1,
-        EN_ram1     => EN_ram1,
-
-        -- ram2, Data memory
-        data_ram2   => data_ram2,
-        addr_ram2   => addr_ram2,
-        OE_ram2     => OE_ram2, 
-        WE_ram2     => WE_ram2, 
-        EN_ram2     => EN_ram2, 
-
-        -- serial
-        seri_rdn        => seri_rdn       ,
-        seri_wrn        => seri_wrn       ,
-        seri_data_ready => seri_data_ready,
-        seri_tbre       => seri_tbre      ,
-        seri_tsre       => seri_tsre      ,
-
-        disp_en            => cache_WE            ,
-        mewb_readout       => mewb_readout        , 
-        ifid_instruc_mem   => ifid_instruc_mem    , 
-        me_write_enable    => me_write_enable     , 
-        me_read_enable     => me_read_enable      , 
-        me_read_addr       => me_read_addr        , 
-        me_write_addr      => me_write_addr       , 
-        me_write_data      => me_write_data       ,
-        pc_real            => pc_real             , 
-        seri1_write_enable => seri1_write_enable  , 
-        seri1_read_enable  => seri1_read_enable   , 
-        seri1_ctrl_read_en => seri1_ctrl_read_en  ,
-        ram2_readout       => ram2_readout        ,
-        ram2_write_enable  => ram2_write_enable   ,
-        ram2_read_enable   => ram2_read_enable    ,
-        ram2_read_addr     => ram2_read_addr      ,
-        ram2_write_addr    => ram2_write_addr     ,
-        ram2_write_data    => ram2_write_data     
     );
 
     ---------------- IF --------------------------
@@ -782,7 +791,22 @@ begin
     ---------------- ME --------------------------
     ME_unit: process(clk, rst)
     begin
-        
+        if flash_load_finish = '0' then
+            boot_ram2_readout   <= ram2_readout;
+            ram2_read_addr      <= zero18;
+            ram2_read_enable    <= boot_ram2_read_enable;
+            ram2_write_enable   <= boot_ram2_write_enable;
+            ram2_write_addr     <= boot_ram2_write_addr;
+            ram2_write_data     <= boot_ram2_write_data;
+        else
+            ram2_read_addr      <= vga_ram2_read_addr;
+            vga_ram2_readout    <= ram2_readout;
+            ram2_read_enable    <= vga_ram2_read_enable;
+            ram2_write_enable   <= '0';
+            ram2_write_addr     <= zero18;
+            ram2_write_data     <= zero16;
+        end if;
+
         if (rst = '0') then
             mewb_instruc <= NOP_instruc;
             me_read_enable <= '0';
@@ -792,22 +816,13 @@ begin
             seri1_ctrl_read_en <= '0';
         elsif boot_finish = '0' then
             mewb_instruc <= NOP_instruc;
+            -- me is RAM1
             me_read_enable  <= boot_ram1_read_enable;
             me_write_enable <= boot_ram1_write_enable;
             me_write_addr   <= boot_ram1_write_addr;
             me_write_data   <= boot_ram1_write_data;
-            -- when booting RAM2 is reserved for flash
-            ram2_read_addr      <= boot_ram2_read_addr;
-            ram2_readout        <= boot_ram2_readout;
-            ram2_read_enable    <= boot_ram2_read_enable;
-            ram2_write_enable   <= boot_ram2_write_enable;
         elsif (clk'event and clk='1') then
             -- except for flash, RAM2 is reserved for VGA
-            ram2_read_addr      <= vga_ram2_read_addr;
-            ram2_readout        <= vga_ram2_readout;
-            ram2_read_enable    <= vga_ram2_read_enable;
-            ram2_write_enable   <= vga_ram2_write_enable;
-            
             mewb_instruc <= exme_instruc;
             me_read_enable <= '0';
             me_write_enable <= '0';
@@ -1222,24 +1237,5 @@ begin
         end if;
     end process Control_unit;
 
-<<<<<<< HEAD
-=======
-    dyp1 <= "1111111";
-
-    led <= r0    when (instruct(14 downto 11) = r0_index) else
-           r1    when (instruct(14 downto 11) = r1_index) else
-           r2    when (instruct(14 downto 11) = r2_index) else
-           r3    when (instruct(14 downto 11) = r3_index) else
-           r4    when (instruct(14 downto 11) = r4_index) else
-           r5    when (instruct(14 downto 11) = r5_index) else
-           r6    when (instruct(14 downto 11) = r6_index) else
-           r7    when (instruct(14 downto 11) = r7_index) else
-           T     when (instruct(14 downto 11) = T_index) else
-           EPC   when (instruct(14 downto 11) = EPC_index) else
-           Cause when (instruct(14 downto 11) = Case_index) else
-           seri_wrn_t & seri_rdn_t & seri_tbre & seri_tsre & seri_data_ready & "00000000000"
-           when (instruct(14 downto 11) = reg_none);
-
->>>>>>> 0b3a3bbe70527cc3de68eb43b11ec3d276136bcd
 end Behavioral;
 

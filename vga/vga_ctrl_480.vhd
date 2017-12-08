@@ -47,7 +47,7 @@ entity vga_ctrl_480 is
 		-- ram2 request
 		ram2_read_enable	: out std_logic;
 		read_addr			: out std_logic_vector (17 downto 0);
-		read_out			: in std_logic_vector (15 downto 0);
+		read_out			: inout std_logic_vector (15 downto 0);
 
 		r0, r1, r2, r3, r4,r5,r6,r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);
@@ -74,7 +74,7 @@ component vga_sweep is
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
 		
-		pos_x, pos_y : out integer
+		pos_x, pos_y : out integer range 0 to 4096
 	);
 end component;
 
@@ -144,7 +144,7 @@ component vga_image_ram2 is
 
         ram2_read_enable         : out std_logic;
         read_addr	: out std_logic_vector (17 downto 0);
-        read_out : in std_logic_vector (15 downto 0)
+        read_out : inout std_logic_vector (15 downto 0)
     );
 end component;
 
@@ -152,7 +152,7 @@ end component;
 signal vga_clk_c : std_logic := '0';
 
 -- column/x and row/y coordinates
-signal x, y : integer range 0 to 4048;
+signal x, y : integer range 0 to 4096;
 signal right_x : integer range -2048 to 2048;
 
 -- Hs, Vs used in computation

@@ -14,13 +14,26 @@ use BASIC.HELPER.ALL;
 
 package interface is
 
+    component refresh is
+        port (
+            click : in std_logic;
+            clk : in std_logic;
+            rst : in std_logic;
+            
+            addr        : out std_logic_vector (17 downto 0);
+            data        : out std_logic_vector (15 downto 0);
+            ram2_write_enable   : out std_logic
+        );
+    end component;
+
     component flash_manager is
         port(
             not_boot            : in std_logic;
             clk                 : in  std_logic;
             event_clk           : in std_logic;
             rst                 : in  std_logic;
-            
+
+            load_finish_flag    : out std_logic;
             boot_finish_flag    : out std_logic := '0';
             flash_byte : out  std_logic;
             flash_vpen : out  std_logic;
@@ -32,7 +45,7 @@ package interface is
             flash_data : inout  std_logic_vector (15 downto 0);
 
             ram1_addr, ram2_addr    : out std_logic_vector (17 downto 0);
-            ram1_data, ram2_data    : out std_logic_vector (15 downto 0);
+            ram1_data, ram2_data    : inout std_logic_vector (15 downto 0);
             ram1_write_enable, ram1_read_enable : out std_logic;
             ram2_write_enable, ram2_read_enable : out std_logic;
             digit  : out std_logic_vector (6 downto 0)
@@ -151,7 +164,7 @@ package interface is
             cache_WE	: in std_logic;
             -- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
             disp_addr	: out std_logic_vector (17 downto 0);
-            disp_data	: in std_logic_vector (15 downto 0);
+            disp_data	: inout std_logic_vector (15 downto 0);
 
             r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
 

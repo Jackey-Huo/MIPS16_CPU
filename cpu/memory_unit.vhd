@@ -132,18 +132,16 @@ begin
                                         --(seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
 
     -- RAM2 is specialized for VGA display
-    EN_ram2 <= '1' when ((rst = '0') or (seri1_read_enable = '1') or (seri1_write_enable = '1')) else '0';
+    EN_ram2 <= '1' when rst = '0' else '0';
 
     OE_ram2 <= OE_ram2_t;
     OE_ram2_t <= '1' when (rst = '0') else
-               '1' when ((seri1_read_enable = '1') or (seri1_write_enable = '1')) else
                '0' when (ram2_read_enable = '1') else
                '1' when (ram2_write_enable = '1') else '0';
     
     WE_ram2 <= WE_ram2_t;
     WE_ram2_t <= '1' when (rst = '0') else
-               '1' when ((seri1_read_enable = '1') or (seri1_write_enable = '1')) else
-               '0' when (ram2_write_enable_real = '1') else
+               '0' when (ram2_write_enable_real = '1') else   
                '1' when (ram2_read_enable = '1') else '1';
 
     addr_ram2 <= zero18 when(rst = '0') else
@@ -153,7 +151,7 @@ begin
 
     ram2_readout <= data_ram2 when (ram2_read_enable = '1') else
                     "ZZZZZZZZZZZZZZZZ";
-    data_ram2 <= ram2_write_data when ((ram2_write_enable_real = '1') or (seri1_write_enable = '1'))
+    data_ram2 <= ram2_write_data when ram2_write_enable_real = '1'
                                 else "ZZZZZZZZZZZZZZZZ";
     
 --    led(3) <= WE_ram2_t;

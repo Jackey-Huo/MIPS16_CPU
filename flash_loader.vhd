@@ -61,17 +61,12 @@ entity flash_loader is
 end flash_loader;
 
 architecture Behavioral of flash_loader is
-
-    signal mem_write_en: std_logic;
     type flash_read_state is (flash_init, flash_read0, flash_read1, flash_read2, flash_read3, flash_read_done, mem_write, mem_write_done, load_finish);
 
     signal state: flash_read_state := flash_init;
-    signal next_flash_addr : std_logic_vector (21 downto 0) := zero22;
-    signal next_mem_addr: std_logic_vector(17 downto 0) := zero18;
+
     signal cur_flash_addr   : std_logic_vector (21 downto 0) := zero22;
     signal cur_mem_addr     : std_logic_vector (17 downto 0) := zero18;
-    signal mem_addr: std_logic_vector(17 downto 0) := zero18;
-    signal state_clk : std_logic := '0';
 
     signal end_addr : std_logic_vector (21 downto 0);
 begin
@@ -79,7 +74,6 @@ begin
     flash_byte <= '1';
     flash_vpen <= '1';
     flash_rp <= '1';
-    state_clk <= clk;
     end_addr <= start_addr + load_len;
     load_done <= '1' when state = load_finish else '0';
 

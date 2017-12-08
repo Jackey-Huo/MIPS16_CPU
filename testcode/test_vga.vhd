@@ -91,6 +91,7 @@ architecture Behavioral of test_vga is
 	signal SP, IH, T, CM, PC : std_logic_vector(15 downto 0) := x"0000";
 
 	-- VGA signals
+	signal disp_mode : std_logic_vector ( 2 downto 0) := "000";
 	signal cache_WE, cache_wea, disp_en       : std_logic := '0';
     signal ram2_readout        : std_logic_vector (15 downto 0);
     signal ram2_write_enable   : std_logic;
@@ -165,12 +166,13 @@ architecture Behavioral of test_vga is
             ram2_read_enable    : in std_logic;
             ram2_read_addr      : in std_logic_vector (17 downto 0);
             ram2_write_addr     : in std_logic_vector (17 downto 0);
-            ram2_write_data		: in std_logic_vector (15 downto 0);
-            led                 : out std_logic_vector (3 downto 0)
+            ram2_write_data		: in std_logic_vector (15 downto 0)
+
         );
     end component;
 begin
-
+	disp_mode <= "000";
+	
 	ctrl_color <= "000000111";
     ------------- Memory and Serial Control Unit, pure combinational logic
     memory_IO : memory_unit port map(
@@ -215,8 +217,7 @@ begin
         ram2_read_enable   => ram2_read_enable    ,
         ram2_read_addr     => ram2_read_addr      ,
         ram2_write_addr    => ram2_write_addr     ,
-        ram2_write_data    => ram2_write_data     ,
-        led                => led(15 downto 12)    
+        ram2_write_data    => ram2_write_data     
     );
 
     fresh_ram2 : refresh port map(
@@ -232,6 +233,7 @@ begin
     vga_disp : vga_ctrl port map(
         clk => clk,
         rst => rst,
+        disp_mode => disp_mode,
         Hs => Hs,
         Vs => Vs,
         cache_wea => cache_wea,
@@ -258,7 +260,13 @@ begin
         B => VGA_B
     );
 
-	led(11 downto 0) <= ram2_read_addr(17 downto 6);
+    led(6 downto 0) <= ram2_readout(6 downto 0);
+    led(15) <= seri_wrn_t;
+    led(14) <= seri_rdn_t;
+    led(13) <= seri_tbre;
+    led(12) <= seri_tsre;
+    led(11) <= seri_data_ready;
+    led(10 downto 7) <= me_read_enable & me_write_enable & ram2_read_enable & ram2_write_enable;
 	
 end Behavioral;
 
