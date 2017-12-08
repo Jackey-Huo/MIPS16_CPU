@@ -140,13 +140,15 @@ package interface is
         Port(
             clk			: in std_logic; -- clock forced to be 50M
             rst			: in std_logic;
-    		disp_mode			: in std_logic; -- select between different display app
-            
+
+            disp_mode	: in std_logic_vector (2 downto 0);
+
             Hs			: out std_logic; -- line sync
             Vs			: out std_logic; -- field sync
             cache_wea	: out std_logic;
-		    ram2_read_enable 	: out std_logic;
-            cache_WE		: in std_logic;
+            ram2_read_enable		: out std_logic;
+            
+            cache_WE	: in std_logic;
             -- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
             disp_addr	: out std_logic_vector (17 downto 0);
             disp_data	: in std_logic_vector (15 downto 0);

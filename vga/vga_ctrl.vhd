@@ -33,6 +33,7 @@ entity vga_ctrl is
 	Port(
 		clk			: in std_logic; -- clock forced to be 50M
 		rst			: in std_logic;
+
 		disp_mode	: in std_logic_vector (2 downto 0);
 
 		Hs			: out std_logic; -- line sync
