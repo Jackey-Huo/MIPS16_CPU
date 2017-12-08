@@ -41,7 +41,6 @@ entity int_ctrl is
         cur_pc          : in std_logic_vector (15 downto 0);
         -- current instruction for software INT
         cur_instruc     : in std_logic_vector (15 downto 0);
-        --int_instruc     : out std_logic_vector (15 downto 0);
         int_flag        : out std_logic;
         epc             : out std_logic_vector (15 downto 0);
         cause           : out std_logic_vector (15 downto 0)
@@ -52,7 +51,7 @@ architecture Behavioral of int_ctrl is
 
 begin
 
-    process(clk, rst)
+    process(clk, rst, cur_instruc)
     begin
         if rst = '0' then
             int_flag <= '0';
@@ -60,7 +59,7 @@ begin
             if cur_instruc (15 downto 11) = INT_op then
                 int_flag <= '1';
                 epc <= cur_pc;
-                cause <= "00000" & cur_instruc (10 downto 0);
+                cause <= "000000000000" & cur_instruc (3 downto 0);
             else
                 int_flag <= '0';
             end if;

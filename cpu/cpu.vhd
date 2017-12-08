@@ -202,8 +202,14 @@ architecture Behavioral of cpu is
     -- INT module signals
     signal int_flag     : std_logic := '0';                         -- if there is INT op
     signal int_num      : std_logic_vector (3 downto 0) := x"0";    -- INT op number
+<<<<<<< HEAD
 
 	signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
+=======
+    signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
+    -- absolute interrupt headle address, changed by the kernel development
+    constant delint_addr   : std_logic_vector (15 downto 0) := x"0006";
+>>>>>>> 0b3a3bbe70527cc3de68eb43b11ec3d276136bcd
 
 begin
     -- '0' for normal boot ; '1' for not boot
@@ -294,7 +300,7 @@ begin
         clk => clk,
         rst => rst,
         cur_pc => pc_real,
-		  
+        cur_instruc => ifid_instruc,
         int_flag => int_flag,
         epc => EPC,
         cause => Cause
@@ -368,7 +374,7 @@ begin
         end if;
     end process IF_unit;
 
-    -- mux for real pc, TODO: block pc increase with IF MEM conflict
+    -- mux for real pc
     pc_real <= zero16 when (rst = '0') else
                id_branch_value when ((id_pc_branch = '1') and (ctrl_insert_bubble = '0')) else
                pc;
@@ -415,9 +421,12 @@ begin
                         idex_reg_b_data <= sign_extend4(ifid_instruc(3 downto 0));
                         -- write back register index
                         idex_reg_wb <= "0" & ifid_instruc(7 downto 5);
+                    when INT_op =>
+                        id_pc_branch <= '1';
+                        idex_reg_wb <= reg_none;
                     when EXTEND_TSP_op =>
                         case ifid_instruc(10 downto 8) is
-                            when EX_ADDSP_pf_op =>  -- TODO: conflict detection
+                            when EX_ADDSP_pf_op =>
                                 idex_reg_a_data <= SP;
                                 idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
                                 idex_reg_wb <= SP_index;
@@ -490,6 +499,12 @@ begin
                             when EX_MTIH_sf_op =>
                                 reg_decode(idex_bypass, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
                                 idex_reg_wb <= IH_index;
+                            when EX_MFEPC_sf_op =>
+                                idex_bypass <= EPC;
+                                idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                            when EX_MFCAS_sf_op =>
+                                idex_bypass <= Cause;
+                                idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
                             when others =>
                                 idex_reg_wb <= reg_none;
                         end case;
@@ -523,7 +538,7 @@ begin
                         idex_reg_a_data <= SP;
                         -- immediate sign extend
                         idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
-                        -- rx value  TODO: control unit for bypass value
+                        -- rx value
                         reg_decode(idex_bypass, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
                     when BNEZ_op =>
                         id_pc_branch <= '1';
@@ -541,13 +556,6 @@ begin
                         id_pc_branch <= '1';
                         -- immediate sign extend
                         idex_reg_a_data <= sign_extend11(ifid_instruc(10 downto 0));
-                    when MFEX_op =>
-                        case ifid_instruc(7 downto 5) is
-                            when "000" => idex_bypass <= EPC;
-                            when "001" => idex_bypass <= Cause;
-                            when others =>
-                        end case;
-                        idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
                     when others =>
                         idex_reg_a_data <= zero16;
                         idex_reg_b_data <= zero16;
@@ -558,7 +566,7 @@ begin
         end if;
     end process ID_unit;
 
-    -- combination logic multiplexer unit for branch TODO: maybe we need bubble handle, fix it later
+    -- combination logic multiplexer unit for branch
     process(pc, id_instruc, idex_reg_b_data_real, idex_reg_a_data_real)
     begin
         if (id_pc_branch = '1') then
@@ -577,6 +585,8 @@ begin
                     end if;
                 when B_op =>
                     id_branch_value <= pc - 1 + idex_reg_a_data_real;
+                when INT_op =>
+                    id_branch_value <= delint_addr;
                 when EXTEND_TSP_op =>
                     case id_instruc(10 downto 8) is
                         when EX_BTNEZ_pf_op =>
@@ -612,7 +622,6 @@ begin
         end if;
     end process;
  
-    -- TODO input will be change to 7, current is not good
     -- combination logic multiplexer unit for conflict solve
     -- multiplexer map
     Rg_A_mux: mux7to1 port map (idex_reg_a_data_real, ctrl_mux_reg_a, idex_reg_a_data, exme_result,
@@ -753,16 +762,13 @@ begin
                     end case;
                 when EXTEND_IH_op =>
                     case ex_instruc(7 downto 0) is
-                        when EX_MFIH_sf_op | EX_MTIH_sf_op  =>
+                        when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op =>
                             exme_bypass <= idex_bypass_real;
                             exme_reg_wb <= idex_reg_wb;
                             ex_alu_op <= alu_nop;
                         when others =>
                             ex_alu_op <= alu_nop;
                     end case;
-                when MFEX_op =>
-                    exme_bypass <= idex_bypass_real;
-                    exme_reg_wb <= idex_reg_wb;
                 when others =>
                     ex_alu_op <= alu_nop;
             end case;
@@ -876,14 +882,11 @@ begin
                     end case;
                 when EXTEND_IH_op =>
                     case exme_instruc(7 downto 0) is
-                        when EX_MFIH_sf_op | EX_MTIH_sf_op  =>
+                        when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op  =>
                             mewb_bypass <= exme_bypass;
                             mewb_reg_wb <= exme_reg_wb;
                         when others =>
                     end case;
-                when MFEX_op =>
-                    mewb_reg_wb <= exme_reg_wb;
-                    mewb_bypass <= exme_bypass;
                 when NOP_op =>
                     mewb_instruc <= NOP_instruc;
                 when others =>
@@ -953,14 +956,11 @@ begin
                     end case;
                 when EXTEND_IH_op =>
                     case exme_instruc(7 downto 0) is
-                        when EX_MFIH_sf_op | EX_MTIH_sf_op  =>
+                        when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op =>
                             wb_data := mewb_bypass;
                             wb_enable := true;
                         when others =>
                     end case;
-                when MFEX_op =>
-                    wb_data := mewb_bypass;
-                    wb_enable := true;
                 when NOP_op =>
                     wb_enable := false;
                 when others =>
@@ -992,6 +992,8 @@ begin
                     when "1010" =>
                         T <= wb_data;
                     when others =>
+                        -- for INT register EPC and Cause, they will be assigned 
+                        -- at INT module, that is, no instruction can write them
                 end case;
             else
                 wb_reg_data <= zero16;
@@ -1155,6 +1157,16 @@ begin
                             ctrl_rd_reg_a  := reg_none;
                             ctrl_rd_reg_b  := reg_none;
                             ctrl_rd_bypass := "0" & ctrl_instruc_0(10 downto 8);
+                        when EX_MFEPC_sf_op =>
+                            ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_reg_a  := reg_none;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := EPC_index;
+                        when EX_MFCAS_sf_op =>
+                            ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_reg_a  := reg_none;
+                            ctrl_rd_reg_b  := reg_none;
+                            ctrl_rd_bypass := Case_index;
                         when others =>
                             ctrl_wb_reg_0  := reg_none;
                             ctrl_rd_reg_a  := reg_none;
@@ -1210,5 +1222,24 @@ begin
         end if;
     end process Control_unit;
 
+<<<<<<< HEAD
+=======
+    dyp1 <= "1111111";
+
+    led <= r0    when (instruct(14 downto 11) = r0_index) else
+           r1    when (instruct(14 downto 11) = r1_index) else
+           r2    when (instruct(14 downto 11) = r2_index) else
+           r3    when (instruct(14 downto 11) = r3_index) else
+           r4    when (instruct(14 downto 11) = r4_index) else
+           r5    when (instruct(14 downto 11) = r5_index) else
+           r6    when (instruct(14 downto 11) = r6_index) else
+           r7    when (instruct(14 downto 11) = r7_index) else
+           T     when (instruct(14 downto 11) = T_index) else
+           EPC   when (instruct(14 downto 11) = EPC_index) else
+           Cause when (instruct(14 downto 11) = Case_index) else
+           seri_wrn_t & seri_rdn_t & seri_tbre & seri_tsre & seri_data_ready & "00000000000"
+           when (instruct(14 downto 11) = reg_none);
+
+>>>>>>> 0b3a3bbe70527cc3de68eb43b11ec3d276136bcd
 end Behavioral;
 
