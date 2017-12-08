@@ -161,6 +161,27 @@ package interface is
     end component;
 
 
+    component WB is
+        port (
+            clk, rst                        : in std_logic;
+
+            boot_finish                     : in std_logic;
+
+            --MEM/WB pipeline storage
+            mewb_instruc                    : in std_logic_vector (15 downto 0);
+            mewb_result                     : in std_logic_vector (15 downto 0);
+            mewb_readout                    : in std_logic_vector (15 downto 0);
+            mewb_reg_wb                     : in std_logic_vector (3 downto 0);
+            mewb_bypass                     : in std_logic_vector (15 downto 0);
+
+            wb_reg_data                     : out std_logic_vector (15 downto 0) := zero16;
+
+            -- register
+            r0, r1, r2, r3, r4, r5, r6, r7  : out std_logic_vector (15 downto 0) := zero16;
+            SP, IH, T                       : out std_logic_vector (15 downto 0) := zero16
+        );
+    end component;
+
     -- component
     component alu is
         port (

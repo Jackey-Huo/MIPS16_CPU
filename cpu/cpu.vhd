@@ -487,6 +487,7 @@ begin
                                 exme_carry, exme_zero, exme_ovr);
 
 
+    ---------------- ME --------------------------
     ME_unit: MEM port map (
             clk                     => clk,
             rst                     => rst,
@@ -526,226 +527,132 @@ begin
     );
 
 
+    WB_unit: WB port map (
+            clk => clk,  rst => rst,
 
-    ---------------- ME --------------------------
-    --ME_unit: process(clk, rst)
-    --begin
-        --if (rst = '0') then
-            --mewb_instruc <= NOP_instruc;
-            --me_read_enable <= '0';
-            --me_write_enable <= '0';
-            --seri1_read_enable <= '0';
-            --seri1_write_enable <= '0';
-            --seri1_ctrl_read_en <= '0';
-        --elsif boot_finish = '0' then
-            --me_read_enable <= boot_read_enable;
-            --me_write_enable <= boot_write_enable;
-            --me_write_addr <= boot_write_addr;
-            --me_write_data <= boot_write_data;
-        --elsif (clk'event and clk='1') then
-            --mewb_instruc <= exme_instruc;
-            --me_read_enable <= '0';
-            --me_write_enable <= '0';
-            --seri1_read_enable <= '0';
-            --seri1_write_enable <= '0';
-            --seri1_ctrl_read_en <= '0';
-            --case exme_instruc(15 downto 11) is
-                --when ADDIU_op | ADDIU3_op | EXTEND_RRI_op  =>
-                    --mewb_result <= exme_result;
-                    --mewb_reg_wb <= exme_reg_wb;
-                --when EXTEND_ALU3_op => -- ADDU, SUBU
-                    --mewb_result <= exme_result;
-                    --mewb_reg_wb <= exme_reg_wb;
-                --when LI_op =>
-                    --mewb_reg_wb <= exme_reg_wb;
-                    --mewb_bypass <= exme_bypass;
-                --when LW_op | LW_SP_op =>
-                    --case exme_result is
-                        --when seri1_data_addr =>    -- 0xBF00 serial 1 data
-                            --seri1_write_enable <= '0';
-                            --seri1_read_enable <= '1';
-                            --mewb_reg_wb <= exme_reg_wb;
-                        --when seri1_ctrl_addr =>    -- 0xBF01 serial 1 control signal
-                            --seri1_ctrl_read_en <= '1';
-                            --mewb_reg_wb <= exme_reg_wb;
-                        --when seri2_data_addr =>   -- not support yet
-                        --when seri2_ctrl_addr =>
-                        --when others => -- lw in SRAM
-                            --mewb_reg_wb <= exme_reg_wb;
-                            --me_read_addr <= "00" & exme_result;
-                            --me_read_enable <= '1';
-                            --me_write_enable <= '0';
-                    --end case;
-                --when SW_op | SW_SP_op =>
-                    --case exme_result is
-                        --when seri1_data_addr =>
-                            --seri1_write_enable <= '1';
-                            --seri1_read_enable <= '0';
-                            --me_write_data <= exme_bypass;  -- actually, only low 8 bit will write to serial
-                        --when seri1_ctrl_addr =>            -- not allowed
-                        --when seri2_data_addr =>            -- not support yet
-                        --when seri2_ctrl_addr =>
-                        --when others => -- sw in SRAM
-                            --me_write_addr <= "00" & exme_result;
-                            --me_write_data <= exme_bypass;
-                            --me_read_enable <= '0';
-                            --me_write_enable <= '1';
-                    --end case;
-                --when INT_op =>
-                    --case exme_instruc(3 downto 0) is
-                        --when "1000" =>                 -- hard interrupt
-                            --me_write_addr <= "00" & hardint_keyboard_addr;
-                            --me_write_data <= exme_bypass;
-                            --me_read_enable <= '0';
-                            --me_write_enable <= '1';
-                        --when others =>
-                                                      ---- soft interrupt, do nothing
-                    --end case;
-                --when EXTEND_TSP_op =>
-                    --case exme_instruc(10 downto 8) is
-                        --when EX_ADDSP_pf_op =>
-                            --mewb_result <= exme_result;
-                            --mewb_reg_wb <= exme_reg_wb;
-                        --when EX_MTSP_pf_op =>
-                            --mewb_bypass <= exme_result;
-                            --mewb_reg_wb <= exme_reg_wb;
-                        --when others =>
-                    --end case;
-                --when EXTEND_ALUPCmix_op =>
-                    --case exme_instruc(4 downto 0) is
-                        --when EX_AND_sf_op | EX_OR_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op | EX_CMP_sf_op =>
-                            --mewb_result <= exme_result;
-                            --mewb_reg_wb <= exme_reg_wb;
-                        --when EX_PC_sf_op =>
-                            --case exme_instruc(7 downto 5) is
-                                --when EX_MFPC_sf_diff_op =>
-                                    --mewb_reg_wb <= exme_reg_wb;
-                                    --mewb_bypass <= exme_bypass;
-                                --when others =>
-                            --end case;
-                        --when others =>
-                    --end case;
-                --when EXTEND_IH_op =>
-                    --case exme_instruc(7 downto 0) is
-                        --when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op  =>
-                            --mewb_bypass <= exme_bypass;
-                            --mewb_reg_wb <= exme_reg_wb;
-                        --when others =>
-                    --end case;
-                --when NOP_op =>
-                    --mewb_instruc <= NOP_instruc;
-                --when others =>
-                    --mewb_instruc <= NOP_instruc;
-            --end case;
-        --end if;
-    --end process ME_unit;
+            boot_finish  => boot_finish,
+
+            --MEM/WB pipeline storage
+            mewb_instruc => mewb_instruc,
+            mewb_result  => mewb_result,
+            mewb_readout => mewb_readout,
+            mewb_reg_wb  => mewb_reg_wb,
+            mewb_bypass  => mewb_bypass,
+
+            wb_reg_data => wb_reg_data,
+
+            -- register
+            r0=>r0, r1=>r1, r2=>r2, r3=>r3,
+            r4=>r4, r5=>r5, r6=>r6, r7=>r7,
+            SP=>SP, IH=>IH, T =>T
+    );
 
 
     ---------------- WB --------------------------
-    WB_unit: process(clk, rst)
-        variable wb_data : std_logic_vector(15 downto 0);
-        variable wb_enable : boolean := false;
-    begin
-          if rst = '0' or boot_finish = '0' then
-                r0 <= zero16;
-                r1 <= zero16;
-                r2 <= zero16;
-                r3 <= zero16;
-                r4 <= zero16;
-                r5 <= zero16;
-                r6 <= zero16;
-                r7 <= zero16;
-                SP <= zero16;
-                IH <= zero16;
-                T <= zero16;
-                wb_enable := false;
-        elsif (clk'event and clk='1') then
-            case mewb_instruc(15 downto 11) is
-                when ADDIU_op | ADDIU3_op | EXTEND_RRI_op =>
-                    wb_data := mewb_result;
-                    wb_enable := true;
-                when EXTEND_ALU3_op => -- ADDU, SUBU
-                    wb_data := mewb_result;
-                    wb_enable := true;
-                when LI_op =>
-                    wb_data := mewb_bypass;
-                    wb_enable := true;
-                when LW_op | LW_SP_op =>
-                    wb_data := mewb_readout;
-                    wb_enable := true;
-                when EXTEND_TSP_op =>
-                    case mewb_instruc(10 downto 8) is
-                        when EX_ADDSP_pf_op =>
-                            wb_data := mewb_result;
-                            wb_enable := true;
-                        when EX_MTSP_pf_op =>
-                            wb_data := mewb_bypass;
-                            wb_enable := true;
-                        when others =>
-                            wb_enable := false;
-                    end case;
-                when EXTEND_ALUPCmix_op =>
-                    case mewb_instruc(4 downto 0) is
-                        when EX_AND_sf_op | EX_OR_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op | EX_CMP_sf_op =>
-                            wb_data := mewb_result;
-                            wb_enable := true;
-                        when EX_PC_sf_op =>
-                            case mewb_instruc(7 downto 5) is
-                                when EX_MFPC_sf_diff_op =>
-                                    wb_data := mewb_bypass;
-                                    wb_enable := true;
-                                when others =>
-                            end case;
-                        when others =>
-                            wb_enable := false;
-                    end case;
-                when EXTEND_IH_op =>
-                    case exme_instruc(7 downto 0) is
-                        when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op =>
-                            wb_data := mewb_bypass;
-                            wb_enable := true;
-                        when others =>
-                    end case;
-                when NOP_op =>
-                    wb_enable := false;
-                when others =>
-                    wb_enable := false;
-            end case;
-            if (wb_enable = true) then
-                wb_reg_data <= wb_data;
-                case mewb_reg_wb is
-                    when "0000" =>
-                        r0 <= wb_data;
-                    when "0001" =>
-                        r1 <= wb_data;
-                    when "0010" =>
-                        r2 <= wb_data;
-                    when "0011" =>
-                        r3 <= wb_data;
-                    when "0100" =>
-                        r4 <= wb_data;
-                    when "0101" =>
-                        r5 <= wb_data;
-                    when "0110" =>
-                        r6 <= wb_data;
-                    when "0111" =>
-                        r7 <= wb_data;
-                    when "1000" =>
-                        SP <= wb_data;
-                    when "1001" =>
-                        IH <= wb_data;
-                    when "1010" =>
-                        T <= wb_data;
-                    when others =>
-                        -- for INT register EPC and Cause, they will be assigned 
-                        -- at INT module, that is, no instruction can write them
-                end case;
-            else
-                wb_reg_data <= zero16;
-            end if;
+    --WB_unit: process(clk, rst)
+        --variable wb_data : std_logic_vector(15 downto 0);
+        --variable wb_enable : boolean := false;
+    --begin
+          --if rst = '0' or boot_finish = '0' then
+                --r0 <= zero16;
+                --r1 <= zero16;
+                --r2 <= zero16;
+                --r3 <= zero16;
+                --r4 <= zero16;
+                --r5 <= zero16;
+                --r6 <= zero16;
+                --r7 <= zero16;
+                --SP <= zero16;
+                --IH <= zero16;
+                --T <= zero16;
+                --wb_enable := false;
+        --elsif (clk'event and clk='1') then
+            --case mewb_instruc(15 downto 11) is
+                --when ADDIU_op | ADDIU3_op | EXTEND_RRI_op =>
+                    --wb_data := mewb_result;
+                    --wb_enable := true;
+                --when EXTEND_ALU3_op => -- ADDU, SUBU
+                    --wb_data := mewb_result;
+                    --wb_enable := true;
+                --when LI_op =>
+                    --wb_data := mewb_bypass;
+                    --wb_enable := true;
+                --when LW_op | LW_SP_op =>
+                    --wb_data := mewb_readout;
+                    --wb_enable := true;
+                --when EXTEND_TSP_op =>
+                    --case mewb_instruc(10 downto 8) is
+                        --when EX_ADDSP_pf_op =>
+                            --wb_data := mewb_result;
+                            --wb_enable := true;
+                        --when EX_MTSP_pf_op =>
+                            --wb_data := mewb_bypass;
+                            --wb_enable := true;
+                        --when others =>
+                            --wb_enable := false;
+                    --end case;
+                --when EXTEND_ALUPCmix_op =>
+                    --case mewb_instruc(4 downto 0) is
+                        --when EX_AND_sf_op | EX_OR_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op | EX_CMP_sf_op =>
+                            --wb_data := mewb_result;
+                            --wb_enable := true;
+                        --when EX_PC_sf_op =>
+                            --case mewb_instruc(7 downto 5) is
+                                --when EX_MFPC_sf_diff_op =>
+                                    --wb_data := mewb_bypass;
+                                    --wb_enable := true;
+                                --when others =>
+                            --end case;
+                        --when others =>
+                            --wb_enable := false;
+                    --end case;
+                --when EXTEND_IH_op =>
+                    --case exme_instruc(7 downto 0) is
+                        --when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op =>
+                            --wb_data := mewb_bypass;
+                            --wb_enable := true;
+                        --when others =>
+                    --end case;
+                --when NOP_op =>
+                    --wb_enable := false;
+                --when others =>
+                    --wb_enable := false;
+            --end case;
+            --if (wb_enable = true) then
+                --wb_reg_data <= wb_data;
+                --case mewb_reg_wb is
+                    --when "0000" =>
+                        --r0 <= wb_data;
+                    --when "0001" =>
+                        --r1 <= wb_data;
+                    --when "0010" =>
+                        --r2 <= wb_data;
+                    --when "0011" =>
+                        --r3 <= wb_data;
+                    --when "0100" =>
+                        --r4 <= wb_data;
+                    --when "0101" =>
+                        --r5 <= wb_data;
+                    --when "0110" =>
+                        --r6 <= wb_data;
+                    --when "0111" =>
+                        --r7 <= wb_data;
+                    --when "1000" =>
+                        --SP <= wb_data;
+                    --when "1001" =>
+                        --IH <= wb_data;
+                    --when "1010" =>
+                        --T <= wb_data;
+                    --when others =>
+                        ---- for INT register EPC and Cause, they will be assigned 
+                        ---- at INT module, that is, no instruction can write them
+                --end case;
+            --else
+                --wb_reg_data <= zero16;
+            --end if;
 
-        end if;
-    end process WB_unit;
+        --end if;
+    --end process WB_unit;
 
 
     ------------ Control Unit --------------------
