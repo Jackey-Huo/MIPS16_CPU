@@ -146,27 +146,13 @@ package interface is
             rst             : in std_logic;
             -- current instruction for software INT
             cur_pc          : in std_logic_vector (15 downto 0);
+            -- current instruction for software INT
+            cur_instruc     : in std_logic_vector (15 downto 0);
             int_flag        : out std_logic;
             epc             : out std_logic_vector (15 downto 0);
             cause           : out std_logic_vector (15 downto 0)
         );
     end component;
--- type <new_type> is
---  record
---    <type_name>        : std_logic_vector( 7 downto 0);
---    <type_name>        : std_logic;
--- end record;
---
--- Declare constants
---
--- constant <constant_name>		: time := <time_unit> ns;
--- constant <constant_name>		: integer := <value;
---
--- Declare functions and procedure
---
--- function <function_name>  (signal <signal_name> : in <type_declaration>) return <type_declaration>;
--- procedure <procedure_name> (<type_declaration> <constant_name>	: in <type_declaration>);
---
 
 end interface;
 
