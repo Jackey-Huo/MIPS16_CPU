@@ -27,6 +27,12 @@ DELINT:
 	SW R6 R5 0x0005
 	SW R6 R7 0x0007
     LW_SP R6 0x0000
+
+    ; 禁止一切硬中断
+    LI R0 0x00
+    SLL R0 R0 0x00
+    MTIH R0
+
 	
 	; R1=中断号
 	; MFCAS R1
@@ -82,7 +88,7 @@ DELINT:
 	
 	;用r3=IH（高位变成1）
 	MFIH R3
-	LI R0 0x0080
+	LI R0 0x00c0
 	SLL R0 R0 0x000
 	OR R3 R0
 	MTIH R3

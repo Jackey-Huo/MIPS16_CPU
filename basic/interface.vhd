@@ -54,6 +54,157 @@ package interface is
         );
     end component;
 
+
+    component ID is
+        port (
+            clk, rst                        : in std_logic;
+
+            -- boot finish flag
+            boot_finish                     : in std_logic;
+
+            -- Control Unit
+            ctrl_insert_bubble              : in std_logic;
+
+            -- hard keyboard interrupt
+            ps2_hold_key_value              : in std_logic_vector (15 downto 0);
+
+            -- IF/ID pipeline storage
+            ifid_instruc                    : in std_logic_vector (15 downto 0);
+
+            -- branch signal
+            id_pc_branch                    : out std_logic                      := '0';
+
+            id_instruc                      : out std_logic_vector (15 downto 0) := zero16;
+
+            -- ID/EX
+            idex_instruc                    : out std_logic_vector (15 downto 0) := zero16;
+            idex_reg_a_data                 : out std_logic_vector (15 downto 0) := zero16;
+            idex_reg_a_data_real            : in  std_logic_vector (15 downto 0) := zero16;
+            idex_reg_b_data                 : out std_logic_vector (15 downto 0) := zero16;
+            idex_reg_b_data_real            : in  std_logic_vector (15 downto 0) := zero16;
+            idex_bypass                     : out std_logic_vector (15 downto 0) := zero16;
+            idex_bypass_real                : in  std_logic_vector (15 downto 0) := zero16;
+            idex_reg_wb                     : out std_logic_vector (3 downto 0)  := "0000";
+
+            -- Register
+            r0, r1, r2, r3, r4, r5, r6, r7  : in  std_logic_vector (15 downto 0) := zero16;
+            SP, IH, T                       : in  std_logic_vector (15 downto 0) := zero16;
+            EPC, Cause                      : in  std_logic_vector (15 downto 0) := zero16;
+            pc_real                         : in  std_logic_vector (15 downto 0)
+            );
+    end component;
+
+    component EXE is
+        port (
+            clk, rst                        : in std_logic;
+
+            -- Control unit signal
+            ctrl_insert_bubble              : in  std_logic;
+            -- boot loader
+            boot_finish                     : in  std_logic;
+
+            -- ID/EX
+            idex_instruc                    : in  std_logic_vector (15 downto 0);
+            idex_reg_a_data_real            : in  std_logic_vector (15 downto 0);
+            idex_reg_b_data_real            : in  std_logic_vector (15 downto 0);
+            idex_bypass_real                : in  std_logic_vector (15 downto 0);
+            idex_reg_wb                     : in  std_logic_vector (3 downto 0) ;
+
+            -- EX layer variables
+            ex_reg_a_data, ex_reg_b_data    : out std_logic_vector (15 downto 0) := zero16;
+            ex_alu_op                       : out std_logic_vector (3 downto 0)  := "0000";
+
+            -- EX/MEM pipeline storage
+            exme_instruc                    : out std_logic_vector (15 downto 0)  := zero16;
+            -- NOTICE: carry and overflow is not required
+            exme_reg_wb                     : out std_logic_vector (3 downto 0)  := "0000";
+            exme_bypass                     : out std_logic_vector (15 downto 0) := zero16
+        );
+    end component;
+
+
+    component MEM is
+        port (
+            clk, rst                        : in std_logic;
+
+            boot_finish                     : in std_logic;
+            boot_write_addr                 : in std_logic_vector(17 downto 0);
+            boot_write_data                 : in std_logic_vector(15 downto 0);
+            boot_write_enable               : in std_logic;
+            boot_read_enable                : in std_logic;
+
+            -- EX/MEM pipeline storage
+            exme_instruc                    : in std_logic_vector (15 downto 0);
+            exme_result                     : in std_logic_vector (15 downto 0);
+            exme_reg_wb                     : in std_logic_vector (3 downto 0) ;
+            exme_bypass                     : in std_logic_vector (15 downto 0);
+
+            -- MEM variables
+            me_read_enable, me_write_enable : out std_logic                      := '0';
+            me_write_enable_real            : out std_logic                      := '0';
+            me_read_addr, me_write_addr     : out std_logic_vector (17 downto 0) := zero18;
+            me_write_data                   : out std_logic_vector (15 downto 0) := zero16;
+
+            seri_wrn_t, seri_rdn_t          : out std_logic                      := '0';
+            seri1_read_enable               : out std_logic                      := '0';
+            seri1_write_enable              : out std_logic                      := '0';
+            seri1_write_enable_real         : out std_logic                      := '0';
+            seri1_ctrl_read_en              : out std_logic                      := '0';
+
+            --MEM/WB pipeline storage
+            mewb_instruc                    : out std_logic_vector (15 downto 0) := zero16;
+            mewb_result                     : out std_logic_vector (15 downto 0) := zero16;
+            mewb_reg_wb                     : out std_logic_vector (3 downto 0)  := "0000";
+            mewb_bypass                     : out std_logic_vector (15 downto 0) := zero16
+
+        );
+    end component;
+
+
+    component WB is
+        port (
+            clk, rst                        : in std_logic;
+
+            boot_finish                     : in std_logic;
+
+            --MEM/WB pipeline storage
+            mewb_instruc                    : in std_logic_vector (15 downto 0);
+            mewb_result                     : in std_logic_vector (15 downto 0);
+            mewb_readout                    : in std_logic_vector (15 downto 0);
+            mewb_reg_wb                     : in std_logic_vector (3 downto 0);
+            mewb_bypass                     : in std_logic_vector (15 downto 0);
+
+            wb_reg_data                     : out std_logic_vector (15 downto 0) := zero16;
+
+            -- register
+            r0, r1, r2, r3, r4, r5, r6, r7  : out std_logic_vector (15 downto 0) := zero16;
+            SP, IH, T                       : out std_logic_vector (15 downto 0) := zero16
+        );
+    end component;
+
+    component Control is
+        port (
+            clk, rst                   : in std_logic;
+
+            id_instruc                 : in std_logic_vector (15 downto 0);
+            ifid_instruc               : in std_logic_vector (15 downto 0);
+
+            boot_finish                : in std_logic;
+
+            -- hard int signal
+            hard_int_flag              : in std_logic;
+
+            -- Control Unit output
+            ctrl_mux_reg_a             : out std_logic_vector (2 downto 0) := "000";
+            ctrl_mux_reg_b             : out std_logic_vector (2 downto 0) := "000";
+            ctrl_mux_bypass            : out std_logic_vector (2 downto 0) := "000";
+            ctrl_insert_bubble         : out std_logic                     := '0'
+
+        );
+    end component;
+
+
+
     -- component
     component alu is
         port (
