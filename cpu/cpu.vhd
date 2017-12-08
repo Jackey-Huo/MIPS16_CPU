@@ -1280,7 +1280,19 @@ begin
 --	 led(10 downto 8) <= "0" & int_flag & "0";
 --    led(7 downto 0) <= data_ram1(15 downto 8);
 
-    led <= r6;
+    led <= r0    when (instruct(14 downto 11) = r0_index) else
+           r1    when (instruct(14 downto 11) = r1_index) else
+           r2    when (instruct(14 downto 11) = r2_index) else
+           r3    when (instruct(14 downto 11) = r3_index) else
+           r4    when (instruct(14 downto 11) = r4_index) else
+           r5    when (instruct(14 downto 11) = r5_index) else
+           r6    when (instruct(14 downto 11) = r6_index) else
+           r7    when (instruct(14 downto 11) = r7_index) else
+           T     when (instruct(14 downto 11) = T_index) else
+           EPC   when (instruct(14 downto 11) = EPC_index) else
+           Cause when (instruct(14 downto 11) = Case_index) else
+           seri_wrn_t & seri_rdn_t & seri_tbre & seri_tsre & seri_data_ready & "00000000000"
+           when (instruct(14 downto 11) = reg_none);
 
 end Behavioral;
 

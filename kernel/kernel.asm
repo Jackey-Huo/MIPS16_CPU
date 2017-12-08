@@ -33,6 +33,13 @@ DELINT:
 
 	NOP 
 
+    NOP
+    NOP
+    NOP
+    NOP
+
+
+
 	; R2=应用程序的pc
 	; MFEPC R2
 
@@ -83,11 +90,6 @@ DELINT:
 	MTIH R3
 	
 
-INTLOOP:
-	NOP
-    NOP
-
-    B INTLOOP
     NOP
 
 
