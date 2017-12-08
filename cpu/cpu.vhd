@@ -63,6 +63,10 @@ entity cpu is
         dyp0            : out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
         dyp1            : out  STD_LOGIC_VECTOR (6 downto 0) := "1111111";
 
+        -- ps2 keyboard
+        ps2_clk          : in std_logic;
+        ps2_data         : in std_logic;
+
         --VGA
         Hs                  : out std_logic;   -- line sync
         Vs                  : out std_logic;   -- field sync
@@ -166,6 +170,10 @@ architecture Behavioral of cpu is
     -- VGA signals
     signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
 
+    -- ps2 signals
+    signal ps2_data_ready       : std_logic := '0';
+    signal ps2_hold_key_value   : std_logic_vector (15 downto 0) := zero16;
+
     -- flash signals
     signal clk_flash : std_logic := '0';
     signal boot_finish : std_logic := '0';
@@ -174,11 +182,11 @@ architecture Behavioral of cpu is
     signal boot_write_enable, boot_read_enable : std_logic := '0';
 
     -- INT module signals
-    signal int_flag     : std_logic := '0';                         -- if there is INT op
-    signal int_num      : std_logic_vector (3 downto 0) := x"0";    -- INT op number
-    signal int_preset_instruc	: std_logic_vector (15 downto 0) := x"0000";
+    signal hard_int_flag     : std_logic := '0';                         -- if there is INT op
     -- absolute interrupt headle address, changed by the kernel development
     constant delint_addr   : std_logic_vector (15 downto 0) := x"0006";
+    -- memory address containing keyboard ascii code when hardware interrupt occur
+    constant hardint_keyboard_addr    : std_logic_vector (15 downto 0) := x"BFF0";
 
 begin
     ------------- Clock selector ----------
@@ -239,13 +247,25 @@ begin
         B => VGA_B
     );
 
+    ------------- PS2 Keyboard Control -----------
+    ps2_keyboard : keyboard_ctrl port map (
+        rst => rst,
+        clk => clk,
+        ps2_clk => ps2_clk,
+        ps2_data => ps2_data,
+        data_ready => ps2_data_ready,
+        hold_key_value => ps2_hold_key_value
+    );
+
     ---------------- INT -------------------------
     INT_unit : int_ctrl port map (
         clk => clk,
         rst => rst,
         cur_pc => pc_real,
         cur_instruc => ifid_instruc,
-        int_flag => int_flag,
+        IH => IH,
+        ps2_data_ready => ps2_data_ready,
+        hard_int_flag => hard_int_flag,
         epc => EPC,
         cause => Cause
     );
@@ -304,6 +324,9 @@ begin
             elsif ((seri1_read_enable = '1') or (seri1_write_enable = '1')) then
                 ifid_instruc <= ifid_instruc_mem;     -- actually, it's a NOP
                 pc <= pc_real;
+            elsif (hard_int_flag = '1') then          -- TODO, in fact, we need consider of MEM/IF conflict here
+                ifid_instruc <= INT_op & "0000000" & "1000";   -- 8 is for keyboard interrupt
+                pc <= pc_real;
             else
                 ifid_instruc <= ifid_instruc_mem;
                 pc <= pc_real + 1;
@@ -359,8 +382,14 @@ begin
                         -- write back register index
                         idex_reg_wb <= "0" & ifid_instruc(7 downto 5);
                     when INT_op =>
-                        id_pc_branch <= '1';
-                        idex_reg_wb <= reg_none;
+                        if (ifid_instruc(3 downto 0) = "1000") then   -- if it's keyboard hardware interrupt
+                            id_pc_branch <= '1';
+                            idex_bypass <= ps2_hold_key_value;
+                            idex_reg_wb <= reg_none;
+                        else                                          -- else, it's soft interrupt
+                            id_pc_branch <= '1';
+                            idex_reg_wb <= reg_none;
+                        end if;
                     when EXTEND_TSP_op =>
                         case ifid_instruc(10 downto 8) is
                             when EX_ADDSP_pf_op =>
@@ -619,6 +648,14 @@ begin
                     ex_alu_op <= alu_nop;
                     exme_reg_wb <= idex_reg_wb;
                     exme_bypass <= idex_reg_a_data_real;
+                when INT_op =>
+                    ex_alu_op <= alu_nop;
+                    if (ex_instruc(4 downto 0) = "1000") then
+                        exme_bypass <= idex_reg_a_data_real;    -- TODO
+                        exme_reg_wb <= reg_none;
+                    else
+                        exme_reg_wb <= reg_none;
+                    end if;
                 when EXTEND_TSP_op =>
                     case ex_instruc(10 downto 8) is
                         when EX_ADDSP_pf_op =>
@@ -770,14 +807,24 @@ begin
                             seri1_write_enable <= '1';
                             seri1_read_enable <= '0';
                             me_write_data <= exme_bypass;  -- actually, only low 8 bit will write to serial
-                        when seri1_ctrl_addr =>    -- not allowed
-                        when seri2_data_addr =>   -- not support yet
+                        when seri1_ctrl_addr =>            -- not allowed
+                        when seri2_data_addr =>            -- not support yet
                         when seri2_ctrl_addr =>
                         when others => -- sw in SRAM
                             me_write_addr <= "00" & exme_result;
                             me_write_data <= exme_bypass;
                             me_read_enable <= '0';
                             me_write_enable <= '1';
+                    end case;
+                when INT_op =>
+                    case exme_instruc(3 downto 0) is
+                        when "1000" =>                 -- hard interrupt
+                            me_write_addr <= "00" & hardint_keyboard_addr;
+                            me_write_data <= exme_bypass;
+                            me_read_enable <= '0';
+                            me_write_enable <= '1';
+                        when others =>
+                                                      -- soft interrupt, do nothing
                     end case;
                 when EXTEND_TSP_op =>
                     case exme_instruc(10 downto 8) is
@@ -964,7 +1011,7 @@ begin
             ctrl_instruc_2 := ctrl_instruc_1;
             ctrl_instruc_1 := ctrl_instruc_0;
             if (ctrl_insert_bubble = '1') then        -- if the last instruction need insert bubble
-                ctrl_instruc_0 := id_instruc;         -- grab id_instruc, for ifid_instruc now contain
+                ctrl_instruc_0 := id_instruc;         -- grab id_instruc, for ifid_instruc currently contain
             else                                      -- next instruction
                 ctrl_instruc_0 := ifid_instruc;
             end if;
@@ -1116,6 +1163,8 @@ begin
                     ctrl_rd_reg_a  := SP_index;
                     ctrl_rd_reg_b  := reg_none;
                     ctrl_rd_bypass := "0" & ctrl_instruc_0(10 downto 8);
+                --when INT_op =>                 -- TODO, add INT hard int control
+                    --case 
                 when BNEZ_op | BEQZ_op =>
                     ctrl_wb_reg_0  := reg_none;
                     ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
@@ -1132,7 +1181,7 @@ begin
                             ctrl_instruc_0, ctrl_instruc_1, ctrl_instruc_2, ctrl_instruc_3);
             
             -- INTTERUPPT : insert bubble
-            if int_flag = '1' then
+            if hard_int_flag = '1' then   -- TODO: int_flag will use for hardware interrupt, not insert_bubble
                 ctrl_insert_bubble <= '1';
             elsif (ctrl_fake_nop = true) then
                 ctrl_insert_bubble <= '1';
@@ -1155,9 +1204,12 @@ begin
            r5    when (instruct(14 downto 11) = r5_index) else
            r6    when (instruct(14 downto 11) = r6_index) else
            r7    when (instruct(14 downto 11) = r7_index) else
+           SP    when (instruct(14 downto 11) = SP_index) else
+           IH    when (instruct(14 downto 11) = IH_index) else
            T     when (instruct(14 downto 11) = T_index) else
            EPC   when (instruct(14 downto 11) = EPC_index) else
            Cause when (instruct(14 downto 11) = Case_index) else
+           ps2_hold_key_value when (instruct(14 downto 11) = "1101") else
            seri_wrn_t & seri_rdn_t & seri_tbre & seri_tsre & seri_data_ready & "00000000000"
            when (instruct(14 downto 11) = reg_none);
 

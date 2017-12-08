@@ -41,28 +41,44 @@ entity int_ctrl is
         cur_pc          : in std_logic_vector (15 downto 0);
         -- current instruction for software INT
         cur_instruc     : in std_logic_vector (15 downto 0);
-        int_flag        : out std_logic;
+        -- interrupt control register
+        IH              : in std_logic_vector (15 downto 0);
+
+        -- for hardware interrupt trigger
+        ps2_data_ready  : in std_logic;
+        hard_int_flag   : out std_logic;
+
         epc             : out std_logic_vector (15 downto 0);
         cause           : out std_logic_vector (15 downto 0)
     );
 end int_ctrl;
 
 architecture Behavioral of int_ctrl is
-
+    signal last_data_ready : std_logic := '0';
 begin
 
-    process(clk, rst, cur_instruc)
+    process(clk, rst)
     begin
         if rst = '0' then
-            int_flag <= '0';
+            hard_int_flag <= '0';
+            last_data_ready <= '0';
         elsif clk'event and clk = '1' then
-            if cur_instruc (15 downto 11) = INT_op then
-                int_flag <= '1';
+            if ((ps2_data_ready = '1') and (last_data_ready = '0')) then
+                if (IH(14) = '1') then    -- if IH(14) = '1' then hardware interrupt enable
+                    hard_int_flag <= '1';
+                else
+                    hard_int_flag <= '0';
+                end if;
+                epc <= cur_pc;
+                cause <= "000000000000" & cur_instruc (3 downto 0);
+            elsif cur_instruc (15 downto 11) = INT_op then
+                hard_int_flag <= '0';
                 epc <= cur_pc;
                 cause <= "000000000000" & cur_instruc (3 downto 0);
             else
-                int_flag <= '0';
+                hard_int_flag <= '0';
             end if;
+            last_data_ready <= ps2_data_ready;
         end if;
     end process;
 

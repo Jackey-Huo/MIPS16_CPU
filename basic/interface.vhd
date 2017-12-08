@@ -148,9 +148,28 @@ package interface is
             cur_pc          : in std_logic_vector (15 downto 0);
             -- current instruction for software INT
             cur_instruc     : in std_logic_vector (15 downto 0);
-            int_flag        : out std_logic;
+            -- interrupt control regitster
+            IH              : in std_logic_vector (15 downto 0);
+
+            -- for hardware interrupt trigger
+            ps2_data_ready  : in std_logic;
+            hard_int_flag   : out std_logic;
+
             epc             : out std_logic_vector (15 downto 0);
             cause           : out std_logic_vector (15 downto 0)
+        );
+    end component;
+
+    component keyboard_ctrl is
+        port (
+            rst             : in std_logic;
+            clk             : in std_logic;
+            ps2_clk         : in std_logic;
+            ps2_data        : in std_logic;
+
+            -- default to 0; set 1 and last for 2 periods when data is ready
+            data_ready      : out std_logic;
+            hold_key_value  : out std_logic_vector (15 downto 0)
         );
     end component;
 

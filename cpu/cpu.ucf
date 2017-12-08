@@ -198,3 +198,8 @@ NET "VGA_B[1]" LOC = A6;
 NET "VGA_B[2]" LOC = B6;
 NET "Hs" LOC = D6;
 NET "Vs" LOC = E6;
+
+# PlanAhead Generated physical constraints 
+
+NET "ps2_clk" LOC = U6;
+NET "ps2_data" LOC = V6;
