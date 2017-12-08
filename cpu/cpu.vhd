@@ -136,7 +136,6 @@ architecture Behavioral of cpu is
     -- EX layer variables
     signal ex_reg_a_data, ex_reg_b_data    : std_logic_vector (15 downto 0) := zero16;
     signal ex_alu_op                       : std_logic_vector (3 downto 0)  := "0000";
-    signal ex_alu_output                   : std_logic_vector (15 downto 0) := zero16;
     
     -- EX/MEM pipeline storage
     signal exme_instruc                    : std_logic_vector (15 downto 0)  := zero16;
@@ -457,261 +456,189 @@ begin
 --                 ---                                  ---                                  ---                
 
     
-    ---------------- EX --------------------------
-    EX_unit: process(clk, rst)
-        variable ex_instruc : std_logic_vector (15 downto 0) := NOP_instruc;
-    begin
-        if (rst = '0' or boot_finish = '0') then
-            exme_instruc <= NOP_instruc;
-            ex_instruc := NOP_instruc;
-        elsif (clk'event and clk='1') then
-            if (ctrl_insert_bubble = '1') then
-                ex_instruc := NOP_instruc;
-                exme_instruc <= NOP_instruc;
-            else
-                ex_instruc := idex_instruc;
-                exme_instruc <= idex_instruc;
-            end if;
-            case ex_instruc(15 downto 11) is
-                when ADDIU_op | ADDIU3_op | LW_op | LW_SP_op | SW_op | SW_SP_op =>
-                    ex_reg_a_data <= idex_reg_a_data_real;
-                    ex_reg_b_data <= idex_reg_b_data_real;
-                    ex_alu_op <= alu_add;
-                    exme_bypass <= idex_bypass_real;
-                    exme_reg_wb <= idex_reg_wb;
-                when EXTEND_ALU3_op =>
-                    ex_reg_a_data <= idex_reg_a_data_real;
-                    ex_reg_b_data <= idex_reg_b_data_real;
-                    exme_bypass <= idex_bypass_real;
-                    exme_reg_wb <= idex_reg_wb;
-                    case ex_instruc(1 downto 0) is
-                        when EX_ADDU_sf_op =>
-                            ex_alu_op <= alu_add;
-                        when EX_SUBU_sf_op =>
-                            ex_alu_op <= alu_sub;
-                        when others =>
-                            ex_alu_op <= alu_nop;
-                    end case;
-                when LI_op =>
-                    ex_alu_op <= alu_nop;
-                    exme_reg_wb <= idex_reg_wb;
-                    exme_bypass <= idex_reg_a_data_real;
-                when INT_op =>
-                    ex_alu_op <= alu_nop;
-                    if (ex_instruc(4 downto 0) = "1000") then
-                        exme_bypass <= idex_reg_a_data_real;    -- TODO
-                        exme_reg_wb <= reg_none;
-                    else
-                        exme_reg_wb <= reg_none;
-                    end if;
-                when EXTEND_TSP_op =>
-                    case ex_instruc(10 downto 8) is
-                        when EX_ADDSP_pf_op =>
-                            ex_reg_a_data <= idex_reg_a_data_real;
-                            ex_reg_b_data <= idex_reg_b_data_real;
-                            ex_alu_op <= alu_add;
-                            exme_reg_wb <= idex_reg_wb;
-                        when EX_MTSP_pf_op =>
-                            ex_alu_op <= alu_nop;
-                            exme_bypass <= idex_bypass_real;
-                            exme_reg_wb <= idex_reg_wb;
-                        when others =>
-                            ex_alu_op <= alu_nop;
-                    end case;
-                when EXTEND_ALUPCmix_op =>
-                    case ex_instruc(4 downto 0) is
-                        when EX_AND_sf_op =>
-                            ex_reg_a_data <= idex_reg_a_data_real;
-                            ex_reg_b_data <= idex_reg_b_data_real;
-                            ex_alu_op <= alu_and;
-                            exme_reg_wb <= idex_reg_wb;
-                        when EX_OR_sf_op =>
-                            ex_reg_a_data <= idex_reg_a_data_real;
-                            ex_reg_b_data <= idex_reg_b_data_real;
-                            ex_alu_op <= alu_or;
-                            exme_reg_wb <= idex_reg_wb;
-                        when EX_NEG_sf_op =>
-                            ex_reg_a_data <= idex_reg_a_data_real;
-                            ex_reg_b_data <= idex_reg_b_data_real;
-                            ex_alu_op <= alu_sub;
-                            exme_reg_wb <= idex_reg_wb;
-                        when EX_NOT_sf_op =>
-                            ex_reg_a_data <= idex_reg_a_data_real;
-                            ex_alu_op <= alu_not;
-                            exme_reg_wb <= idex_reg_wb;
-                        when EX_SRLV_sf_op =>
-                            ex_reg_a_data <= idex_reg_a_data_real;
-                            ex_reg_b_data <= idex_reg_b_data_real;
-                            ex_alu_op <= alu_srl;
-                            exme_reg_wb <= idex_reg_wb;
-                        when EX_CMP_sf_op =>
-                            ex_reg_a_data <= idex_reg_a_data_real;
-                            ex_reg_b_data <= idex_reg_b_data_real;
-                            ex_alu_op <= alu_cmp;
-                            exme_reg_wb <= idex_reg_wb;
-                        when EX_PC_sf_op =>
-                            case ex_instruc(7 downto 5) is
-                                when EX_MFPC_sf_diff_op =>
-                                    ex_alu_op <= alu_nop;
-                                    exme_bypass <= idex_bypass_real;
-                                    exme_reg_wb <= idex_reg_wb;
-                                when others =>
-                                    ex_alu_op <= alu_nop;
-                            end case;
-                        when others =>
-                            ex_alu_op <= alu_nop;
-                    end case;
-                when EXTEND_RRI_op =>
-                    case ex_instruc(1 downto 0) is
-                        when EX_SLL_sf_op =>
-                            ex_reg_a_data <= idex_reg_a_data_real;
-                            ex_reg_b_data <= idex_reg_b_data_real;
-                            ex_alu_op <= alu_sll;
-                            exme_reg_wb <= idex_reg_wb;
-                        when EX_SRA_sf_op =>
-                            ex_reg_a_data <= idex_reg_a_data_real;
-                            ex_reg_b_data <= idex_reg_b_data_real;
-                            ex_alu_op <= alu_sra;
-                            exme_reg_wb <= idex_reg_wb;
-                        when EX_SRL_sf_op =>
-                            ex_reg_a_data <= idex_reg_a_data_real;
-                            ex_reg_b_data <= idex_reg_b_data_real;
-                            ex_alu_op <= alu_srl;
-                            exme_reg_wb <= idex_reg_wb;
-                        when others =>
-                            ex_alu_op <= alu_nop;
-                    end case;
-                when EXTEND_IH_op =>
-                    case ex_instruc(7 downto 0) is
-                        when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op =>
-                            exme_bypass <= idex_bypass_real;
-                            exme_reg_wb <= idex_reg_wb;
-                            ex_alu_op <= alu_nop;
-                        when others =>
-                            ex_alu_op <= alu_nop;
-                    end case;
-                when others =>
-                    ex_alu_op <= alu_nop;
-            end case;
-        end if;
-    end process EX_unit;
+
+    EX_unit: EXE port map (
+            clk                   => clk,
+            rst                   => rst,
+
+            boot_finish           => boot_finish,
+            ctrl_insert_bubble    => ctrl_insert_bubble,
+
+            -- ID/EX
+            idex_instruc          => idex_instruc,
+            idex_reg_a_data_real  => idex_reg_a_data_real,
+            idex_reg_b_data_real  => idex_reg_b_data_real,
+            idex_bypass_real      => idex_bypass_real,
+            idex_reg_wb           => idex_reg_wb,
+
+            -- EX layer variables
+            ex_reg_a_data         => ex_reg_a_data,
+            ex_reg_b_data         => ex_reg_b_data,
+            ex_alu_op             => ex_alu_op,
+
+            -- EX/MEM pipeline storage
+            exme_instruc          => exme_instruc,
+            exme_reg_wb           => exme_reg_wb,
+            exme_bypass           => exme_bypass
+    );
 
     -- alu map
     ALU_comp: alu port map (rst, ex_reg_a_data, ex_reg_b_data, ex_alu_op, exme_result,
                                 exme_carry, exme_zero, exme_ovr);
 
+
+    ME_unit: MEM port map (
+            clk                     => clk,
+            rst                     => rst,
+
+            boot_finish             => boot_finish,
+            boot_write_addr         => boot_write_addr,
+            boot_write_data         => boot_write_data,
+            boot_write_enable       => boot_write_enable,
+            boot_read_enable        => boot_read_enable,
+
+            -- EX/MEM pipeline storage
+            exme_instruc            => exme_instruc,
+            exme_result             => exme_result,
+            exme_reg_wb             => exme_reg_wb,
+            exme_bypass             => exme_bypass,
+
+            -- MEM variables           -- MEM variables
+            me_read_enable          => me_read_enable,
+            me_write_enable         => me_write_enable,
+            me_write_enable_real    => me_write_enable_real,
+            me_read_addr            => me_read_addr,
+            me_write_addr           => me_write_addr,
+            me_write_data           => me_write_data,
+
+            seri_wrn_t              => seri_wrn_t,
+            seri_rdn_t              => seri_rdn_t,
+            seri1_read_enable       => seri1_read_enable,
+            seri1_write_enable      => seri1_write_enable,
+            seri1_write_enable_real => seri1_write_enable_real,
+            seri1_ctrl_read_en      => seri1_ctrl_read_en,
+
+            --MEM/WB pipeline storage
+            mewb_instruc            => mewb_instruc,
+            mewb_result             => mewb_result,
+            mewb_reg_wb             => mewb_reg_wb,
+            mewb_bypass             => mewb_bypass
+    );
+
+
+
     ---------------- ME --------------------------
-    ME_unit: process(clk, rst)
-    begin
-        if (rst = '0') then
-            mewb_instruc <= NOP_instruc;
-            me_read_enable <= '0';
-            me_write_enable <= '0';
-            seri1_read_enable <= '0';
-            seri1_write_enable <= '0';
-            seri1_ctrl_read_en <= '0';
-        elsif boot_finish = '0' then
-            me_read_enable <= boot_read_enable;
-            me_write_enable <= boot_write_enable;
-            me_write_addr <= boot_write_addr;
-            me_write_data <= boot_write_data;
-        elsif (clk'event and clk='1') then
-            mewb_instruc <= exme_instruc;
-            me_read_enable <= '0';
-            me_write_enable <= '0';
-            seri1_read_enable <= '0';
-            seri1_write_enable <= '0';
-            seri1_ctrl_read_en <= '0';
-            case exme_instruc(15 downto 11) is
-                when ADDIU_op | ADDIU3_op | EXTEND_RRI_op  =>
-                    mewb_result <= exme_result;
-                    mewb_reg_wb <= exme_reg_wb;
-                when EXTEND_ALU3_op => -- ADDU, SUBU
-                    mewb_result <= exme_result;
-                    mewb_reg_wb <= exme_reg_wb;
-                when LI_op =>
-                    mewb_reg_wb <= exme_reg_wb;
-                    mewb_bypass <= exme_bypass;
-                when LW_op | LW_SP_op =>
-                    case exme_result is
-                        when seri1_data_addr =>    -- 0xBF00 serial 1 data
-                            seri1_write_enable <= '0';
-                            seri1_read_enable <= '1';
-                            mewb_reg_wb <= exme_reg_wb;
-                        when seri1_ctrl_addr =>    -- 0xBF01 serial 1 control signal
-                            seri1_ctrl_read_en <= '1';
-                            mewb_reg_wb <= exme_reg_wb;
-                        when seri2_data_addr =>   -- not support yet
-                        when seri2_ctrl_addr =>
-                        when others => -- lw in SRAM
-                            mewb_reg_wb <= exme_reg_wb;
-                            me_read_addr <= "00" & exme_result;
-                            me_read_enable <= '1';
-                            me_write_enable <= '0';
-                    end case;
-                when SW_op | SW_SP_op =>
-                    case exme_result is
-                        when seri1_data_addr =>
-                            seri1_write_enable <= '1';
-                            seri1_read_enable <= '0';
-                            me_write_data <= exme_bypass;  -- actually, only low 8 bit will write to serial
-                        when seri1_ctrl_addr =>            -- not allowed
-                        when seri2_data_addr =>            -- not support yet
-                        when seri2_ctrl_addr =>
-                        when others => -- sw in SRAM
-                            me_write_addr <= "00" & exme_result;
-                            me_write_data <= exme_bypass;
-                            me_read_enable <= '0';
-                            me_write_enable <= '1';
-                    end case;
-                when INT_op =>
-                    case exme_instruc(3 downto 0) is
-                        when "1000" =>                 -- hard interrupt
-                            me_write_addr <= "00" & hardint_keyboard_addr;
-                            me_write_data <= exme_bypass;
-                            me_read_enable <= '0';
-                            me_write_enable <= '1';
-                        when others =>
-                                                      -- soft interrupt, do nothing
-                    end case;
-                when EXTEND_TSP_op =>
-                    case exme_instruc(10 downto 8) is
-                        when EX_ADDSP_pf_op =>
-                            mewb_result <= exme_result;
-                            mewb_reg_wb <= exme_reg_wb;
-                        when EX_MTSP_pf_op =>
-                            mewb_bypass <= exme_result;
-                            mewb_reg_wb <= exme_reg_wb;
-                        when others =>
-                    end case;
-                when EXTEND_ALUPCmix_op =>
-                    case exme_instruc(4 downto 0) is
-                        when EX_AND_sf_op | EX_OR_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op | EX_CMP_sf_op =>
-                            mewb_result <= exme_result;
-                            mewb_reg_wb <= exme_reg_wb;
-                        when EX_PC_sf_op =>
-                            case exme_instruc(7 downto 5) is
-                                when EX_MFPC_sf_diff_op =>
-                                    mewb_reg_wb <= exme_reg_wb;
-                                    mewb_bypass <= exme_bypass;
-                                when others =>
-                            end case;
-                        when others =>
-                    end case;
-                when EXTEND_IH_op =>
-                    case exme_instruc(7 downto 0) is
-                        when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op  =>
-                            mewb_bypass <= exme_bypass;
-                            mewb_reg_wb <= exme_reg_wb;
-                        when others =>
-                    end case;
-                when NOP_op =>
-                    mewb_instruc <= NOP_instruc;
-                when others =>
-                    mewb_instruc <= NOP_instruc;
-            end case;
-        end if;
-    end process ME_unit;
+    --ME_unit: process(clk, rst)
+    --begin
+        --if (rst = '0') then
+            --mewb_instruc <= NOP_instruc;
+            --me_read_enable <= '0';
+            --me_write_enable <= '0';
+            --seri1_read_enable <= '0';
+            --seri1_write_enable <= '0';
+            --seri1_ctrl_read_en <= '0';
+        --elsif boot_finish = '0' then
+            --me_read_enable <= boot_read_enable;
+            --me_write_enable <= boot_write_enable;
+            --me_write_addr <= boot_write_addr;
+            --me_write_data <= boot_write_data;
+        --elsif (clk'event and clk='1') then
+            --mewb_instruc <= exme_instruc;
+            --me_read_enable <= '0';
+            --me_write_enable <= '0';
+            --seri1_read_enable <= '0';
+            --seri1_write_enable <= '0';
+            --seri1_ctrl_read_en <= '0';
+            --case exme_instruc(15 downto 11) is
+                --when ADDIU_op | ADDIU3_op | EXTEND_RRI_op  =>
+                    --mewb_result <= exme_result;
+                    --mewb_reg_wb <= exme_reg_wb;
+                --when EXTEND_ALU3_op => -- ADDU, SUBU
+                    --mewb_result <= exme_result;
+                    --mewb_reg_wb <= exme_reg_wb;
+                --when LI_op =>
+                    --mewb_reg_wb <= exme_reg_wb;
+                    --mewb_bypass <= exme_bypass;
+                --when LW_op | LW_SP_op =>
+                    --case exme_result is
+                        --when seri1_data_addr =>    -- 0xBF00 serial 1 data
+                            --seri1_write_enable <= '0';
+                            --seri1_read_enable <= '1';
+                            --mewb_reg_wb <= exme_reg_wb;
+                        --when seri1_ctrl_addr =>    -- 0xBF01 serial 1 control signal
+                            --seri1_ctrl_read_en <= '1';
+                            --mewb_reg_wb <= exme_reg_wb;
+                        --when seri2_data_addr =>   -- not support yet
+                        --when seri2_ctrl_addr =>
+                        --when others => -- lw in SRAM
+                            --mewb_reg_wb <= exme_reg_wb;
+                            --me_read_addr <= "00" & exme_result;
+                            --me_read_enable <= '1';
+                            --me_write_enable <= '0';
+                    --end case;
+                --when SW_op | SW_SP_op =>
+                    --case exme_result is
+                        --when seri1_data_addr =>
+                            --seri1_write_enable <= '1';
+                            --seri1_read_enable <= '0';
+                            --me_write_data <= exme_bypass;  -- actually, only low 8 bit will write to serial
+                        --when seri1_ctrl_addr =>            -- not allowed
+                        --when seri2_data_addr =>            -- not support yet
+                        --when seri2_ctrl_addr =>
+                        --when others => -- sw in SRAM
+                            --me_write_addr <= "00" & exme_result;
+                            --me_write_data <= exme_bypass;
+                            --me_read_enable <= '0';
+                            --me_write_enable <= '1';
+                    --end case;
+                --when INT_op =>
+                    --case exme_instruc(3 downto 0) is
+                        --when "1000" =>                 -- hard interrupt
+                            --me_write_addr <= "00" & hardint_keyboard_addr;
+                            --me_write_data <= exme_bypass;
+                            --me_read_enable <= '0';
+                            --me_write_enable <= '1';
+                        --when others =>
+                                                      ---- soft interrupt, do nothing
+                    --end case;
+                --when EXTEND_TSP_op =>
+                    --case exme_instruc(10 downto 8) is
+                        --when EX_ADDSP_pf_op =>
+                            --mewb_result <= exme_result;
+                            --mewb_reg_wb <= exme_reg_wb;
+                        --when EX_MTSP_pf_op =>
+                            --mewb_bypass <= exme_result;
+                            --mewb_reg_wb <= exme_reg_wb;
+                        --when others =>
+                    --end case;
+                --when EXTEND_ALUPCmix_op =>
+                    --case exme_instruc(4 downto 0) is
+                        --when EX_AND_sf_op | EX_OR_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op | EX_CMP_sf_op =>
+                            --mewb_result <= exme_result;
+                            --mewb_reg_wb <= exme_reg_wb;
+                        --when EX_PC_sf_op =>
+                            --case exme_instruc(7 downto 5) is
+                                --when EX_MFPC_sf_diff_op =>
+                                    --mewb_reg_wb <= exme_reg_wb;
+                                    --mewb_bypass <= exme_bypass;
+                                --when others =>
+                            --end case;
+                        --when others =>
+                    --end case;
+                --when EXTEND_IH_op =>
+                    --case exme_instruc(7 downto 0) is
+                        --when EX_MFIH_sf_op | EX_MTIH_sf_op | EX_MFEPC_sf_op | EX_MFCAS_sf_op  =>
+                            --mewb_bypass <= exme_bypass;
+                            --mewb_reg_wb <= exme_reg_wb;
+                        --when others =>
+                    --end case;
+                --when NOP_op =>
+                    --mewb_instruc <= NOP_instruc;
+                --when others =>
+                    --mewb_instruc <= NOP_instruc;
+            --end case;
+        --end if;
+    --end process ME_unit;
 
 
     ---------------- WB --------------------------
