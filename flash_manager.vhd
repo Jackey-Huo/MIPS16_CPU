@@ -135,7 +135,7 @@ begin
             if state = not_booted then
                 boot_finish_flag <= '0';
                 start_addr <= zero22;
-                load_len <= "00" & x"0200";
+                load_len <= "00" & x"0FFF";
                 state <= booting;
                 -- use ram1
                 ram_choose <= '0';
