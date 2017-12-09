@@ -27,6 +27,9 @@ package helper is
     constant BEQZ_op     : std_logic_vector (4 downto 0) := "00100";
     constant B_op        : std_logic_vector (4 downto 0) := "00010";
     constant NOP_op      : std_logic_vector (4 downto 0) := "00001";
+    constant MOVE_op     : std_logic_vector (4 downto 0) := "01111";
+    constant CMPI_op     : std_logic_vector (4 downto 0) := "01110";
+    constant ADDSP3_op   : std_logic_vector (4 downto 0) := "00000";
 
     constant EXTEND_ALU3_op : std_logic_vector (4 downto 0) := "11100";
     constant EX_ADDU_sf_op  : std_logic_vector (1 downto 0) := "01";
@@ -49,6 +52,7 @@ package helper is
     constant EX_NOT_sf_op       : std_logic_vector (4 downto 0) := "01111";
     constant EX_OR_sf_op        : std_logic_vector (4 downto 0) := "01101";
     constant EX_SRLV_sf_op      : std_logic_vector (4 downto 0) := "00110";
+    constant EX_SLTU_sf_op      : std_logic_vector (4 downto 0) := "00011";
 
     constant EXTEND_RRI_op      : std_logic_vector (4 downto 0) := "00110";
     constant EX_SLL_sf_op       : std_logic_vector (1 downto 0) := "00";
@@ -77,6 +81,7 @@ package helper is
     constant alu_sra  : std_logic_vector (3 downto 0) := "1000";
     constant alu_rol  : std_logic_vector (3 downto 0) := "1001";
     constant alu_cmp  : std_logic_vector (3 downto 0) := "1010";
+    constant alu_less : std_logic_vector (3 downto 0) := "1011";
     constant alu_nop  : std_logic_vector (3 downto 0) := "1111";
 
     -- for serial
@@ -445,7 +450,7 @@ package body helper is
         ctrl_fake_nop := false;
 
         case conflict_instruc_a(15 downto 11) is
-            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op | ADDIU3_op =>
+            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op | ADDIU3_op | MOVE_op | CMPI_op | ADDSP3_op =>
                 case conflict_instruc_number_a is
                     when 1 =>
                         ctrl_mux_reg_a <= chs_alu_result;     --                 ---
@@ -496,7 +501,7 @@ package body helper is
                 end case;
             when EXTEND_ALUPCmix_op =>
                 case conflict_instruc_a(4 downto 0) is
-                    when EX_AND_sf_op | EX_OR_sf_op | EX_CMP_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op =>
+                    when EX_AND_sf_op | EX_OR_sf_op | EX_CMP_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op | EX_SLTU_sf_op =>
                         case conflict_instruc_number_a is
                             when 1 =>
                                 ctrl_mux_reg_a <= chs_alu_result;
@@ -561,7 +566,7 @@ package body helper is
 
 
         case conflict_instruc_b(15 downto 11) is
-            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op | ADDIU3_op =>
+            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op | ADDIU3_op | MOVE_op | CMPI_op | ADDSP3_op =>
                 case conflict_instruc_number_b is
                     when 1 =>
                         ctrl_mux_reg_b <= chs_alu_result;    --                 ---
@@ -612,7 +617,7 @@ package body helper is
                 end case;
             when EXTEND_ALUPCmix_op =>
                 case conflict_instruc_b(4 downto 0) is
-                    when EX_AND_sf_op | EX_OR_sf_op | EX_CMP_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op =>
+                    when EX_AND_sf_op | EX_OR_sf_op | EX_CMP_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op | EX_SLTU_sf_op =>
                         case conflict_instruc_number_b is
                             when 1 =>
                                 ctrl_mux_reg_b <= chs_alu_result;
@@ -677,7 +682,7 @@ package body helper is
 
 
         case conflict_instruc_bypass(15 downto 11) is
-            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op | ADDIU3_op =>
+            when EXTEND_ALU3_op | ADDIU_op | EXTEND_RRI_op | ADDIU3_op | MOVE_op | CMPI_op | ADDSP3_op =>
                 case conflict_instruc_number_bypass is
                     when 1 =>
                         ctrl_mux_bypass <= chs_alu_result;     --
@@ -728,7 +733,7 @@ package body helper is
                 end case;
             when EXTEND_ALUPCmix_op =>
                 case conflict_instruc_bypass(4 downto 0) is
-                    when EX_AND_sf_op | EX_OR_sf_op | EX_CMP_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op =>
+                    when EX_AND_sf_op | EX_OR_sf_op | EX_CMP_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op | EX_SLTU_sf_op =>
                         case conflict_instruc_number_bypass is
                             when 1 =>
                                 ctrl_mux_bypass <= chs_alu_result;

@@ -119,9 +119,24 @@ begin
                     ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
                     ctrl_rd_reg_b  := reg_none;
                     ctrl_rd_bypass := reg_none;
+                when ADDSP3_op =>
+                    ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                    ctrl_rd_reg_a  := SP_index;
+                    ctrl_rd_reg_b  := reg_none;
+                    ctrl_rd_bypass := reg_none;
+                when MOVE_op =>
+                    ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
+                    ctrl_rd_reg_a  := "0" & ctrl_instruc_0(7 downto 5);
+                    ctrl_rd_reg_b  := reg_none;
+                    ctrl_rd_bypass := reg_none;
                 when LI_op =>
                     ctrl_wb_reg_0  := "0" & ctrl_instruc_0(10 downto 8);
                     ctrl_rd_reg_a  := reg_none;
+                    ctrl_rd_reg_b  := reg_none;
+                    ctrl_rd_bypass := reg_none;
+                when CMPI_op =>
+                    ctrl_wb_reg_0  := T_index;
+                    ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
                     ctrl_rd_reg_b  := reg_none;
                     ctrl_rd_bypass := reg_none;
                 when EXTEND_RRI_op =>  -- SLL, SRA, SRL
@@ -178,6 +193,11 @@ begin
                             ctrl_wb_reg_0  := "0" & ctrl_instruc_0(7 downto 5);
                             ctrl_rd_reg_a  := "0" & ctrl_instruc_0(7 downto 5);
                             ctrl_rd_reg_b  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_bypass := reg_none;
+                        when EX_SLTU_sf_op =>
+                            ctrl_wb_reg_0  := T_index;
+                            ctrl_rd_reg_a  := "0" & ctrl_instruc_0(10 downto 8);
+                            ctrl_rd_reg_b  := "0" & ctrl_instruc_0(7 downto 5);
                             ctrl_rd_bypass := reg_none;
                         when EX_PC_sf_op =>
                             case ctrl_instruc_0(7 downto 5) is

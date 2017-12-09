@@ -130,7 +130,7 @@ begin
             seri1_write_enable <= '0';
             seri1_ctrl_read_en <= '0';
             case exme_instruc(15 downto 11) is
-                when ADDIU_op | ADDIU3_op | EXTEND_RRI_op  =>
+                when ADDIU_op | ADDIU3_op | EXTEND_RRI_op | MOVE_op | CMPI_op | ADDSP3_op =>
                     mewb_result <= exme_result;
                     mewb_reg_wb <= exme_reg_wb;
                 when EXTEND_ALU3_op => -- ADDU, SUBU
@@ -193,7 +193,7 @@ begin
                     end case;
                 when EXTEND_ALUPCmix_op =>
                     case exme_instruc(4 downto 0) is
-                        when EX_AND_sf_op | EX_OR_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op | EX_CMP_sf_op =>
+                        when EX_AND_sf_op | EX_OR_sf_op | EX_NEG_sf_op | EX_NOT_sf_op | EX_SRLV_sf_op | EX_CMP_sf_op | EX_SLTU_sf_op =>
                             mewb_result <= exme_result;
                             mewb_reg_wb <= exme_reg_wb;
                         when EX_PC_sf_op =>
