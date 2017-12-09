@@ -40,7 +40,7 @@ entity vga_sweep is
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
 		
-		pos_x, pos_y : out integer
+		pos_x, pos_y : out integer range 0 to 4096
 	);
 end vga_sweep;
 
