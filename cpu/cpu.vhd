@@ -228,7 +228,7 @@ begin
 --    led(11) <= seri_data_ready;
 --    led(10 downto 7) <= boot_finish & flash_load_finish & ram2_read_enable & ram2_write_enable;
     
-    ------------- Clock selector ----------
+    ---------------- Clock selector ----------------
     clk_selector   : clock_select port map(
         click => click,
         clk_50M => clk_50M,
@@ -237,7 +237,7 @@ begin
         clk_flash => clk_flash
     );
 
-    ------------- Flash Manager : boot and load data from flash -------
+    ---------------- Flash Manager : boot and load data from flash ----------------
     flash_file_manager : flash_manager port map(
         not_boot            => boot_mode,
         clk                 => clk,
@@ -266,7 +266,7 @@ begin
         digit               => dyp0                     
     );
 
-    ------------- PS2 Keyboard Control -----------
+    ---------------- PS2 Keyboard Control ----------------
     ps2_keyboard : keyboard_ctrl port map (
         rst => rst,
         clk => clk,
@@ -276,7 +276,7 @@ begin
         hold_key_value => ps2_hold_key_value
     );
 
-    ---------------- INT -------------------------
+    ---------------- INT ----------------
     INT_unit : int_ctrl port map (
         clk => clk,
         rst => rst,
@@ -289,6 +289,7 @@ begin
         cause => Cause
     );
 
+    ---------------- RAM1, RAM2 Memory Reading Unit ----------------
     memory_IO : memory_unit port map(
         clk         => clk,
         rst         => rst,
@@ -314,8 +315,7 @@ begin
         seri_tbre       => seri_tbre      ,
         seri_tsre       => seri_tsre      ,
         
-        -- useless
-        disp_en            => disp_en             ,
+        disp_en            => cache_WE            ,
         mewb_readout       => mewb_readout        , 
         ifid_instruc_mem   => ifid_instruc_mem    , 
         me_write_enable    => me_write_enable     , 
@@ -347,7 +347,7 @@ begin
 --        ram2_write_enable => ram2_write_enable
 --    );
 
-    ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
+    ---------------- VGA control : 1. show debug value. 2. show image. 3. show character etc ----------------
     vga_ram2_readout <= ram2_readout;
     vga_disp : vga_ctrl port map(
         clk => clk_50M,
@@ -358,6 +358,8 @@ begin
         cache_wea => cache_wea,
         ram2_read_enable => vga_ram2_read_enable,
         cache_WE => cache_WE,
+        cache_write_addr => me_write_addr(12 downto 0),
+        cache_write_data => me_write_data(7 downto 0),
         disp_addr => vga_ram2_read_addr,
         disp_data => vga_ram2_readout,
         r0=>r0,
@@ -407,15 +409,12 @@ begin
         end if;
     end process IF_unit;
 
-    -- mux for real pc
+    ---------------- mux for real pc
     pc_real <= zero16 when (rst = '0') else
                id_branch_value when ((id_pc_branch = '1') and (ctrl_insert_bubble = '0')) else
                pc;
 
-
-
-    ---------------- ID --------------------------
-
+    ---------------- ID ----------------
     ID_unit: ID port map (
         clk                  => clk,
         rst                  => rst,
@@ -453,9 +452,9 @@ begin
         SP=>SP, IH=>IH, T =>T,
         EPC=>EPC, Cause=>Cause,
         pc_real => pc_real
-     );
+    );
 
-    ---- combination logic multiplexer unit for branch
+    ---------------- combination logic multiplexer unit for branch ----------------
     process(pc, id_instruc, idex_reg_b_data_real, idex_reg_a_data_real)
     begin
         if (id_pc_branch = '1') then
@@ -519,7 +518,7 @@ begin
                         mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
     Rg_bypass: mux7to1 port map (idex_bypass_real, ctrl_mux_bypass, idex_bypass, exme_result,
                         mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
-    --
+    ----------------
 
 
     --                 ---                                  ---                                  ---
@@ -533,7 +532,7 @@ begin
     --                 ---                                  ---                                  ---                
 
     
-
+    ---------------- EX ----------------
     EX_unit: EXE port map (
             clk                   => clk,
             rst                   => rst,
@@ -559,106 +558,105 @@ begin
             exme_bypass           => exme_bypass
     );
 
-    -- alu map
+    ---------------- ALU ----------------
     ALU_comp: alu port map (rst, ex_reg_a_data, ex_reg_b_data, ex_alu_op, exme_result,
-                                exme_carry, exme_zero, exme_ovr);
-
-
-    ---------------- ME --------------------------
-    ME_unit: MEM port map (
-            clk                     => clk,
-            rst                     => rst,
-            
-            -- flash load
-            flash_load_finish       => flash_load_finish,
-            boot_ram2_read_enable   => boot_ram2_read_enable,
-            boot_ram2_write_enable  => boot_ram2_write_enable,
-            boot_ram2_write_addr    => boot_ram2_write_addr,
-            boot_ram2_write_data    => boot_ram2_write_data,
-
-            -- vga
-            vga_ram2_read_addr      => vga_ram2_read_addr,
-            vga_ram2_read_enable    => vga_ram2_read_enable,
-
-            -- boot
-            boot_finish             => boot_finish,
-            boot_write_addr         => boot_ram1_write_addr,
-            boot_write_data         => boot_ram1_write_data,
-            boot_write_enable       => boot_ram1_write_enable,
-            boot_read_enable        => boot_ram1_read_enable,
-
-            -- EX/MEM pipeline storage
-            exme_instruc            => exme_instruc,
-            exme_result             => exme_result,
-            exme_reg_wb             => exme_reg_wb,
-            exme_bypass             => exme_bypass,
-
-            -- MEM variables           -- MEM variables
-            me_read_enable          => me_read_enable,
-            me_write_enable         => me_write_enable,
-            me_read_addr            => me_read_addr,
-            me_write_addr           => me_write_addr,
-            me_write_data           => me_write_data,
-
-            -- RAM2 variables
-            ram2_read_enable        => ram2_read_enable,
-            ram2_write_enable       => ram2_write_enable,
-            ram2_read_addr          => ram2_read_addr,
-            ram2_write_addr         => ram2_write_addr,
-            ram2_write_data         => ram2_write_data,
-
-            seri1_read_enable       => seri1_read_enable,
-            seri1_write_enable      => seri1_write_enable,
-            seri1_ctrl_read_en      => seri1_ctrl_read_en,
-
-            -- hard int address
-            hardint_keyboard_addr   => hardint_keyboard_addr,
-
-            --MEM/WB pipeline storage
-            mewb_instruc            => mewb_instruc,
-            mewb_result             => mewb_result,
-            mewb_reg_wb             => mewb_reg_wb,
-            mewb_bypass             => mewb_bypass
+                                exme_carry, exme_zero, exme_ovr
     );
 
+    ---------------- ME ----------------
+    ME_unit: MEM port map (
+        clk                     => clk,
+        rst                     => rst,
+        
+        -- flash load
+        flash_load_finish       => flash_load_finish,
+        boot_ram2_read_enable   => boot_ram2_read_enable,
+        boot_ram2_write_enable  => boot_ram2_write_enable,
+        boot_ram2_write_addr    => boot_ram2_write_addr,
+        boot_ram2_write_data    => boot_ram2_write_data,
 
-    ---------------- WB --------------------------
+        -- vga
+        vga_ram2_read_addr      => vga_ram2_read_addr,
+        vga_ram2_read_enable    => vga_ram2_read_enable,
+
+        -- boot
+        boot_finish             => boot_finish,
+        boot_write_addr         => boot_ram1_write_addr,
+        boot_write_data         => boot_ram1_write_data,
+        boot_write_enable       => boot_ram1_write_enable,
+        boot_read_enable        => boot_ram1_read_enable,
+
+        -- EX/MEM pipeline storage
+        exme_instruc            => exme_instruc,
+        exme_result             => exme_result,
+        exme_reg_wb             => exme_reg_wb,
+        exme_bypass             => exme_bypass,
+
+        -- MEM variables           -- MEM variables
+        me_read_enable          => me_read_enable,
+        me_write_enable         => me_write_enable,
+        me_read_addr            => me_read_addr,
+        me_write_addr           => me_write_addr,
+        me_write_data           => me_write_data,
+
+        -- RAM2 variables
+        ram2_read_enable        => ram2_read_enable,
+        ram2_write_enable       => ram2_write_enable,
+        ram2_read_addr          => ram2_read_addr,
+        ram2_write_addr         => ram2_write_addr,
+        ram2_write_data         => ram2_write_data,
+
+        seri1_read_enable       => seri1_read_enable,
+        seri1_write_enable      => seri1_write_enable,
+        seri1_ctrl_read_en      => seri1_ctrl_read_en,
+
+        -- hard int address
+        hardint_keyboard_addr   => hardint_keyboard_addr,
+
+        --MEM/WB pipeline storage
+        mewb_instruc            => mewb_instruc,
+        mewb_result             => mewb_result,
+        mewb_reg_wb             => mewb_reg_wb,
+        mewb_bypass             => mewb_bypass
+    );
+
+    ---------------- WB ----------------
     WB_unit: WB port map (
-            clk => clk,  rst => rst,
+        clk => clk,  rst => rst,
 
-            boot_finish  => boot_finish,
+        boot_finish  => boot_finish,
 
-            --MEM/WB pipeline storage
-            mewb_instruc => mewb_instruc,
-            mewb_result  => mewb_result,
-            mewb_readout => mewb_readout,
-            mewb_reg_wb  => mewb_reg_wb,
-            mewb_bypass  => mewb_bypass,
+        --MEM/WB pipeline storage
+        mewb_instruc => mewb_instruc,
+        mewb_result  => mewb_result,
+        mewb_readout => mewb_readout,
+        mewb_reg_wb  => mewb_reg_wb,
+        mewb_bypass  => mewb_bypass,
 
-            wb_reg_data => wb_reg_data,
+        wb_reg_data => wb_reg_data,
 
-            -- register
-            r0=>r0, r1=>r1, r2=>r2, r3=>r3,
-            r4=>r4, r5=>r5, r6=>r6, r7=>r7,
-            SP=>SP, IH=>IH, T =>T
+        -- register
+        r0=>r0, r1=>r1, r2=>r2, r3=>r3,
+        r4=>r4, r5=>r5, r6=>r6, r7=>r7,
+        SP=>SP, IH=>IH, T =>T
     );
 
 
     Control_unit: Control port map(
-            clk => clk, rst => rst,
+        clk => clk, rst => rst,
 
-            id_instruc             => id_instruc,
-            ifid_instruc           => ifid_instruc,
+        id_instruc             => id_instruc,
+        ifid_instruc           => ifid_instruc,
 
-            boot_finish            => boot_finish,
-            hard_int_flag          => hard_int_flag,
-            hard_int_insert_bubble => hard_int_insert_bubble,
+        boot_finish            => boot_finish,
+        hard_int_flag          => hard_int_flag,
+        hard_int_insert_bubble => hard_int_insert_bubble,
 
-            -- Control Unit output
-            ctrl_mux_reg_a         => ctrl_mux_reg_a,
-            ctrl_mux_reg_b         => ctrl_mux_reg_b,
-            ctrl_mux_bypass        => ctrl_mux_bypass,
-            ctrl_insert_bubble     => ctrl_insert_bubble
+        -- Control Unit output
+        ctrl_mux_reg_a         => ctrl_mux_reg_a,
+        ctrl_mux_reg_b         => ctrl_mux_reg_b,
+        ctrl_mux_bypass        => ctrl_mux_bypass,
+        ctrl_insert_bubble     => ctrl_insert_bubble
     );
 
 

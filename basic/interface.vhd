@@ -332,7 +332,11 @@ package interface is
             cache_wea	: out std_logic;
             ram2_read_enable		: out std_logic;
             
-            cache_WE	: in std_logic;
+            -- character cache
+            cache_WE			: in std_logic;
+            cache_write_addr	: in std_logic_vector (12 downto 0);
+            cache_write_data	: in std_logic_vector (7 downto 0);
+
             -- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
             disp_addr	: out std_logic_vector (17 downto 0);
             disp_data	: inout std_logic_vector (15 downto 0);
