@@ -179,7 +179,7 @@ signal ocp_image		: std_logic := '0';
 signal fontROMAddr1, fontROMAddr2 : std_logic_vector (10 downto 0) := "00000000000";
 begin
 	-- Mux font ROM address access : 001 for debug
-	fontROMAddr <= fontROMAddr1 when (disp_mode = "001") else fontROMAddr2;
+	fontROMAddr <= fontROMAddr1 when (disp_mode = "000") else fontROMAddr2;
 
 	-- halve the 50M clock
 	vga_clk_producer : process (clk)

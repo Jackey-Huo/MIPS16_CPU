@@ -58,25 +58,27 @@ signal vec_y			: std_logic_vector (7 downto 0);
 signal rt, gt, bt : std_logic_vector (2 downto 0) := "000";
 shared variable ascii_code : integer := 0;
 
-constant line_char_width : integer := 40;
+constant line_char_num : integer := 40;
+
 begin
 	color <= rt & bt & gt;
 	char_x <= x / 8;
 	char_y <= y / 8;
-	vec_y <= conv_std_logic_vector(char_y, 8);
+	--vec_y <= conv_std_logic_vector(char_y, 8);
 	
 	process(vga_clk, rst)
-		variable dx : integer := 0;
+		variable dx : integer range -10 to 10 := 0 ;
 	begin
 		if rst = '0' or x < 0 then
 			dx := 0;
 			cache_wea <= '0';
-		elsif vga_clk'event and vga_clk = '1' and vec_y(0) = '1' then
+		elsif vga_clk'event and vga_clk = '1' then
 			cache_wea <= '1';
-			cache_read_addr <= conv_std_logic_vector(char_x + char_y * line_char_width / 2, 13);
+			cache_read_addr <= conv_std_logic_vector(char_x + char_y * line_char_num, 13);
 			ascii_code := conv_integer(cache_read_data);
-			fontROMAddr <= conv_std_logic_vector(ascii_code * 8 + y mod 8, 11);
-			dx := 7 - (x - char_x * 8) mod 8;
+			fontROMAddr <= conv_std_logic_vector(ascii_code * 8 + y - char_y * 8, 11);
+			dx := 7 - (x - char_x * 8);
+
 			if fontROMData(dx) = '1' then
 				rt <= "000";
 				gt <= "000";
@@ -88,6 +90,7 @@ begin
 				bt <= "111";
 				occupy_flag <= '0';
 			end if;
+
 		end if;
 	end process;
 
