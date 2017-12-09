@@ -242,6 +242,7 @@ begin
         not_boot            => boot_mode,
         clk                 => clk,
         event_clk           => click,
+        disp_mode           => disp_mode,
         rst                 => rst,
 
         load_finish_flag    => flash_load_finish,

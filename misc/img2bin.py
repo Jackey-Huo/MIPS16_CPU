@@ -16,7 +16,7 @@ def recon(img):
     img_rec[img_rec > 255] = 255
     return img_rec.astype("uint8")
 
-def serialize(f, img, start=0x050000):
+def serialize(f, img, start=0x001000):
     print("%x" % start)
     cnt = 0
     print(img.shape)
@@ -39,23 +39,40 @@ def serialize(f, img, start=0x050000):
 #nameb = "C:\\Users\\atlantix\\Desktop\\img.bmp"
 #nametxt = "C:\\Users\\atlantix\\Desktop\\flash_win.txt"
 
-in_name_format = "C:\\Users\\atlantix\\Desktop\\410-cpu_presentation\\1 (%d).PNG"
-out_name_format = "C:\\Users\\atlantix\\Desktop\\410-cpu_presentation\\1 (%d).bmp"
-flash_name = "C:\\Users\\atlantix\\Desktop\\flash.txt"
-N = 17
-f = open(flash_name, "w")
-out_shape = (400, 630)
+sery = False
 
-for i in range(1, N+1, 1):
-    namea = in_name_format % i
-    nameb = out_name_format % i
+
+if sery == False:
+    namea = "C:\\Users\\atlantix\\Desktop\\terminal.PNG"
+    nameb = "C:\\Users\\atlantix\\Desktop\\terminal.bmp"
+    flash_name = "C:\\Users\\atlantix\\Desktop\\flash_terminal.txt"
+    f = open(flash_name, "w")
+    out_shape = (400, 630)
     img = imread (namea)
     imgr = resize(img, out_shape)
     imgr = (imgr - imgr.min()) / (imgr.max() - imgr.min()) * 255
     img8 = quantize(imgr)
     imwrite(nameb, recon(img8))
-    if i == 1:
-        serialize(f, img8, start=0x001000)
-    else:
-        serialize(f, img8, start=(0x040000*(i-1)))
-f.close()
+
+elif sery == True:
+    in_name_format = "C:\\Users\\atlantix\\Desktop\\410-cpu_presentation\\1 (%d).PNG"
+    out_name_format = "C:\\Users\\atlantix\\Desktop\\410-cpu_presentation\\1 (%d).bmp"
+    flash_name = "C:\\Users\\atlantix\\Desktop\\flash.txt"
+    N = 17
+    f = open(flash_name, "w")
+    out_shape = (400, 630)
+
+
+    for i in range(1, N+1, 1):
+        namea = in_name_format % i
+        nameb = out_name_format % i
+        img = imread (namea)
+        imgr = resize(img, out_shape)
+        imgr = (imgr - imgr.min()) / (imgr.max() - imgr.min()) * 255
+        img8 = quantize(imgr)
+        imwrite(nameb, recon(img8))
+        if i == 1:
+            serialize(f, img8, start=0x001000)
+        else:
+            serialize(f, img8, start=(0x040000*(i-1)))
+    f.close()

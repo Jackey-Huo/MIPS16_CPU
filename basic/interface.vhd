@@ -31,6 +31,7 @@ package interface is
             not_boot            : in std_logic;
             clk                 : in  std_logic;
             event_clk           : in std_logic;
+            disp_mode           : in std_logic_vector (2 downto 0);
             rst                 : in  std_logic;
 
             load_finish_flag    : out std_logic;

@@ -181,8 +181,6 @@ begin
 	-- Mux font ROM address access : 001 for debug
 	fontROMAddr <= fontROMAddr1 when (disp_mode = "001") else fontROMAddr2;
 
-	right_x <= x - vga480_div;
-
 	-- halve the 50M clock
 	vga_clk_producer : process (clk)
 	begin
@@ -263,7 +261,7 @@ begin
 		-- in
 		vga_clk =>vga_clk_c,
 		rst => rst,
-		x => right_x,
+		x => x,
 		y => y,
 		cache_wea => cache_wea,
 		cache_read_addr => cache_read_addr,
@@ -280,18 +278,24 @@ begin
 			G <= "000";
 			B <= "000";
 		else
-			if disp_mode = "000" and ocp_image = '1' then
+			if disp_mode = "001" and ocp_image = '1' then
 				R <= color_image(8 downto 6);
 				G <= color_image(5 downto 3);
 				B <= color_image(2 downto 0);
-			elsif disp_mode = "001" and ocp_verbose = '1' then
+			elsif disp_mode = "000" and ocp_verbose = '1' then
 				R <= color_verbose(8 downto 6);
 				G <= color_verbose(5 downto 3);
 				B <= color_verbose(2 downto 0);
-			elsif disp_mode = "010" and ocp_terminal = '1' then
-				R <= color_terminal(8 downto 6);
-				G <= color_terminal(5 downto 3);
-				B <= color_terminal(2 downto 0);
+			elsif disp_mode = "010" then
+				if ocp_terminal = '1' then
+					R <= color_terminal(8 downto 6);
+					G <= color_terminal(5 downto 3);
+					B <= color_terminal(2 downto 0);
+				else
+					R <= color_image(8 downto 6);
+					G <= color_image(5 downto 3);
+					B <= color_image(2 downto 0);
+				end if;
 			else
 				R <= "000";
 				G <= "000";
