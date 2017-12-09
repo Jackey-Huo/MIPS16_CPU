@@ -51,7 +51,7 @@ DELINT:
 
 	
 	; R1=中断号
-	; MFCAS R1
+	; MFCAS R1 
 	NOP 
 
     NOP
@@ -86,6 +86,13 @@ DELINT:
     ADDIU R1 0x0030
 	SW R6 R1 0x0000
 	NOP
+
+	; PPT change	
+	LI R0 0x08
+	CMP R0 R1
+	BTEQZ HARD_INTER
+	NOP	
+
 	
 	;提示终端，中断处理结束
 	LI R3 0x0f
@@ -132,6 +139,15 @@ DELINT:
 
 	JR R6
 	NOP
+
+HARD_INTER:
+	LI R3 0xBF
+	SLL R3 R3 0x0
+	LI R4 F0
+	OR R3 R4
+	; R3=0xBFF0
+	LW R3 R4 0x0
+	BEQZ 
 
 
 ;init  0x8251

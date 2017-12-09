@@ -54,27 +54,43 @@ end vga_terminal;
 architecture Behavioral of vga_terminal is
 
 signal char_x, char_y : integer := 0;
+signal vec_y			: std_logic_vector (7 downto 0);
 signal rt, gt, bt : std_logic_vector (2 downto 0) := "000";
 shared variable ascii_code : integer := 0;
 
+constant line_char_num : integer := 40;
+
 begin
 	color <= rt & bt & gt;
-	occupy_flag <= '1' when (rt /= "000" or gt /= "000" or bt /="000") else '0';
 	char_x <= x / 8;
+	char_y <= y / 8;
+	--vec_y <= conv_std_logic_vector(char_y, 8);
 	
 	process(vga_clk, rst)
-		variable dx : integer := 0;
+		variable dx : integer range -10 to 10 := 0 ;
 	begin
 		if rst = '0' or x < 0 then
 			dx := 0;
 			cache_wea <= '0';
 		elsif vga_clk'event and vga_clk = '1' then
 			cache_wea <= '1';
-			fontROMAddr <= conv_std_logic_vector(ascii_code * 8 + y mod 8, 11);
-			dx := 7 - x mod 8;
-			rt <= (others => fontROMData(dx));
-			gt <= (others => fontROMData(dx));
-			bt <= (others => fontROMData(dx));
+			cache_read_addr <= conv_std_logic_vector(char_x + char_y * line_char_num, 13);
+			ascii_code := conv_integer(cache_read_data);
+			fontROMAddr <= conv_std_logic_vector(ascii_code * 8 + y - char_y * 8, 11);
+			dx := 7 - (x - char_x * 8);
+
+			if fontROMData(dx) = '1' then
+				rt <= "000";
+				gt <= "000";
+				bt <= "000";
+				occupy_flag <= '1';
+			else
+				rt <= "111";
+				gt <= "111";
+				bt <= "111";
+				occupy_flag <= '0';
+			end if;
+
 		end if;
 	end process;
 
