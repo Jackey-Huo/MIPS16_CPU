@@ -12,7 +12,5 @@ NOP
 NOP
 NOP
 NOP
-RET
-
 JR R7
 NOP

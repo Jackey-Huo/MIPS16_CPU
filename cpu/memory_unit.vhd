@@ -56,6 +56,7 @@ entity memory_unit is
         seri_tbre       : in std_logic;
         seri_tsre       : in std_logic;
 
+        disp_en             : out std_logic;
         mewb_readout        : out std_logic_vector (15 downto 0);
         ifid_instruc_mem    : out std_logic_vector (15 downto 0);
         me_write_enable     : in std_logic;
@@ -66,8 +67,14 @@ entity memory_unit is
         pc_real             : in std_logic_vector (15 downto 0);
         seri1_write_enable  : in std_logic;
         seri1_read_enable   : in std_logic;
-        seri1_ctrl_read_en  : in std_logic
+        seri1_ctrl_read_en  : in std_logic;
 
+        ram2_readout        : out std_logic_vector (15 downto 0);
+        ram2_write_enable   : in std_logic;
+        ram2_read_enable    : in std_logic;
+        ram2_read_addr      : in std_logic_vector (17 downto 0);
+        ram2_write_addr     : in std_logic_vector (17 downto 0);
+		ram2_write_data		: in std_logic_vector (15 downto 0)
     );
 end memory_unit;
 
@@ -75,13 +82,15 @@ architecture Behavioral of memory_unit is
 
     -- MEM variables
     signal me_write_enable_real            : std_logic                      := '0';
+    signal ram2_write_enable_real          : std_logic                      := '0';
     signal seri_wrn_t, seri_rdn_t          : std_logic                      := '0';
     signal seri1_write_enable_real         : std_logic                      := '0';
-
+    signal WE_ram1_t, WE_ram2_t, OE_ram2_t : std_logic                      := '0';
 begin
 
     ------------- Memory and Serial Control Unit, pure combinational logic
     me_write_enable_real <= '0' when (rst = '0') else (me_write_enable and clk);
+    ram2_write_enable_real <= '0' when (rst = '0') else (ram2_write_enable and clk);
     seri1_write_enable_real <= '0' when (rst = '0') else (seri1_write_enable and not(clk));
 
     -- TODO: serial read & write need further implementation, tbre tsre and data_ready not used now
@@ -95,10 +104,13 @@ begin
     seri_wrn <= seri_wrn_t;
 
     EN_ram1 <= '1' when ((rst = '0') or (seri1_read_enable = '1') or (seri1_write_enable = '1')) else '0';
-    WE_ram1 <= '1' when (rst = '0') else
+    WE_ram1_t <= '1' when (rst = '0') else
                '1' when ((seri1_read_enable = '1') or (seri1_write_enable = '1')) else
                '0' when (me_write_enable_real = '1') else
                '1' when (me_read_enable = '1') else '1';
+    WE_ram1 <= WE_ram1_t;
+    disp_en <= WE_ram1_t when (me_write_addr(15 downto 13) = "111") else '1';
+
     OE_ram1 <= '1' when (rst = '0') else
                '1' when ((seri1_read_enable = '1') or (seri1_write_enable = '1')) else
                '0' when (me_read_enable = '1') else
@@ -113,15 +125,38 @@ begin
                     "00000000000000" &  seri_data_ready & (seri_tbre and seri_tsre) when (seri1_ctrl_read_en = '1') else
                     "ZZZZZZZZZZZZZZZZ";
     -- if MEM is using SRAM, insert a NOP into pipeline
-     ifid_instruc_mem <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0') and
+    ifid_instruc_mem <= data_ram1 when ((me_read_enable = '0') and (me_write_enable = '0') and
                                         (seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
 
     --ifid_instruc_mem <= instruct when ((me_read_enable = '0') and (me_write_enable = '0') and
                                         --(seri1_read_enable = '0') and (seri1_write_enable = '0')) else NOP_instruc;
-    EN_ram2 <= '1';
-    OE_ram2 <= '1';
-    WE_ram2 <= '1';
-    data_ram2 <= "ZZZZZZZZZZZZZZZZ";
-    addr_ram2 <= zero18;
+
+    -- RAM2 is specialized for VGA display
+    EN_ram2 <= '1' when rst = '0' else '0';
+
+    OE_ram2 <= OE_ram2_t;
+    OE_ram2_t <= '1' when (rst = '0') else
+               '0' when (ram2_read_enable = '1') else
+               '1' when (ram2_write_enable = '1') else '0';
+    
+    WE_ram2 <= WE_ram2_t;
+    WE_ram2_t <= '1' when (rst = '0') else
+               '0' when (ram2_write_enable_real = '1') else   
+               '1' when (ram2_read_enable = '1') else '1';
+
+    addr_ram2 <= zero18 when(rst = '0') else
+                ram2_read_addr when (ram2_read_enable = '1') else
+                ram2_write_addr when (ram2_write_enable = '1') else
+                "ZZZZZZZZZZZZZZZZZZ";
+
+    ram2_readout <= data_ram2 when (ram2_read_enable = '1') else
+                    "ZZZZZZZZZZZZZZZZ";
+    data_ram2 <= ram2_write_data when ram2_write_enable_real = '1'
+                                else "ZZZZZZZZZZZZZZZZ";
+    
+--    led(3) <= WE_ram2_t;
+--    led(2) <= OE_ram2_t;
+--    led(1) <= ram2_write_enable;
+--    led(0) <= ram2_read_enable;
 end Behavioral;
 

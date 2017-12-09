@@ -14,6 +14,44 @@ use BASIC.HELPER.ALL;
 
 package interface is
 
+    component refresh is
+        port (
+            click : in std_logic;
+            clk : in std_logic;
+            rst : in std_logic;
+            
+            addr        : out std_logic_vector (17 downto 0);
+            data        : out std_logic_vector (15 downto 0);
+            ram2_write_enable   : out std_logic
+        );
+    end component;
+
+    component flash_manager is
+        port(
+            not_boot            : in std_logic;
+            clk                 : in  std_logic;
+            event_clk           : in std_logic;
+            rst                 : in  std_logic;
+
+            load_finish_flag    : out std_logic;
+            boot_finish_flag    : out std_logic := '0';
+            flash_byte : out  std_logic;
+            flash_vpen : out  std_logic;
+            flash_ce : out  std_logic;
+            flash_oe : out  std_logic;
+            flash_we : out  std_logic;
+            flash_rp : out  std_logic;
+            flash_addr : out  std_logic_vector (22 downto 0);
+            flash_data : inout  std_logic_vector (15 downto 0);
+
+            ram1_addr, ram2_addr    : out std_logic_vector (17 downto 0);
+            ram1_data, ram2_data    : inout std_logic_vector (15 downto 0);
+            ram1_write_enable, ram1_read_enable : out std_logic;
+            ram2_write_enable, ram2_read_enable : out std_logic;
+            digit  : out std_logic_vector (6 downto 0)
+        );
+    end component;
+
     component memory_unit is
         port(
             clk         : in std_logic;
@@ -40,6 +78,7 @@ package interface is
             seri_tbre       : in std_logic;
             seri_tsre       : in std_logic;
 
+            disp_en             : out std_logic;
             mewb_readout        : out std_logic_vector (15 downto 0);
             ifid_instruc_mem    : out std_logic_vector (15 downto 0);
             me_write_enable     : in std_logic;
@@ -50,7 +89,14 @@ package interface is
             pc_real             : in std_logic_vector (15 downto 0);
             seri1_write_enable  : in std_logic;
             seri1_read_enable   : in std_logic;
-            seri1_ctrl_read_en  : in std_logic
+            seri1_ctrl_read_en  : in std_logic;
+            
+            ram2_readout        : out std_logic_vector (15 downto 0);
+            ram2_write_enable   : in std_logic;
+            ram2_read_enable    : in std_logic;
+            ram2_read_addr      : in std_logic_vector (17 downto 0);
+            ram2_write_addr     : in std_logic_vector (17 downto 0);
+            ram2_write_data		: in std_logic_vector (15 downto 0)
         );
     end component;
 
@@ -128,9 +174,21 @@ package interface is
         port (
             clk, rst                        : in std_logic;
 
+            -- flash load
+            flash_load_finish               : in std_logic;
+            boot_ram2_read_enable           : in std_logic;
+            boot_ram2_write_enable          : in std_logic;
+            boot_ram2_write_addr            : in std_logic_vector (17 downto 0);
+            boot_ram2_write_data            : in std_logic_vector (15 downto 0);
+
+            -- vga
+            vga_ram2_read_addr              : in std_logic_vector;
+            vga_ram2_readout                : out std_logic_vector (15 downto 0);
+            vga_ram2_read_enable            : in std_logic;
+
             boot_finish                     : in std_logic;
-            boot_write_addr                 : in std_logic_vector(17 downto 0);
-            boot_write_data                 : in std_logic_vector(15 downto 0);
+            boot_write_addr                 : in std_logic_vector (17 downto 0);
+            boot_write_data                 : in std_logic_vector (15 downto 0);
             boot_write_enable               : in std_logic;
             boot_read_enable                : in std_logic;
 
@@ -141,9 +199,17 @@ package interface is
             exme_bypass                     : in std_logic_vector (15 downto 0);
 
             -- MEM variables
-            me_read_enable, me_write_enable : out std_logic                      := '0';
-            me_read_addr, me_write_addr     : out std_logic_vector (17 downto 0) := zero18;
+            me_read_enable                  : out std_logic                      := '0';
+            me_write_enable                 : out std_logic                      := '0';
+            me_read_addr                    : out std_logic_vector (17 downto 0) := zero18;
+            me_write_addr                   : out std_logic_vector (17 downto 0) := zero18;
             me_write_data                   : out std_logic_vector (15 downto 0) := zero16;
+
+            ram2_read_enable                : out std_logic                      := '0';
+            ram2_write_enable               : out std_logic                      := '0';
+            ram2_read_addr, ram2_write_addr : out std_logic_vector (17 downto 0) := zero18;
+            ram2_write_data                 : out std_logic_vector (15 downto 0) := zero16;
+            ram2_readout                    : in std_logic_vector (15 downto 0)  := zero16;
 
             seri1_read_enable               : out std_logic                      := '0';
             seri1_write_enable              : out std_logic                      := '0';
@@ -256,25 +322,31 @@ package interface is
         );
     end component;
 
-
     component vga_ctrl is
         Port(
-            clk : in std_logic; -- clock forced to be 50M
-            rst : in std_logic;
+            clk			: in std_logic; -- clock forced to be 50M
+            rst			: in std_logic;
+
+            disp_mode	: in std_logic_vector (2 downto 0);
+
+            Hs			: out std_logic; -- line sync
+            Vs			: out std_logic; -- field sync
+            cache_wea	: out std_logic;
+            ram2_read_enable		: out std_logic;
             
-            Hs : out std_logic; -- line sync
-            Vs : out std_logic; -- field sync
+            cache_WE	: in std_logic;
+            -- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
+            disp_addr	: out std_logic_vector (17 downto 0);
+            disp_data	: inout std_logic_vector (15 downto 0);
 
             r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
+
             PC : in std_logic_vector(15 downto 0);
             CM : in std_logic_vector(15 downto 0);
             Tdata : in std_logic_vector(15 downto 0);
             SPdata : in std_logic_vector(15 downto 0);
             IHdata : in std_logic_vector(15 downto 0);
             instruction : in std_logic_vector(15 downto 0);
-            
-            -- Concatenated color definition for input
-            color : in std_logic_vector (8 downto 0);
 
             -- Separate color definition for output
             R : out std_logic_vector(2 downto 0);

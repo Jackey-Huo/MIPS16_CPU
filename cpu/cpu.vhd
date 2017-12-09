@@ -100,6 +100,7 @@ architecture Behavioral of cpu is
 
     -- clocks
     -- main clock
+    signal clock_mode                       : std_logic_vector (2 downto 0) := "000";
     signal clk : std_logic;
     -- vga_clk
     signal clk50 : std_logic;
@@ -165,18 +166,45 @@ architecture Behavioral of cpu is
     signal wb_reg_data                     : std_logic_vector (15 downto 0) := zero16;
 
     -- VGA signals
-    signal ctrl_R, ctrl_G, ctrl_B : std_logic_vector(2 downto 0) := "000";
+    -- cache_WE is formal cache control
+    -- cache_wea is cache control signal requested by VGA controller
+    -- ram2_read_enable
+    signal disp_en : std_logic := '0';
+    signal disp_mode                : std_logic_vector (2 downto 0) := "000";
+    signal cache_WE, vga_ram2_we, cache_wea : std_logic := '0';
+    signal ctrl_R, ctrl_G, ctrl_B   : std_logic_vector(2 downto 0) := "000";
+    signal vga_ram2_readout        : std_logic_vector (15 downto 0);
+    signal vga_ram2_write_enable   : std_logic;
+    signal vga_ram2_read_enable    : std_logic;
+    signal vga_ram2_read_addr      : std_logic_vector (17 downto 0);
+    signal vga_ram2_write_addr     : std_logic_vector (17 downto 0);
+    signal vga_ram2_write_data     : std_logic_vector (15 downto 0);
+
+    signal ram2_readout        : std_logic_vector (15 downto 0);
+    signal ram2_write_enable   : std_logic;
+    signal ram2_read_enable    : std_logic;
+    signal ram2_read_addr      : std_logic_vector (17 downto 0);
+    signal ram2_write_addr     : std_logic_vector (17 downto 0);
+    signal ram2_write_data     : std_logic_vector (15 downto 0);
 
     -- ps2 signals
     signal ps2_data_ready       : std_logic := '0';
     signal ps2_hold_key_value   : std_logic_vector (15 downto 0) := zero16;
 
     -- flash signals
+    signal boot_mode    : std_logic := '1';
     signal clk_flash : std_logic := '0';
     signal boot_finish : std_logic := '0';
-    signal boot_write_addr : std_logic_vector(17 downto 0) := zero18;
-    signal boot_write_data : std_logic_vector(15 downto 0) := zero16;
-    signal boot_write_enable, boot_read_enable : std_logic := '0';
+    signal flash_load_finish    : std_logic := '0';
+    signal boot_ram1_write_addr : std_logic_vector(17 downto 0) := zero18;
+    signal boot_ram1_write_data : std_logic_vector(15 downto 0) := zero16;
+    signal boot_ram1_write_enable, boot_ram1_read_enable : std_logic := '0';
+    signal boot_ram2_read_addr  : std_logic_vector (17 downto 0) := zero18;
+    signal boot_ram2_readout    : std_logic_vector (15 downto 0) := zero16;
+    signal boot_ram2_write_addr : std_logic_vector(17 downto 0) := zero18;
+    signal boot_ram2_write_data : std_logic_vector(15 downto 0) := zero16;
+    signal boot_ram2_write_enable, boot_ram2_read_enable : std_logic := '0';
+
 
     -- INT module signals
     signal hard_int_flag          : std_logic := '0';                  -- if there is INT op
@@ -187,62 +215,55 @@ architecture Behavioral of cpu is
     constant hardint_keyboard_addr    : std_logic_vector (15 downto 0) := x"BFF0";
 
 begin
+    -- '0' for normal boot ; '1' for not boot
+    boot_mode <= instruct (15);
+    clock_mode <= instruct (2 downto 0);
+    disp_mode <= instruct (5 downto 3);
+
+--    led(6 downto 0) <= vga_ram2_readout(6 downto 0);
+--    led(15) <= seri_wrn_t;
+--    led(14) <= seri_rdn_t;
+--    led(13) <= seri_tbre;
+--    led(12) <= seri_tsre;
+--    led(11) <= seri_data_ready;
+--    led(10 downto 7) <= boot_finish & flash_load_finish & ram2_read_enable & ram2_write_enable;
+    
     ------------- Clock selector ----------
     clk_selector   : clock_select port map(
         click => click,
         clk_50M => clk_50M,
-        selector => instruct(2 downto 0), --25M
+        selector => clock_mode, --25M
         clk => clk,
         clk_flash => clk_flash
     );
 
-    -- bootloader : load monitor program from flash
-    bl  :   bootloader port map(
-            not_boot => instruct(15),
-            clk => clk_flash,
-            rst => rst,
-            boot_finish_flag => boot_finish,
-            flash_byte => flash_byte, --: out  std_logic;
-            flash_vpen =>flash_vpen, --: out  std_logic;
-            flash_ce => flash_ce, --: out  std_logic;
-            flash_oe => flash_oe, --: out  std_logic;
-            flash_we => flash_we, --: out  std_logic;
-            flash_rp => flash_rp, --: out  std_logic;
-            flash_addr => flash_addr, -- : out  std_logic_vector (22 downto 0);
-            flash_data => flash_data, --: inout  std_logic_vector (15 downto 0);
+    ------------- Flash Manager : boot and load data from flash -------
+    flash_file_manager : flash_manager port map(
+        not_boot            => boot_mode,
+        clk                 => clk,
+        event_clk           => click,
+        rst                 => rst,
 
-            memory_address => boot_write_addr, -- : out std_logic_vector(17 downto 0);
-            memory_data_bus => boot_write_data, --: inout std_logic_vector(15 downto 0);
+        load_finish_flag    => flash_load_finish,
+        boot_finish_flag    => boot_finish,
+        flash_byte          => flash_byte, --: out  std_logic;
+        flash_vpen          => flash_vpen, --: out  std_logic;
+        flash_ce            => flash_ce, --: out  std_logic;
+        flash_oe            => flash_oe, --: out  std_logic;
+        flash_we            => flash_we, --: out  std_logic;
+        flash_rp            => flash_rp, --: out  std_logic;
+        flash_addr          => flash_addr, -- : out  std_logic_vector (22 downto 0);
+        flash_data          => flash_data, --: inout  std_logic_vector (15 downto 0);
 
-            memory_write_enable => boot_write_enable, -- : out std_logic;
-            memory_read_enable => boot_read_enable, --: out std_logic;
-            digit => dyp0 --: out  STD_LOGIC_VECTOR (6 downto 0)
-    );
- 
-    ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
-    vga_disp : vga_ctrl port map(
-        clk => clk_50M,
-        rst => rst,
-        Hs => Hs,
-        Vs => Vs,
-        r0=>r0,
-        r1=>r1,
-        r2=>r2,
-        r3=>r3,
-        r4=>r4,
-        r5=>r5,
-        r6=>r6,
-        r7=>r7,
-        PC => PC, -- : in std_logic_vector(15 downto 0);
-        CM => me_read_addr(15 downto 0), -- in std_logic_vector(15 downto 0);
-        Tdata => T, -- : in std_logic_vector(15 downto 0);
-        SPdata => SP, -- : in std_logic_vector(15 downto 0);
-        IHdata => IH, --: in std_logic_vector(15 downto 0);
-        instruction => ifid_instruc,
-        color => "000000000",
-        R => VGA_R,
-        G => VGA_G,
-        B => VGA_B
+        ram1_addr           => boot_ram1_write_addr     , 
+        ram2_addr           => boot_ram2_write_addr     ,
+        ram1_data           => boot_ram1_write_data     ,
+        ram2_data           => boot_ram2_write_data     ,
+        ram1_write_enable   => boot_ram1_write_enable   ,
+        ram1_read_enable    => boot_ram1_read_enable    ,
+        ram2_write_enable   => boot_ram2_write_enable   ,
+        ram2_read_enable    => boot_ram2_read_enable    ,
+        digit               => dyp0                     
     );
 
     ------------- PS2 Keyboard Control -----------
@@ -268,7 +289,6 @@ begin
         cause => Cause
     );
 
-    ------------- Memory and Serial Control Unit, pure combinational logic
     memory_IO : memory_unit port map(
         clk         => clk,
         rst         => rst,
@@ -293,7 +313,8 @@ begin
         seri_data_ready => seri_data_ready,
         seri_tbre       => seri_tbre      ,
         seri_tsre       => seri_tsre      ,
-
+        -- useless
+        disp_en            => disp_en             ,
         mewb_readout       => mewb_readout        , 
         ifid_instruc_mem   => ifid_instruc_mem    , 
         me_write_enable    => me_write_enable     , 
@@ -304,7 +325,56 @@ begin
         pc_real            => pc_real             , 
         seri1_write_enable => seri1_write_enable  , 
         seri1_read_enable  => seri1_read_enable   , 
-        seri1_ctrl_read_en => seri1_ctrl_read_en  
+        seri1_ctrl_read_en => seri1_ctrl_read_en  ,
+        ram2_readout       => ram2_readout        ,
+        ram2_write_enable  => ram2_write_enable   ,
+        ram2_read_enable   => ram2_read_enable    ,
+        ram2_read_addr     => ram2_read_addr      ,
+        ram2_write_addr    => ram2_write_addr     ,
+        ram2_write_data    => ram2_write_data     
+    );
+
+    --ram2_write_addr <= zero18;
+    --ram2_write_data <= zero16;
+    --ram2_write_enable <= '0';
+--    fresh_ram2 : refresh port map(
+--        click => click,
+--        clk => clk,
+--        rst => rst,
+--        addr => ram2_write_addr,
+--        data => ram2_write_data,
+--        ram2_write_enable => ram2_write_enable
+--    );
+
+    ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
+    vga_disp : vga_ctrl port map(
+        clk => clk_50M,
+        rst => rst,
+        disp_mode => disp_mode,
+        Hs => Hs,
+        Vs => Vs,
+        cache_wea => cache_wea,
+        ram2_read_enable => vga_ram2_read_enable,
+        cache_WE => cache_WE,
+        disp_addr => vga_ram2_read_addr,
+        disp_data => vga_ram2_readout,
+        r0=>r0,
+        r1=>r1,
+        r2=>r2,
+        r3=>r3,
+        r4=>r4,
+        r5=>r5,
+        r6=>r6,
+        r7=>r7,
+        PC => PC, -- : in std_logic_vector(15 downto 0);
+        CM => me_read_addr(15 downto 0), -- in std_logic_vector(15 downto 0);
+        Tdata => T, -- : in std_logic_vector(15 downto 0);
+        SPdata => SP, -- : in std_logic_vector(15 downto 0);
+        IHdata => IH, --: in std_logic_vector(15 downto 0);
+        instruction => ifid_instruc,
+        R => VGA_R,
+        G => VGA_G,
+        B => VGA_B
     );
 
     ---------------- IF --------------------------
@@ -447,17 +517,18 @@ begin
                         mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
     Rg_bypass: mux7to1 port map (idex_bypass_real, ctrl_mux_bypass, idex_bypass, exme_result,
                         mewb_result, mewb_readout, wb_reg_data, exme_bypass, mewb_bypass);
+    --
 
 
---                 ---                                  ---                                  ---
---    idex_reg_a--|   |                    idex_reg_b--|   |     ^_^           idex_bypass--|   |
---    alu_result--| M |                    alu_result--| M |                    alu_result--| M |
---   mewb_result--|   |                   mewb_result--|   |                   mewb_result--|   |
---  mewb_readout--| U |--ex_alu_reg_a    mewb_readout--| U |--ex_alu_reg_b    mewb_readout--| U |--ex_bypass
---   wb_reg_data--|   |                   wb_reg_data--|   |                   wb_reg_data--|   |
---   exme_bypass--| X |                   exme_bypass--| X |                   exme_bypass--| X |
---   mewb_bypass--|   |                   mewb_bypass--|   |                   mewb_bypass--|   |
---                 ---                                  ---                                  ---                
+    --                 ---                                  ---                                  ---
+    --    idex_reg_a--|   |                    idex_reg_b--|   |     ^_^           idex_bypass--|   |
+    --    alu_result--| M |                    alu_result--| M |                    alu_result--| M |
+    --   mewb_result--|   |                   mewb_result--|   |                   mewb_result--|   |
+    --  mewb_readout--| U |--ex_alu_reg_a    mewb_readout--| U |--ex_alu_reg_b    mewb_readout--| U |--ex_bypass
+    --   wb_reg_data--|   |                   wb_reg_data--|   |                   wb_reg_data--|   |
+    --   exme_bypass--| X |                   exme_bypass--| X |                   exme_bypass--| X |
+    --   mewb_bypass--|   |                   mewb_bypass--|   |                   mewb_bypass--|   |
+    --                 ---                                  ---                                  ---                
 
     
 
@@ -495,12 +566,25 @@ begin
     ME_unit: MEM port map (
             clk                     => clk,
             rst                     => rst,
+            
+            -- flash load
+            flash_load_finish       => flash_load_finish,
+            boot_ram2_read_enable   => boot_ram2_read_enable,
+            boot_ram2_write_enable  => boot_ram2_write_enable,
+            boot_ram2_write_addr    => boot_ram2_write_addr,
+            boot_ram2_write_data    => boot_ram2_write_data,
 
+            -- vga
+            vga_ram2_read_addr      => vga_ram2_read_addr,
+            vga_ram2_readout        => vga_ram2_readout,
+            vga_ram2_read_enable    => vga_ram2_read_enable,
+
+            -- boot
             boot_finish             => boot_finish,
-            boot_write_addr         => boot_write_addr,
-            boot_write_data         => boot_write_data,
-            boot_write_enable       => boot_write_enable,
-            boot_read_enable        => boot_read_enable,
+            boot_write_addr         => boot_ram1_write_addr,
+            boot_write_data         => boot_ram1_write_data,
+            boot_write_enable       => boot_ram1_write_enable,
+            boot_read_enable        => boot_ram1_read_enable,
 
             -- EX/MEM pipeline storage
             exme_instruc            => exme_instruc,
@@ -514,6 +598,13 @@ begin
             me_read_addr            => me_read_addr,
             me_write_addr           => me_write_addr,
             me_write_data           => me_write_data,
+
+            -- RAM2 variables
+            ram2_read_enable        => ram2_read_enable,
+            ram2_write_enable       => ram2_write_enable,
+            ram2_read_addr          => ram2_read_addr,
+            ram2_write_addr         => ram2_write_addr,
+            ram2_write_data         => ram2_write_data,
 
             seri1_read_enable       => seri1_read_enable,
             seri1_write_enable      => seri1_write_enable,

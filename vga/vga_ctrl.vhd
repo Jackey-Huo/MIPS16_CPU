@@ -31,10 +31,20 @@ use BASIC.HELPER.ALL;
 
 entity vga_ctrl is
 	Port(
-		clk : in std_logic; -- clock forced to be 50M
-		rst : in std_logic;
-		Hs : out std_logic; -- line sync
-		Vs : out std_logic; -- field sync
+		clk			: in std_logic; -- clock forced to be 50M
+		rst			: in std_logic;
+
+		disp_mode	: in std_logic_vector (2 downto 0);
+
+		Hs			: out std_logic; -- line sync
+		Vs			: out std_logic; -- field sync
+		cache_wea	: out std_logic;
+		ram2_read_enable		: out std_logic;
+		
+		cache_WE	: in std_logic;
+		-- mem_addr is (17 downto 0) , mem_addr <= "00" & "111" & disp_addr
+		disp_addr	: out std_logic_vector (17 downto 0);
+		disp_data	: inout std_logic_vector (15 downto 0);
 
 		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
 
@@ -44,9 +54,6 @@ entity vga_ctrl is
 		SPdata : in std_logic_vector(15 downto 0);
 		IHdata : in std_logic_vector(15 downto 0);
 		instruction : in std_logic_vector(15 downto 0);
-
-		-- Concatenated color definition for input
-		color : in std_logic_vector (8 downto 0);
 
 		-- Separate color definition for output
 		R : out std_logic_vector(2 downto 0);
@@ -64,24 +71,43 @@ component fontROM is
 	douta: out std_logic_vector(7 downto 0));
 end component;
 
+component VGARAM is
+	PORT (
+		clka : IN STD_LOGIC;
+		wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+		addra : IN STD_LOGIC_VECTOR(12 DOWNTO 0);
+		dina : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+		clkb : IN STD_LOGIC;
+		addrb : IN STD_LOGIC_VECTOR(12 DOWNTO 0);
+		doutb : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
+	);
+end component;
+
 component vga_ctrl_480 is 
 	Port(
 		clk : in std_logic; -- clock forced to be 50M
 		rst : in std_logic;
-
+		disp_mode	: in std_logic_vector (2 downto 0);
+	
 		Hs : out std_logic; -- line sync
 		Vs : out std_logic; -- field sync
 
 		fontROMAddr : out std_logic_vector (10 downto 0);
 		fontROMData : in std_logic_vector (7 downto 0);
+		-- cache request
+		cache_wea	: out std_logic;
+		-- ram2 request
+		ram2_read_enable		: out std_logic;
+		read_addr	: out std_logic_vector (17 downto 0);
+		read_out	: inout std_logic_vector (15 downto 0);
 
-		r0, r1, r2, r3, r4, r5, r6, r7 : in std_logic_vector(15 downto 0);
+		r0, r1, r2, r3, r4,r5,r6,r7 : in std_logic_vector(15 downto 0);
 		PC : in std_logic_vector(15 downto 0);
 		CM : in std_logic_vector(15 downto 0);
 		Tdata : in std_logic_vector(15 downto 0);
 		SPdata : in std_logic_vector(15 downto 0);
 		IHdata : in std_logic_vector(15 downto 0);
-		instruction : in std_logic_vector (15 downto 0);
+		instruction : in std_logic_vector(15 downto 0);
 
 		-- Separate color definition for output
 		R : out std_logic_vector(2 downto 0);
@@ -114,6 +140,9 @@ signal dr0, dr1, dr2, dr3, dr4, dr5, dr6, dr7 : std_logic_vector(15 downto 0) :=
 signal dSP, dIH, dT, d_CM, dPC : std_logic_vector(15 downto 0) := x"0000";
 signal x, y : integer := 0;
 
+signal cacheReadAddr : std_logic_vector (12 downto 0) := "0000000000000";
+signal cacheReadData : std_logic_vector (15 downto 0) := x"0000";
+
 begin
 
 	dr0<=r0;
@@ -125,20 +154,34 @@ begin
 	dr6<=r6;
 	dr7<=r7;
 
-
 	get_font : fontROM port map(
 		clka => clk,
 		addra => fontROMAddr,
 		douta => fontROMData
-		);
+	);
+
+--	vga_cache : VGARAM port map(
+--		clka 	=> clk,
+--		wea(0) 	=> cache_WE,
+--		addra 	=> disp_addr (12 downto 0),
+--		dina 	=> disp_data,
+--		clkb 	=> clk,
+--		addrb 	=> cacheReadAddr,
+--		doutb 	=> cacheReadData
+--	);
 
 	vga480_disp : vga_ctrl_480 port map(
 		clk => clk,
 		rst => rst,
+		disp_mode => disp_mode,
 		Hs => Hs,
 		Vs => Vs,
 		fontROMAddr => fontROMAddr,
 		fontROMData => fontROMData,
+		read_addr => disp_addr,
+		read_out => disp_data,
+		cache_wea => cache_wea,
+		ram2_read_enable => ram2_read_enable,
 		r0=>dr0,
 		r1=>dr1,
 		r2=>dr2,
