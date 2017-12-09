@@ -130,13 +130,18 @@ package helper is
     constant char_height        : integer := 8;
     constant half_width         : integer := 128;
     constant half_height         : integer := 128;
-    constant disp_scale_factor  : integer := 4;
+    constant disp_scale_factor  : integer := 1;
 
     constant vga_disp_480       : std_logic_vector (2 downto 0) := "000";
     constant vga_disp_768       : std_logic_vector (2 downto 0) := "001";
 
     constant vga480_center_x : integer := 320;
     constant vga480_center_y : integer := 240;
+    constant image_lapse_x  : integer := 5;
+    constant image_lapse_y  : integer := 40;
+    constant image_height   : integer := 400;
+    constant image_width    : integer := 630;
+    constant max_index      : integer := 252000;
 
     constant vga480_full_w : integer := 799;
     constant vga480_full_h : integer := 524;

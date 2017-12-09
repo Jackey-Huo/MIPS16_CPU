@@ -54,7 +54,7 @@ signal intern_color : std_logic_vector (8 downto 0) := "000000000";
 
 begin
     color <= intern_color;
-    --occupy_flag <= '1' when (intern_color /= "000000000") else '0';
+    occupy_flag <= '1' when (intern_color /= "000000000") else '0';
     process(vga_clk, rst)
         variable bx, by, ind : integer range -1000000 to 1000000 := 0;
     begin
@@ -62,13 +62,12 @@ begin
             intern_color <= "000000000";
             ram2_read_enable <= '0';
         elsif vga_clk'event and vga_clk = '1' then
-            occupy_flag <= '1';
-            bx := x / disp_scale_factor;
-            by := y / disp_scale_factor;
+            bx := (x - image_lapse_x) / disp_scale_factor;
+            by := (y - image_lapse_y) / disp_scale_factor;
+            ind := by * image_width + bx;
             if x >= 0 and vga480_w > x and y >= 0 and vga480_h > y
-                and bx >= 0 and by >= 0 then
-
-                ind := by * vga480_w + bx;
+                and bx >= 0 and by >= 0 and image_height > by and image_width > bx and
+                ind < max_index then
                 ram2_read_enable <= '1';
                 read_addr <= conv_std_logic_vector(ind, 18);
                 intern_color <= read_out (8 downto 0);

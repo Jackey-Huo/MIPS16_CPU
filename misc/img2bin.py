@@ -16,7 +16,7 @@ def recon(img):
     img_rec[img_rec > 255] = 255
     return img_rec
 
-def serialize(img, name, start=0x060000):
+def serialize(img, name, start=0x050000):
     f = open(name, 'w')
     cnt = 0
     print(img.shape)
@@ -32,11 +32,23 @@ def serialize(img, name, start=0x060000):
             cnt = cnt + 1
     f.close()
 
-namea = "C:\\Users\\atlantix\\Desktop\\terminal.PNG"
-nameb = "C:\\Users\\atlantix\\Desktop\\terminal.bmp"
+#namea = "C:\\Users\\atlantix\\Desktop\\terminal.PNG"
+#nameb = "C:\\Users\\atlantix\\Desktop\\terminal.bmp"
+#nametxt = "C:\\Users\\atlantix\\Desktop\\flash_terminal.txt"
+
+#namea = "C:\\Users\\atlantix\\Desktop\\img.png"
+#nameb = "C:\\Users\\atlantix\\Desktop\\img.bmp"
+#nametxt = "C:\\Users\\atlantix\\Desktop\\flash_win.txt"
+
+namea = "C:\\Users\\atlantix\\Desktop\\模板-cpu战术\\幻灯片13.PNG"
+nameb = "C:\\Users\\atlantix\\Desktop\\模板-cpu战术\\幻灯片13.bmp"
+nametxt = "C:\\Users\\atlantix\\Desktop\\flash.txt"
 
 img = imread (namea)
-imgr = resize(img, (480, 640))
+imgr = resize(img, (400, 630))
+imgr = (imgr - imgr.min()) * (imgr.max() - imgr.min()) * 255
+print(imgr.max(), imgr.min())
 img8 = quantize(imgr)
+print(img8.max(), img8.min())
 imwrite(nameb, recon(img8))
-serialize(img8, "C:\\Users\\atlantix\\Desktop\\flash_terminal.txt")
+serialize(img8, nametxt, start=0x090000)

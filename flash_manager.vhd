@@ -162,11 +162,11 @@ begin
                             ppt_slide_index <= ppt_slide_index + 1;
                         when "00010" =>
                             digit <= not "0010010";
-                            start_addr <= "00" & x"60000";
+                            start_addr <= "00" & x"50000";
                             ppt_slide_index <= ppt_slide_index + 1;
                         when "00011" =>
                             digit <= not "0000110";
-                            start_addr <= "00" & x"A0000";
+                            start_addr <= "00" & x"90000";
                             ppt_slide_index <= ppt_slide_index + 1;
                         when others  => ppt_slide_index <= "00000";
                     end case;
