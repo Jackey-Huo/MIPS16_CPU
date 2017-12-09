@@ -90,6 +90,12 @@ begin
                   else
                       result1 <= "00000000000000001";
                   end if;
+              when alu_less =>
+                  if (a1 < b1) then
+                      result1 <= "00000000000000001";
+                  else
+                      result1 <= zero17;
+                  end if;
               when others =>
                 result1 <= "ZZZZZZZZZZZZZZZZZ";
             end case;
