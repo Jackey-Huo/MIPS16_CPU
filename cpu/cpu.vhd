@@ -680,8 +680,9 @@ begin
            EPC   when (instruct(14 downto 11) = EPC_index) else
            Cause when (instruct(14 downto 11) = Case_index) else
            ps2_hold_key_value when (instruct(14 downto 11) = "1101") else
-           seri_wrn_t & seri_rdn_t & seri_tbre & seri_tsre & seri_data_ready & "00000000000"
-           when (instruct(14 downto 11) = reg_none);
+           boot_finish & flash_load_finish & me_read_enable & 
+           me_write_enable & ram2_read_enable & ram2_write_enable & "0000000000" when (instruct(14 downto 11) = "1110") else
+           x"0000";
 
 end Behavioral;
 

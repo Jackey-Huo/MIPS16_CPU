@@ -72,7 +72,7 @@ begin
 		if rst = '0' or x < 0 then
 			dx := 0;
 			cache_wea <= '0';
-		elsif vga_clk'event and vga_clk = '1' then
+		elsif vga_clk'event and vga_clk = '1' and char_y < line_char_num then
 			cache_wea <= '1';
 			cache_read_addr <= conv_std_logic_vector(char_x + char_y * line_char_num, 13);
 			ascii_code := conv_integer(cache_read_data);

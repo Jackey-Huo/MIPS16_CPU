@@ -606,7 +606,7 @@ UASM:
 	OR R2 R5
 
 	
-		;循环发出	
+	; 循环发出	
 	
 UASMLOOP:		
 	
