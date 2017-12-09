@@ -122,8 +122,10 @@ begin
 
     -- first test in click
     process (state, clk, state_clk, rst)
+        variable ppt_addr_index : std_logic_vector (21 downto 0) := zero22;
     begin
         if rst = '0' then
+            ppt_addr_index := zero22;
             ppt_slide_index <= "00000";
             boot_finish_flag <= '0';
             state <= not_booted;
@@ -152,25 +154,24 @@ begin
                     ram_choose <= '1'; --chose ram2
                     load_len <= "11" & x"FFFF"; -- load on the whole ram2
 
-                    case ppt_slide_index is
-                        when "00000" =>
-                            digit <= not "0000001";
-                            ppt_slide_index <= ppt_slide_index + 1;
-                        when "00001" =>
-                            digit <= not "1001111";
-                            start_addr <= "00" & x"10000";
-                            ppt_slide_index <= ppt_slide_index + 1;
-                        when "00010" =>
-                            digit <= not "0010010";
-                            start_addr <= "00" & x"50000";
-                            ppt_slide_index <= ppt_slide_index + 1;
-                        when "00011" =>
-                            digit <= not "0000110";
-                            start_addr <= "00" & x"90000";
-                            ppt_slide_index <= ppt_slide_index + 1;
-                        when others  => ppt_slide_index <= "00000";
-                    end case;
-
+                    if ppt_slide_index = "00000" then
+                        digit <= not "0000001";
+                        ppt_addr_index := zero22;
+                        ppt_slide_index <= ppt_slide_index + 1;
+                    elsif ppt_slide_index = "00001" then
+                        digit <= not "1001111";
+                        start_addr <= "00" & x"01000";
+                        ppt_slide_index <= ppt_slide_index + 1;
+                    elsif ppt_slide_index < "11111" then
+                        digit (4 downto 0) <= ppt_slide_index;
+                        digit (6 downto 5) <= "00";
+                        ppt_slide_index <= ppt_slide_index + 1;
+                        ppt_addr_index := ppt_addr_index + x"40000";
+                        start_addr <= ppt_addr_index;
+                    else
+                        ppt_slide_index <= "00000";
+                        digit <= not "0000001";
+                    end if;
                     state <= loading;
                 else
                     load_finish_flag <= '1';

@@ -45,7 +45,6 @@ entity MEM is
 
         -- vga
         vga_ram2_read_addr              : in std_logic_vector;
-        vga_ram2_readout                : out std_logic_vector (15 downto 0);
         vga_ram2_read_enable            : in std_logic;
 
         boot_finish                     : in std_logic;
@@ -71,7 +70,6 @@ entity MEM is
         ram2_write_enable               : out std_logic                      := '0';
         ram2_read_addr, ram2_write_addr : out std_logic_vector (17 downto 0) := zero18;
         ram2_write_data                 : out std_logic_vector (15 downto 0) := zero16;
-        ram2_readout                    : in std_logic_vector (15 downto 0)  := zero16;
 
         seri_wrn_t, seri_rdn_t          : out std_logic                      := '0';
         seri1_read_enable               : out std_logic                      := '0';
@@ -105,7 +103,6 @@ begin
             ram2_write_data     <= boot_ram2_write_data;
         else
             ram2_read_addr      <= vga_ram2_read_addr;
-            vga_ram2_readout    <= ram2_readout;
             ram2_read_enable    <= vga_ram2_read_enable;
             ram2_write_enable   <= '0';
             ram2_write_addr     <= zero18;

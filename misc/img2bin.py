@@ -9,15 +9,15 @@ def quantize(img):
             for k in range(img.shape[2]):
                 x[i, j, k] = int(img[i, j, k] / 64)
     """
-    return (img.astype("float32") / 64).astype("uint8") 
+    return ((img.astype("float32")) / 32).astype("uint8") 
 
 def recon(img):
-    img_rec = img8 * 64
+    img_rec = img8 * 32 + 16
     img_rec[img_rec > 255] = 255
-    return img_rec
+    return img_rec.astype("uint8")
 
-def serialize(img, name, start=0x050000):
-    f = open(name, 'w')
+def serialize(f, img, start=0x050000):
+    print("%x" % start)
     cnt = 0
     print(img.shape)
     for i in range(img.shape[0]):
@@ -30,7 +30,6 @@ def serialize(img, name, start=0x050000):
             hex_pos = ("%06x" % (cnt+start))
             f.write("%s=%s\n" % (hex_pos, hex_color))
             cnt = cnt + 1
-    f.close()
 
 #namea = "C:\\Users\\atlantix\\Desktop\\terminal.PNG"
 #nameb = "C:\\Users\\atlantix\\Desktop\\terminal.bmp"
@@ -40,15 +39,23 @@ def serialize(img, name, start=0x050000):
 #nameb = "C:\\Users\\atlantix\\Desktop\\img.bmp"
 #nametxt = "C:\\Users\\atlantix\\Desktop\\flash_win.txt"
 
-namea = "C:\\Users\\atlantix\\Desktop\\模板-cpu战术\\幻灯片13.PNG"
-nameb = "C:\\Users\\atlantix\\Desktop\\模板-cpu战术\\幻灯片13.bmp"
-nametxt = "C:\\Users\\atlantix\\Desktop\\flash.txt"
+in_name_format = "C:\\Users\\atlantix\\Desktop\\410-cpu_presentation\\1 (%d).PNG"
+out_name_format = "C:\\Users\\atlantix\\Desktop\\410-cpu_presentation\\1 (%d).bmp"
+flash_name = "C:\\Users\\atlantix\\Desktop\\flash.txt"
+N = 17
+f = open(flash_name, "w")
+out_shape = (400, 630)
 
-img = imread (namea)
-imgr = resize(img, (400, 630))
-imgr = (imgr - imgr.min()) * (imgr.max() - imgr.min()) * 255
-print(imgr.max(), imgr.min())
-img8 = quantize(imgr)
-print(img8.max(), img8.min())
-imwrite(nameb, recon(img8))
-serialize(img8, nametxt, start=0x090000)
+for i in range(1, N+1, 1):
+    namea = in_name_format % i
+    nameb = out_name_format % i
+    img = imread (namea)
+    imgr = resize(img, out_shape)
+    imgr = (imgr - imgr.min()) / (imgr.max() - imgr.min()) * 255
+    img8 = quantize(imgr)
+    imwrite(nameb, recon(img8))
+    if i == 1:
+        serialize(f, img8, start=0x001000)
+    else:
+        serialize(f, img8, start=(0x040000*(i-1)))
+f.close()

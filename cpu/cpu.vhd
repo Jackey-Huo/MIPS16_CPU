@@ -175,7 +175,7 @@ architecture Behavioral of cpu is
     signal disp_mode                : std_logic_vector (2 downto 0) := "000";
     signal cache_WE, vga_ram2_we, cache_wea : std_logic := '0';
     signal ctrl_R, ctrl_G, ctrl_B   : std_logic_vector(2 downto 0) := "000";
-    signal vga_ram2_readout        : std_logic_vector (15 downto 0);
+    signal vga_ram2_readout        : std_logic_vector (15 downto 0) := "0000000000000111";
     signal vga_ram2_write_enable   : std_logic;
     signal vga_ram2_read_enable    : std_logic;
     signal vga_ram2_read_addr      : std_logic_vector (17 downto 0);
@@ -314,6 +314,7 @@ begin
         seri_data_ready => seri_data_ready,
         seri_tbre       => seri_tbre      ,
         seri_tsre       => seri_tsre      ,
+        
         -- useless
         disp_en            => disp_en             ,
         mewb_readout       => mewb_readout        , 
@@ -348,6 +349,7 @@ begin
 --    );
 
     ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
+    vga_ram2_readout <= ram2_readout;
     vga_disp : vga_ctrl port map(
         clk => clk_50M,
         rst => rst,
@@ -572,7 +574,6 @@ begin
 
             -- vga
             vga_ram2_read_addr      => vga_ram2_read_addr,
-            vga_ram2_readout        => vga_ram2_readout,
             vga_ram2_read_enable    => vga_ram2_read_enable,
 
             -- boot
