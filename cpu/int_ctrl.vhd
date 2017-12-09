@@ -69,8 +69,6 @@ begin
                 else
                     hard_int_flag <= '0';
                 end if;
-                epc <= cur_pc;
-                cause <= "000000000000" & cur_instruc (3 downto 0);
             elsif cur_instruc (15 downto 11) = INT_op then
                 hard_int_flag <= '0';
                 epc <= cur_pc;
