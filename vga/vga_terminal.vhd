@@ -42,22 +42,16 @@ entity vga_terminal is
 		rst				: in std_logic;
 		x, y			: in integer;
 
+		cache_wea		: out std_logic;
+		cache_read_addr	: out std_logic_vector (12 downto 0);
+		cache_read_data	: in std_logic_vector (7 downto 0);
+
 		fontROMAddr 	: out std_logic_vector (10 downto 0);
 		fontROMData 	: in std_logic_vector (7 downto 0)
     );
 end vga_terminal;
 
 architecture Behavioral of vga_terminal is
-
-component VGARAM_ctrl IS
-  PORT (
-    clka : IN STD_LOGIC;
-    wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-    addra : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
-    dina : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-    douta : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
-  );
-END component;
 
 signal char_x, char_y : integer := 0;
 signal rt, gt, bt : std_logic_vector (2 downto 0) := "000";
@@ -73,7 +67,9 @@ begin
 	begin
 		if rst = '0' or x < 0 then
 			dx := 0;
+			cache_wea <= '0';
 		elsif vga_clk'event and vga_clk = '1' then
+			cache_wea <= '1';
 			fontROMAddr <= conv_std_logic_vector(ascii_code * 8 + y mod 8, 11);
 			dx := 7 - x mod 8;
 			rt <= (others => fontROMData(dx));
