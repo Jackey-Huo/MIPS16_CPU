@@ -44,6 +44,7 @@ entity Control is
 
         -- hard int signal
         hard_int_flag              : in std_logic;
+        hard_int_insert_bubble     : out std_logic := '0';
 
         -- Control Unit output
         ctrl_mux_reg_a             : out std_logic_vector (2 downto 0) := "000";
@@ -266,11 +267,14 @@ begin
             conflict_detect(ctrl_fake_nop, ctrl_mux_reg_a, ctrl_mux_reg_b, ctrl_mux_bypass,
                             ctrl_rd_reg_a, ctrl_rd_reg_b, ctrl_rd_bypass, ctrl_wb_reg_1, ctrl_wb_reg_2, ctrl_wb_reg_3,
                             ctrl_instruc_0, ctrl_instruc_1, ctrl_instruc_2, ctrl_instruc_3);
-            
-            -- INTTERUPPT : insert bubble
-            if hard_int_flag = '1' then   -- TODO: int_flag will use for hardware interrupt, not insert_bubble
-                ctrl_insert_bubble_t <= '1';
-            elsif (ctrl_fake_nop = true) then
+            if (hard_int_flag = '1') then
+                hard_int_insert_bubble <= '1';
+                ctrl_wb_reg_0 := reg_none;
+                ctrl_instruc_0 := NOP_instruc;
+            else
+                hard_int_insert_bubble <= '0';
+            end if;
+            if (ctrl_fake_nop = true) then
                 ctrl_insert_bubble_t <= '1';
                 ctrl_wb_reg_0 := reg_none;
                 ctrl_instruc_0 := NOP_instruc;

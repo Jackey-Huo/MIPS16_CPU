@@ -148,14 +148,12 @@ architecture Behavioral of cpu is
     
     -- MEM variables
     signal me_read_enable, me_write_enable : std_logic                      := '0';
-    signal me_write_enable_real            : std_logic                      := '0';
     signal me_read_addr, me_write_addr     : std_logic_vector (17 downto 0) := zero18;
     signal me_write_data                   : std_logic_vector (15 downto 0) := zero16;
 
     signal seri_wrn_t, seri_rdn_t          : std_logic                      := '0';
     signal seri1_read_enable               : std_logic                      := '0';
     signal seri1_write_enable              : std_logic                      := '0';
-    signal seri1_write_enable_real         : std_logic                      := '0';
     signal seri1_ctrl_read_en              : std_logic                      := '0';
 
     --MEM/WB pipeline storage
@@ -209,7 +207,8 @@ architecture Behavioral of cpu is
 
 
     -- INT module signals
-    signal hard_int_flag     : std_logic := '0';                         -- if there is INT op
+    signal hard_int_flag          : std_logic := '0';                  -- if there is INT op
+    signal hard_int_insert_bubble : std_logic := '0';
     -- absolute interrupt headle address, changed by the kernel development
     constant delint_addr   : std_logic_vector (15 downto 0) := x"0006";
     -- memory address containing keyboard ascii code when hardware interrupt occur
@@ -309,8 +308,8 @@ begin
         EN_ram2     => EN_ram2, 
 
         -- serial
-        seri_rdn        => seri_rdn       ,
-        seri_wrn        => seri_wrn       ,
+        seri_rdn        => seri_rdn_t     ,
+        seri_wrn        => seri_wrn_t     ,
         seri_data_ready => seri_data_ready,
         seri_tbre       => seri_tbre      ,
         seri_tsre       => seri_tsre      ,
@@ -389,14 +388,17 @@ begin
             if (ctrl_insert_bubble = '1') then
                 ifid_instruc <= ifid_instruc;
                 pc <= pc_real;
+            elsif (hard_int_flag = '1') then          -- TODO, in fact, we need consider of MEM/IF conflict here
+                ifid_instruc <= INT_op & "0000000" & "1000";   -- 8 is for keyboard interrupt
+                pc <= pc_real;
+            elsif (hard_int_insert_bubble = '1') then
+                ifid_instruc <= NOP_instruc;          -- insert NOP after hard int occur, to previou branch conflict
+                pc <= pc_real;
             elsif ((me_read_enable = '1') or (me_write_enable = '1')) then
                 ifid_instruc <= ifid_instruc_mem;     -- actually, it's a NOP
                 pc <= pc_real;
             elsif ((seri1_read_enable = '1') or (seri1_write_enable = '1')) then
                 ifid_instruc <= ifid_instruc_mem;     -- actually, it's a NOP
-                pc <= pc_real;
-            elsif (hard_int_flag = '1') then          -- TODO, in fact, we need consider of MEM/IF conflict here
-                ifid_instruc <= INT_op & "0000000" & "1000";   -- 8 is for keyboard interrupt
                 pc <= pc_real;
             else
                 ifid_instruc <= ifid_instruc_mem;
@@ -426,6 +428,7 @@ begin
         ctrl_insert_bubble   => ctrl_insert_bubble,
 
         -- hard keyboard interrupt
+        hard_int_flag        => hard_int_flag,
         ps2_hold_key_value   => ps2_hold_key_value,
 
         -- branch signal
@@ -433,6 +436,7 @@ begin
 
         -- current id instruction, output for control unit
         id_instruc           => id_instruc,
+
 
         -- ID/EX
         idex_instruc         => idex_instruc,
@@ -603,11 +607,12 @@ begin
             ram2_write_addr         => ram2_write_addr,
             ram2_write_data         => ram2_write_data,
 
-            seri_wrn_t              => seri_wrn_t,
-            seri_rdn_t              => seri_rdn_t,
             seri1_read_enable       => seri1_read_enable,
             seri1_write_enable      => seri1_write_enable,
             seri1_ctrl_read_en      => seri1_ctrl_read_en,
+
+            -- hard int address
+            hardint_keyboard_addr   => hardint_keyboard_addr,
 
             --MEM/WB pipeline storage
             mewb_instruc            => mewb_instruc,
@@ -647,6 +652,7 @@ begin
 
             boot_finish            => boot_finish,
             hard_int_flag          => hard_int_flag,
+            hard_int_insert_bubble => hard_int_insert_bubble,
 
             -- Control Unit output
             ctrl_mux_reg_a         => ctrl_mux_reg_a,
@@ -655,6 +661,9 @@ begin
             ctrl_insert_bubble     => ctrl_insert_bubble
     );
 
+
+    seri_wrn <= seri_wrn_t;
+    seri_rdn <= seri_rdn_t;
 
     dyp1 <= "1111111";
 

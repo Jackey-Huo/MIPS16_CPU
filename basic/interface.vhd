@@ -112,6 +112,7 @@ package interface is
             ctrl_insert_bubble              : in std_logic;
 
             -- hard keyboard interrupt
+            hard_int_flag                   : in std_logic;
             ps2_hold_key_value              : in std_logic_vector (15 downto 0);
 
             -- IF/ID pipeline storage
@@ -208,14 +209,12 @@ package interface is
             ram2_read_addr, ram2_write_addr : out std_logic_vector (17 downto 0) := zero18;
             ram2_write_data                 : out std_logic_vector (15 downto 0) := zero16;
 
-            seri_wrn_t, seri_rdn_t          : out std_logic                      := '0';
             seri1_read_enable               : out std_logic                      := '0';
             seri1_write_enable              : out std_logic                      := '0';
-            seri1_write_enable_real         : out std_logic                      := '0';
             seri1_ctrl_read_en              : out std_logic                      := '0';
 
             -- hard int address
-            -- hardint_keyboard_addr           : in std_logic_vector (15 downto 0);
+            hardint_keyboard_addr           : in std_logic_vector (15 downto 0);
 
             --MEM/WB pipeline storage
             mewb_instruc                    : out std_logic_vector (15 downto 0) := zero16;
@@ -259,6 +258,7 @@ package interface is
 
             -- hard int signal
             hard_int_flag              : in std_logic;
+            hard_int_insert_bubble     : out std_logic;
 
             -- Control Unit output
             ctrl_mux_reg_a             : out std_logic_vector (2 downto 0) := "000";

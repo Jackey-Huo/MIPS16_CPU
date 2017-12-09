@@ -24,6 +24,7 @@ entity ID is
         ctrl_insert_bubble              : in std_logic;
 
         -- hard keyboard interrupt
+        hard_int_flag                   : in std_logic;
         ps2_hold_key_value              : in std_logic_vector (15 downto 0);
 
         -- IF/ID pipeline storage

@@ -71,10 +71,8 @@ entity MEM is
         ram2_read_addr, ram2_write_addr : out std_logic_vector (17 downto 0) := zero18;
         ram2_write_data                 : out std_logic_vector (15 downto 0) := zero16;
 
-        seri_wrn_t, seri_rdn_t          : out std_logic                      := '0';
         seri1_read_enable               : out std_logic                      := '0';
         seri1_write_enable              : out std_logic                      := '0';
-        seri1_write_enable_real         : out std_logic                      := '0';
         seri1_ctrl_read_en              : out std_logic                      := '0';
 
         -- hard int address

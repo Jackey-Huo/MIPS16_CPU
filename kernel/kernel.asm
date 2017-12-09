@@ -8,6 +8,22 @@ NOP
 
 B START
 NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+NOP
+
 
 ; 中断处理程序
 DELINT:   
