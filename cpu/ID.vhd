@@ -94,6 +94,18 @@ begin
                         idex_reg_b_data <= sign_extend4(ifid_instruc(3 downto 0));
                         -- write back register index
                         idex_reg_wb <= "0" & ifid_instruc(7 downto 5);
+                    when ADDSP3_op =>
+                        idex_reg_a_data <= SP;
+                        idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
+                        idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                    when MOVE_op =>
+                        reg_decode(idex_reg_a_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                        idex_reg_b_data <= zero16;
+                        idex_reg_wb <= "0" & ifid_instruc(10 downto 8);
+                    when CMPI_op =>
+                        reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                        idex_reg_b_data <= sign_extend8(ifid_instruc(7 downto 0));
+                        idex_reg_wb <= T_index;
                     when INT_op =>
                         if (ifid_instruc(3 downto 0) = "1000") then   -- if it's keyboard hardware interrupt
                             id_pc_branch <= '1';
@@ -139,6 +151,10 @@ begin
                                 reg_decode(idex_reg_a_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
                                 reg_decode(idex_reg_b_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
                                 idex_reg_wb <= "0" & ifid_instruc(7 downto 5);
+                            when EX_SLTU_sf_op =>
+                                reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                reg_decode(idex_reg_b_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
+                                idex_reg_wb <= T_index;
                             when EX_CMP_sf_op =>
                                 reg_decode(idex_reg_a_data, "0"&ifid_instruc(10 downto 8), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);
                                 reg_decode(idex_reg_b_data, "0"&ifid_instruc(7 downto 5), r0, r1, r2, r3, r4, r5, r6, r7, SP, IH);

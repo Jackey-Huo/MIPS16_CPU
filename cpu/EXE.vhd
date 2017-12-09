@@ -79,7 +79,7 @@ begin
                 exme_instruc <= idex_instruc;
             end if;
             case ex_instruc(15 downto 11) is
-                when ADDIU_op | ADDIU3_op | LW_op | LW_SP_op | SW_op | SW_SP_op =>
+                when ADDIU_op | ADDIU3_op | LW_op | LW_SP_op | SW_op | SW_SP_op | MOVE_op |ADDSP3_op =>
                     ex_reg_a_data <= idex_reg_a_data_real;
                     ex_reg_b_data <= idex_reg_b_data_real;
                     ex_alu_op <= alu_add;
@@ -98,6 +98,11 @@ begin
                         when others =>
                             ex_alu_op <= alu_nop;
                     end case;
+                when CMPI_op =>
+                    ex_reg_a_data <= idex_reg_a_data_real;
+                    ex_reg_b_data <= idex_reg_b_data_real;
+                    ex_alu_op <= alu_cmp;
+                    exme_reg_wb <= idex_reg_wb;
                 when LI_op =>
                     ex_alu_op <= alu_nop;
                     exme_reg_wb <= idex_reg_wb;
@@ -149,6 +154,11 @@ begin
                             ex_reg_a_data <= idex_reg_a_data_real;
                             ex_reg_b_data <= idex_reg_b_data_real;
                             ex_alu_op <= alu_srl;
+                            exme_reg_wb <= idex_reg_wb;
+                        when EX_SLTU_sf_op =>
+                            ex_reg_a_data <= idex_reg_a_data_real;
+                            ex_reg_b_data <= idex_reg_b_data_real;
+                            ex_alu_op <= alu_less;
                             exme_reg_wb <= idex_reg_wb;
                         when EX_CMP_sf_op =>
                             ex_reg_a_data <= idex_reg_a_data_real;
