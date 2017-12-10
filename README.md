@@ -34,13 +34,13 @@ ps2键盘相关代码在keyboard/下
 
 ## 贡献
 
-感谢[@AtlantixJJ](https://github.com/AtlantixJJ),这家伙完成了vga，ps2, flash自启动和从flash中加载PPT并显示
-（是的！几乎所有的扩展); 另外感谢[@ZHANGChongzhiu](https://github.com/ZHANGChongzhiu)将我们从繁重的报告中
+感谢[@AtlantixJJ](https://github.com/AtlantixJJ), 这家伙完成了vga，ps2, flash自启动和从flash中加载PPT并显示
+（是的！几乎所有的扩展); 另外感谢[@ZHANGChongzhiu](https://github.com/ZHANGChongzhiu), 将我们从繁重的报告中
 解救出来; 最后！感谢伟大的我自己，在充分的享受了写码5分钟编译半小时的快感后, 写完了“浩如烟海”的cpu主逻辑，
-还极富创造性的加了两个蹩脚的中断。并且,在经历了这一切之后我们都还活着! 真是感谢上帝!
+还极富创造性的加了两个蹩脚的中断。并且, 在经历了这一切之后我们都还活着! 真是感谢上帝!
 
 祝学弟学妹们cpu都跑的飞快，扩展6的飞起，游戏直逼吃鸡, 组队遇上美女，老学姐就只能帮你们到这里啦:D。
 
-![奋战三星期，造台计算机](image/奋战三星期造台计算机.png)
+![奋战三星期，造台计算机](https://raw.githubusercontent.com/Jackey-Huo/cpu/master/image/%E5%A5%8B%E6%88%98%E4%B8%89%E6%98%9F%E6%9C%9F%E9%80%A0%E5%8F%B0%E8%AE%A1%E7%AE%97%E6%9C%BA.png)
 
 
