@@ -151,6 +151,7 @@ begin
                             else
                                 ppt_addr_index := "00" & x"00000";
                             end if;
+                            start_addr <= ppt_addr_index;
                         --elsif ppt_slide_index = "00001" then
                         --    digit <= not "1001111";
                         --    start_addr <= "00" & x"01000";
@@ -161,7 +162,7 @@ begin
                             if event_clk = "0001" then -- forward
                                 ppt_slide_index <= ppt_slide_index + 1;
                                 ppt_addr_index := ppt_addr_index + x"40000";
-                            elsif event_clk = "0010" then -- backward
+                            else-- backward
                                 ppt_slide_index <= ppt_slide_index - 1;
                                 ppt_addr_index := ppt_addr_index - x"40000";
                             end if;

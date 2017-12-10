@@ -63,7 +63,7 @@ elif sery == True:
     out_shape = (400, 630)
 
 
-    for i in range(1, N+1, 1):
+    for i in range(2, 5, 1):
         namea = in_name_format % i
         nameb = out_name_format % i
         img = imread (namea)
