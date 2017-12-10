@@ -50,6 +50,7 @@ type refresh_state_machine is (idle, refresh, write_ram, done);
 
 shared variable state : refresh_state_machine := idle;
 shared variable intern_addr : std_logic_vector (17 downto 0) := zero18;
+shared variable intern_data : std_logic_vector (15 downto 0) := zero16;
 begin
 
     process(rst, click)
@@ -61,17 +62,20 @@ begin
         elsif click = '0' then
             state := refresh;
             intern_addr := zero18;
+            intern_data := x"0000";
         elsif clk'event and clk = '1' then
             if state = refresh then
                 -- get data
-                data <= x"0007";
+                
                 -- set addr
+                data <= intern_data;
                 addr <= intern_addr;
-                ram2_write_enable <= '1';
+                ram2_write_enable <= '0';
                 state := write_ram;
             elsif state = write_ram then
-                ram2_write_enable <= '0';
+                ram2_write_enable <= '1';
                 intern_addr := intern_addr + 1;
+                intern_data := intern_data + 1;
                 if intern_addr > "111111111111111110" then
                     ram2_write_enable <= '1';
                     state := idle;
