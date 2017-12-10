@@ -41,7 +41,6 @@ DELINT:
 	SW R6 R3 0x0003
 	SW R6 R4 0x0004
 	SW R6 R5 0x0005
-	SW R6 R7 0x0007
     LW_SP R6 0x0000
 
     ; ½ûÖ¹Ò»ÇÐÓ²ÖÐ¶Ï

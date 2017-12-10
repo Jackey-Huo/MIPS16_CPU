@@ -256,8 +256,8 @@ package body helper is
                 when others     => temp(5 downto 0) := "111111";
             end case;
         else
-            -- The ascii of a - 1 : 96
-            temp := temp + x"0060";
+            -- The ascii of a ： 97
+            temp := temp + x"0061";
         end if;
 
         if temp(5 downto 0) = "111111" then
@@ -269,8 +269,8 @@ package body helper is
                 when others     => temp(5 downto 0) := "111111";
             end case;
         else
-            -- The ascii of 0 -1 : 47
-            temp := temp + x"002F";
+            -- The ascii of 0 : 48
+            temp := temp + x"0030";
         end if;
 			
  
