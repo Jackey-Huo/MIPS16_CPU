@@ -613,6 +613,7 @@ begin
 
         -- hard int address
         hardint_keyboard_addr   => hardint_keyboard_addr,
+        ps2_hold_key_value      => ps2_hold_key_value,
 
         --MEM/WB pipeline storage
         mewb_instruc            => mewb_instruc,

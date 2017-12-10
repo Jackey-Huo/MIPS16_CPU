@@ -216,6 +216,7 @@ package interface is
 
             -- hard int address
             hardint_keyboard_addr           : in std_logic_vector (15 downto 0);
+            ps2_hold_key_value              : in std_logic_vector (15 downto 0);
 
             --MEM/WB pipeline storage
             mewb_instruc                    : out std_logic_vector (15 downto 0) := zero16;
