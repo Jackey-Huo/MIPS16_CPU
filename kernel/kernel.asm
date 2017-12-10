@@ -2,8 +2,8 @@ ADDSP3 R0 0x0000
 ADDSP3 R0 0x0000
 NOP
 
-;保存用户程序寄存器的地址 
-;0xBF10  0xBF11 BF12 0xBF13 BF14 0xBF15
+; 保存用户程序寄存器的地址 
+; 0xBF10  0xBF11 BF12 0xBF13 BF14 0xBF15
 ; R0    R1   R2   R3   R4   R5  
 
 B START
@@ -88,12 +88,72 @@ DELINT:
 	NOP
 
 	; PPT change	
-	LI R0 0x08
+	LI R0 0x38
 	CMP R0 R1
-	BTEQZ HARD_INTER
+	BTNEZ HARD_INTER_DONE
 	NOP	
 
-	
+; HARD INTERRUPT BEGIN
+HARD_INTER:
+	LI R3 0xBF
+	SLL R3 R3 0x0
+	LI R4 0xF0
+	OR R3 R4
+	; R3=0xBFF0
+	LW R3 R4 0x0
+
+	MFPC R7 
+	ADDIU R7 0x0003  
+	NOP
+	B TESTW 	
+	NOP
+	LI R6 0x00BF 
+	SLL R6 R6 0x0000 ;R6=0xBF00 
+	SW R6 R4 0x0000
+	NOP
+
+	; R4 is current key (ascii)
+	LI R3 0xEF
+	SLL R3 R3 0x0
+	LI R5 0xFF
+	OR R3 R5
+	; R3=EFFF
+	LW R3 R5 0x0
+	; R5=current top index
+	SW R5 R4 0x0
+	ADDIU R5 0x01
+	SW R3 R5 0x0
+	; Save increased top index
+
+	; 03 is for enter
+	LI R5 0x03
+	CMP R5 R4
+	BTEQZ FORWARD_PPT
+	NOP
+	; 01 is for backspace
+	LI R5 0x01
+	CMP R5 R4
+	BTEQZ BACKWARD_PPT
+
+FORWARD_PPT:
+	MFIH R5
+	LI R6 0x01
+	OR R5 R6
+	MTIH R5
+	B HARD_INTER_DONE
+	NOP
+
+BACKWARD_PPT:
+	MFIH R5
+	LI R6 0x02
+	OR R5 R6
+	MTIH R5
+	B HARD_INTER_DONE
+	NOP
+
+HARD_INTER_DONE:
+
+
 	;提示终端，中断处理结束
 	LI R3 0x0f
 	MFPC R7 
@@ -113,8 +173,7 @@ DELINT:
 	MFIH R3
 	LI R0 0x00c0
 	SLL R0 R0 0x000
-	OR R3 R0
-	MTIH R3
+	MTIH R0
 	
     NOP
 
@@ -139,16 +198,6 @@ DELINT:
 
 	JR R6
 	NOP
-
-HARD_INTER:
-	LI R3 0xBF
-	SLL R3 R3 0x0
-	LI R4 F0
-	OR R3 R4
-	; R3=0xBFF0
-	LW R3 R4 0x0
-	BEQZ 
-
 
 ;init  0x8251
 START:
@@ -215,7 +264,12 @@ START:
 	SW R6 R0 0x0000
 	NOP
 	
-
+	LI R3 0xEF
+	SLL R3 R3 0x0
+	LI R4 0xFF
+	OR R3 R4
+	LI R2 0x0
+	SW R3 R2 0x0
 	
 
 	
@@ -606,7 +660,7 @@ UASM:
 	OR R2 R5
 
 	
-		;循环发出	
+	; 循环发出	
 	
 UASMLOOP:		
 	

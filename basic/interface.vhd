@@ -30,7 +30,7 @@ package interface is
         port(
             not_boot            : in std_logic;
             clk                 : in  std_logic;
-            event_clk           : in std_logic;
+            event_clk           : in std_logic_vector (3 downto 0);
             disp_mode           : in std_logic_vector (2 downto 0);
             rst                 : in  std_logic;
 

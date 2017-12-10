@@ -59,11 +59,12 @@ signal rt, gt, bt : std_logic_vector (2 downto 0) := "000";
 shared variable ascii_code : integer := 0;
 
 constant line_char_num : integer := 40;
-
+constant txt_begin_x		: integer := 100;
+constant txt_begin_y		: integer := 200;
 begin
 	color <= rt & bt & gt;
-	char_x <= x / 8;
-	char_y <= y / 8;
+	char_x <= (x - txt_begin_x) / 16;
+	char_y <= (y - txt_begin_y) / 16;
 	--vec_y <= conv_std_logic_vector(char_y, 8);
 	
 	process(vga_clk, rst)
@@ -72,12 +73,12 @@ begin
 		if rst = '0' or x < 0 then
 			dx := 0;
 			cache_wea <= '0';
-		elsif vga_clk'event and vga_clk = '1' then
+		elsif vga_clk'event and vga_clk = '1' and char_y < line_char_num and y - char_y * 16 < 8 then
 			cache_wea <= '1';
 			cache_read_addr <= conv_std_logic_vector(char_x + char_y * line_char_num, 13);
 			ascii_code := conv_integer(cache_read_data);
-			fontROMAddr <= conv_std_logic_vector(ascii_code * 8 + y - char_y * 8, 11);
-			dx := 7 - (x - char_x * 8);
+			fontROMAddr <= conv_std_logic_vector(ascii_code * 8 + y - char_y * 16, 11);
+			dx := 7 - (x - char_x * 16);
 
 			if fontROMData(dx) = '1' then
 				rt <= "000";

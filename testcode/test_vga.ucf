@@ -110,3 +110,21 @@ NET "data_ram2[12]" LOC = P11;
 NET "data_ram2[13]" LOC = P10;
 NET "data_ram2[14]" LOC = N12;
 NET "data_ram2[15]" LOC = N11;
+
+# switch / sw
+NET "instruct[0]" LOC = T7;
+NET "instruct[1]" LOC = R7;
+NET "instruct[2]" LOC = U8;
+NET "instruct[3]" LOC = V4;
+NET "instruct[4]" LOC = V3;
+NET "instruct[5]" LOC = V2;
+NET "instruct[6]" LOC = U1;
+NET "instruct[7]" LOC = R4;
+NET "instruct[8]" LOC = R1;
+NET "instruct[9]" LOC = N2;
+NET "instruct[10]" LOC = N1;
+NET "instruct[11]" LOC = M1;
+NET "instruct[12]" LOC = K7;
+NET "instruct[13]" LOC = K2;
+NET "instruct[14]" LOC = J7;
+NET "instruct[15]" LOC = J6;

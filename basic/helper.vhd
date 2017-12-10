@@ -261,19 +261,19 @@ package body helper is
         end if;
 
         if temp(5 downto 0) = "111111" then
-			temp := temp + x"0000";
+			case key_code is
+                when "01100110" => temp(5 downto 0) := "000001" ; -- BKSP
+                when "01110110" => temp(5 downto 0) := "000010" ; -- ESC
+                when "01011010" => temp(5 downto 0) := "000011" ; -- ENTER
+                when "00101001" => temp(5 downto 0) := "000100" ; -- SPACE
+                when others     => temp(5 downto 0) := "111111";
+            end case;
         else
             -- The ascii of 0 -1 : 47
             temp := temp + x"002F";
         end if;
 			
-        --"100100" when "01001110" , -- -
-        --"100101" when "01010101" , -- =
-        --"100110" when "01110110" , -- ESC
-        --"100111" when "01100110" , -- BKSP
-        --"011110" when "01011010" , -- ENTER
-        --"000000" when "00101001" , -- SPACE
-        --"111111" when others;
+ 
         return temp;
     end get_ascii_keycode;
 

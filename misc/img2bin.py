@@ -39,7 +39,7 @@ def serialize(f, img, start=0x001000):
 #nameb = "C:\\Users\\atlantix\\Desktop\\img.bmp"
 #nametxt = "C:\\Users\\atlantix\\Desktop\\flash_win.txt"
 
-sery = False
+sery = True
 
 
 if sery == False:
@@ -55,10 +55,10 @@ if sery == False:
     imwrite(nameb, recon(img8))
 
 elif sery == True:
-    in_name_format = "C:\\Users\\atlantix\\Desktop\\410-cpu_presentation\\1 (%d).PNG"
-    out_name_format = "C:\\Users\\atlantix\\Desktop\\410-cpu_presentation\\1 (%d).bmp"
+    in_name_format = "C:\\Users\\atlantix\\Desktop\\410_v1.5\\幻灯片%d.PNG"
+    out_name_format = "C:\\Users\\atlantix\\Desktop\\410_v1.5\\幻灯片%d.bmp"
     flash_name = "C:\\Users\\atlantix\\Desktop\\flash.txt"
-    N = 17
+    N = 18
     f = open(flash_name, "w")
     out_shape = (400, 630)
 
@@ -71,8 +71,5 @@ elif sery == True:
         imgr = (imgr - imgr.min()) / (imgr.max() - imgr.min()) * 255
         img8 = quantize(imgr)
         imwrite(nameb, recon(img8))
-        if i == 1:
-            serialize(f, img8, start=0x001000)
-        else:
-            serialize(f, img8, start=(0x040000*(i-1)))
+        serialize(f, img8, start=(0x040000*i))
     f.close()
