@@ -42,6 +42,10 @@ entity vga_terminal is
 		rst				: in std_logic;
 		x, y			: in integer;
 
+		cache_wea		: out std_logic;
+		cache_read_addr	: out std_logic_vector (12 downto 0);
+		cache_read_data	: in std_logic_vector (7 downto 0);
+
 		fontROMAddr 	: out std_logic_vector (10 downto 0);
 		fontROMData 	: in std_logic_vector (7 downto 0)
     );
@@ -49,36 +53,45 @@ end vga_terminal;
 
 architecture Behavioral of vga_terminal is
 
-component VGARAM_ctrl IS
-  PORT (
-    clka : IN STD_LOGIC;
-    wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-    addra : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
-    dina : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-    douta : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
-  );
-END component;
-
 signal char_x, char_y : integer := 0;
+signal vec_y			: std_logic_vector (7 downto 0);
 signal rt, gt, bt : std_logic_vector (2 downto 0) := "000";
 shared variable ascii_code : integer := 0;
 
+constant line_char_num : integer := 40;
+constant txt_begin_x		: integer := 100;
+constant txt_begin_y		: integer := 200;
 begin
 	color <= rt & bt & gt;
-	occupy_flag <= '1' when (rt /= "000" or gt /= "000" or bt /="000") else '0';
-	char_x <= x / 8;
+	char_x <= (x - txt_begin_x) / 16;
+	char_y <= (y - txt_begin_y) / 16;
+	--vec_y <= conv_std_logic_vector(char_y, 8);
 	
 	process(vga_clk, rst)
-		variable dx : integer := 0;
+		variable dx : integer range -10 to 10 := 0 ;
 	begin
 		if rst = '0' or x < 0 then
 			dx := 0;
-		elsif vga_clk'event and vga_clk = '1' then
-			fontROMAddr <= conv_std_logic_vector(ascii_code * 8 + y mod 8, 11);
-			dx := 7 - x mod 8;
-			rt <= (others => fontROMData(dx));
-			gt <= (others => fontROMData(dx));
-			bt <= (others => fontROMData(dx));
+			cache_wea <= '0';
+		elsif vga_clk'event and vga_clk = '1' and char_y < line_char_num and y - char_y * 16 < 8 then
+			cache_wea <= '1';
+			cache_read_addr <= conv_std_logic_vector(char_x + char_y * line_char_num, 13);
+			ascii_code := conv_integer(cache_read_data);
+			fontROMAddr <= conv_std_logic_vector(ascii_code * 8 + y - char_y * 16, 11);
+			dx := 7 - (x - char_x * 16);
+
+			if fontROMData(dx) = '1' then
+				rt <= "000";
+				gt <= "000";
+				bt <= "000";
+				occupy_flag <= '1';
+			else
+				rt <= "111";
+				gt <= "111";
+				bt <= "111";
+				occupy_flag <= '0';
+			end if;
+
 		end if;
 	end process;
 

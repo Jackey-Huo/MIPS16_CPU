@@ -1,0 +1,6 @@
+# 1
+
+LI R4 BF
+SLL R4 R4 00
+JR R7
+NOp

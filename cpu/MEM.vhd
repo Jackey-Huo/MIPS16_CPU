@@ -77,6 +77,7 @@ entity MEM is
 
         -- hard int address
         hardint_keyboard_addr           : in std_logic_vector (15 downto 0);
+        ps2_hold_key_value              : in std_logic_vector (15 downto 0);
 
         --MEM/WB pipeline storage
         mewb_instruc                    : out std_logic_vector (15 downto 0) := zero16;
@@ -172,7 +173,7 @@ begin
                     case exme_instruc(3 downto 0) is
                         when "1000" =>                 -- hard interrupt
                             me_write_addr <= "00" & hardint_keyboard_addr;
-                            me_write_data <= exme_bypass;
+                            me_write_data <= ps2_hold_key_value;
                             me_read_enable <= '0';
                             me_write_enable <= '1';
                         when others =>

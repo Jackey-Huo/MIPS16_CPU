@@ -35,9 +35,10 @@ use BASIC.HELPER.ALL;
 entity flash_manager is
     port (
         not_boot            : in std_logic;
-        clk                 : in  std_logic;
-        event_clk           : in std_logic;
-        rst                 : in  std_logic;
+        clk                 : in std_logic;
+        event_clk           : in std_logic_vector (3 downto 0);
+        disp_mode           : in std_logic_vector (2 downto 0);
+        rst                 : in std_logic;
         
         load_finish_flag    : out std_logic;
         boot_finish_flag    : out std_logic := '0';
@@ -92,7 +93,6 @@ type flash_manager_state_machine is (not_booted, booting, booted, idle, loading,
 
 signal ppt_slide_index : std_logic_vector (4 downto 0) := "00000";
 
-signal state_clk : std_logic := '0';
 signal state : flash_manager_state_machine := not_booted;
 signal manager_state : flash_manager_state_machine := not_booted;
 signal start_addr : std_logic_vector (21 downto 0) := zero22;
@@ -106,25 +106,12 @@ signal mem_write_enable_real, mem_read_enable_real : std_logic := '0';
 signal load_done    : std_logic := '0';
 
 begin
-    state_clk <= event_clk;
-
-    process(state, ppt_slide_index)
-    begin
---        case state is
---            when not_booted => digit <= not "0000001"; -- 0
---            when booting    => digit <= not "1001111"; -- 1
---            when idle       => digit <= not "0010010"; -- 2
---            when loading    => digit <= not "0000110"; -- 3
---            when loaded     => digit <= not "0000110"; -- 4
---            when others     => digit <=     "1111111";
---        end case;
-    end process;
-
-    -- first test in click
-    process (state, clk, state_clk, rst)
+    process (state, clk, event_clk, rst)
         variable ppt_addr_index : std_logic_vector (21 downto 0) := zero22;
+        variable bg_loaded      : std_logic := '0';
     begin
         if rst = '0' then
+            bg_loaded := '0';
             ppt_addr_index := zero22;
             ppt_slide_index <= "00000";
             boot_finish_flag <= '0';
@@ -147,35 +134,70 @@ begin
             elsif state = booted then
                 state <= idle;
             elsif state = idle then
-                if state_clk = '0' then
-                    -- loading image
-                    load_finish_flag <= '0';
+                if disp_mode = "001" then
+                    -- forward PPT
+                    if event_clk /= "0000" then
+                        -- loading image
+                        load_finish_flag <= '0';
 
-                    ram_choose <= '1'; --chose ram2
-                    load_len <= "11" & x"FFFF"; -- load on the whole ram2
+                        ram_choose <= '1'; --chose ram2
+                        -- "11" & "d860"
+                        load_len <= "11" & x"FFFF"; -- load on the whole ram2
 
-                    if ppt_slide_index = "00000" then
-                        digit <= not "0000001";
-                        ppt_addr_index := zero22;
-                        ppt_slide_index <= ppt_slide_index + 1;
-                    elsif ppt_slide_index = "00001" then
-                        digit <= not "1001111";
-                        start_addr <= "00" & x"01000";
-                        ppt_slide_index <= ppt_slide_index + 1;
-                    elsif ppt_slide_index < "11111" then
-                        digit (4 downto 0) <= ppt_slide_index;
-                        digit (6 downto 5) <= "00";
-                        ppt_slide_index <= ppt_slide_index + 1;
-                        ppt_addr_index := ppt_addr_index + x"40000";
-                        start_addr <= ppt_addr_index;
+                        if ppt_slide_index = "00000" then
+                            digit <= not "0000001";
+                            ppt_addr_index := "00" & x"00000";
+                            ppt_slide_index <= ppt_slide_index + 1;
+                        elsif ppt_slide_index = "00001" then
+                            digit (4 downto 0) <= ppt_slide_index;
+                            digit (6 downto 5) <= "00";
+                            if event_clk = "0001" then
+                                ppt_addr_index := "00" & x"40000";
+                                ppt_slide_index <= ppt_slide_index + 1;
+                            elsif event_clk = "0010" then
+                                ppt_addr_index := "00" & x"00000";
+                                ppt_slide_index <= "00000";
+                            end if;
+                            start_addr <= ppt_addr_index;
+                        --elsif ppt_slide_index = "00001" then
+                        --    digit <= not "1001111";
+                        --    start_addr <= "00" & x"01000";
+                        --    ppt_slide_index <= ppt_slide_index + 1;
+                        elsif ppt_slide_index < "11111" then
+                            digit (4 downto 0) <= ppt_slide_index;
+                            digit (6 downto 5) <= "00";
+                            if event_clk = "0001" then -- forward
+                                ppt_slide_index <= ppt_slide_index + 1;
+                                ppt_addr_index := ppt_addr_index + x"40000";
+                            elsif event_clk = "0010" then-- backward
+                                ppt_slide_index <= ppt_slide_index - 1;
+                                ppt_addr_index := ppt_addr_index - x"40000";
+                            end if;
+                            start_addr <= ppt_addr_index;
+                        else
+                            ppt_slide_index <= "00000";
+                            digit <= not "0000001";
+                        end if;
+                        state <= loading;
                     else
-                        ppt_slide_index <= "00000";
-                        digit <= not "0000001";
+                        load_finish_flag <= '1';
+                        boot_finish_flag <= '1';
                     end if;
-                    state <= loading;
-                else
-                    load_finish_flag <= '1';
+                elsif disp_mode = "010" then
+                    
                     boot_finish_flag <= '1';
+                    if bg_loaded = '0' then
+                        bg_loaded := '1';
+                        load_finish_flag <= '0';
+                        start_addr <= "00" & x"01000";
+                        load_len <= "11" & x"FFFF";
+                        state <= loading;      
+                    else   
+                        load_finish_flag <= '1';
+                    end if;
+                else
+                    boot_finish_flag <= '1';
+                    load_finish_flag <= '1';
                 end if;
             elsif state = loading then
                 ram_choose <= '1';

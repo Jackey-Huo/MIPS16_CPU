@@ -40,10 +40,14 @@ entity vga_ctrl_480 is
 		Hs 					: out std_logic; -- line sync
 		Vs 					: out std_logic; -- field sync
 
-		fontROMAddr 		: out std_logic_vector (10 downto 0);
-		fontROMData 		: in std_logic_vector (7 downto 0);
 		-- cache request
 		cache_wea			: out std_logic;
+		cache_read_addr		: out std_logic_vector (12 downto 0);
+		cache_read_data		: in std_logic_vector (7 downto 0);
+
+		fontROMAddr 		: out std_logic_vector (10 downto 0);
+		fontROMData 		: in std_logic_vector (7 downto 0);
+
 		-- ram2 request
 		ram2_read_enable	: out std_logic;
 		read_addr			: out std_logic_vector (17 downto 0);
@@ -110,6 +114,10 @@ component vga_terminal is
 		vga_clk			: in std_logic;
 		rst				: in std_logic;
 		x, y			: in integer;
+		
+		cache_wea			: out std_logic;
+		cache_read_addr	: out std_logic_vector (12 downto 0);
+		cache_read_data	: in std_logic_vector (7 downto 0);
 
 		fontROMAddr 	: out std_logic_vector (10 downto 0);
 		fontROMData 	: in std_logic_vector (7 downto 0)
@@ -170,10 +178,8 @@ signal ocp_image		: std_logic := '0';
 
 signal fontROMAddr1, fontROMAddr2 : std_logic_vector (10 downto 0) := "00000000000";
 begin
-	-- Mux font ROM address access
-	fontROMAddr <= fontROMAddr1 when (x < vga480_div) else fontROMAddr2;
-
-	right_x <= x - vga480_div;
+	-- Mux font ROM address access : 001 for debug
+	fontROMAddr <= fontROMAddr1 when (disp_mode = "000") else fontROMAddr2;
 
 	-- halve the 50M clock
 	vga_clk_producer : process (clk)
@@ -206,7 +212,7 @@ begin
 --		cacheData => cacheData
 --	);
 --
-	cache_wea <= '1';
+
 	vga_disp_image : vga_image_ram2 port map(
 		occupy_flag => ocp_image,
 		color => color_image,
@@ -255,8 +261,11 @@ begin
 		-- in
 		vga_clk =>vga_clk_c,
 		rst => rst,
-		x => right_x,
+		x => x,
 		y => y,
+		cache_wea => cache_wea,
+		cache_read_addr => cache_read_addr,
+		cache_read_data => cache_read_data,
 		fontROMAddr => fontROMAddr2,
 		fontROMData => fontROMData
 	);
@@ -269,18 +278,24 @@ begin
 			G <= "000";
 			B <= "000";
 		else
-			if disp_mode = "000" and ocp_image = '1' then
+			if disp_mode = "001" and ocp_image = '1' then
 				R <= color_image(8 downto 6);
 				G <= color_image(5 downto 3);
 				B <= color_image(2 downto 0);
-			elsif disp_mode = "001" and ocp_verbose = '1' and x < vga480_div then
+			elsif disp_mode = "000" and ocp_verbose = '1' then
 				R <= color_verbose(8 downto 6);
 				G <= color_verbose(5 downto 3);
 				B <= color_verbose(2 downto 0);
-			elsif disp_mode = "010" and ocp_terminal = '1' and x >= vga480_div then
-				R <= color_terminal(8 downto 6);
-				G <= color_terminal(5 downto 3);
-				B <= color_terminal(2 downto 0);
+			elsif disp_mode = "010" then
+				if ocp_terminal = '1' then
+					R <= color_terminal(8 downto 6);
+					G <= color_terminal(5 downto 3);
+					B <= color_terminal(2 downto 0);
+				else
+					R <= color_image(8 downto 6);
+					G <= color_image(5 downto 3);
+					B <= color_image(2 downto 0);
+				end if;
 			else
 				R <= "000";
 				G <= "000";

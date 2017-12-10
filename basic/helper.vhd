@@ -241,39 +241,39 @@ package body helper is
                 --"011011" when "01000001" , -- ,
                 --"011100" when "01001001" , -- .
         end case;
-        if temp(5 downto 0) = "11111" then
+        if temp(5 downto 0) = "111111" then
             case key_code is
-                when "01000101" => temp(5 downto 0) := "110000"; -- 0
-                when "00010110" => temp(5 downto 0) := "110001"; 
-                when "00011110" => temp(5 downto 0) := "110010"; 
-                when "00100110" => temp(5 downto 0) := "110011"; 
-                when "00100101" => temp(5 downto 0) := "110100"; 
-                when "00101110" => temp(5 downto 0) := "110101"; 
-                when "00110110" => temp(5 downto 0) := "110110"; 
-                when "00111101" => temp(5 downto 0) := "110111"; 
-                when "00111110" => temp(5 downto 0) := "111000"; 
-                when "01000110" => temp(5 downto 0) := "111001"; -- 9
+                when "01000101" => temp(5 downto 0) := "000000"; -- 0
+                when "00010110" => temp(5 downto 0) := "000001"; 
+                when "00011110" => temp(5 downto 0) := "000010"; 
+                when "00100110" => temp(5 downto 0) := "000011"; 
+                when "00100101" => temp(5 downto 0) := "000100"; 
+                when "00101110" => temp(5 downto 0) := "000101"; 
+                when "00110110" => temp(5 downto 0) := "000110"; 
+                when "00111101" => temp(5 downto 0) := "000111"; 
+                when "00111110" => temp(5 downto 0) := "001000"; 
+                when "01000110" => temp(5 downto 0) := "001001"; -- 9
                 when others     => temp(5 downto 0) := "111111";
             end case;
         else
-            -- The ascii of a - 1 : 96
-            temp := temp + x"0060";
+            -- The ascii of a ： 97
+            temp := temp + x"0061";
         end if;
-			
-        if temp(5 downto 0) = "11111" then
-			temp := temp + x"0000";
+
+        if temp(5 downto 0) = "111111" then
+			case key_code is
+                when "01100110" => temp(5 downto 0) := "000001" ; -- BKSP
+                when "01110110" => temp(5 downto 0) := "000010" ; -- ESC
+                when "01011010" => temp(5 downto 0) := "000011" ; -- ENTER
+                when "00101001" => temp(5 downto 0) := "000100" ; -- SPACE
+                when others     => temp(5 downto 0) := "111111";
+            end case;
         else
-            -- The ascii of 0 -1 : 47
-            temp := temp + x"002F";
+            -- The ascii of 0 : 48
+            temp := temp + x"0030";
         end if;
 			
-        --"100100" when "01001110" , -- -
-        --"100101" when "01010101" , -- =
-        --"100110" when "01110110" , -- ESC
-        --"100111" when "01100110" , -- BKSP
-        --"011110" when "01011010" , -- ENTER
-        --"000000" when "00101001" , -- SPACE
-        --"111111" when others;
+ 
         return temp;
     end get_ascii_keycode;
 

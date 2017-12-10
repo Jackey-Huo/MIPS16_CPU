@@ -67,7 +67,8 @@ entity test_vga is
 		VGA_B : out std_logic_vector(2 downto 0);
 		
 		-- debug
-		led : out std_logic_vector(15 downto 0)
+		led : out std_logic_vector(15 downto 0);
+        instruct : in std_logic_vector (15 downto 0)
 	);
 
 end test_vga;
@@ -171,7 +172,7 @@ architecture Behavioral of test_vga is
         );
     end component;
 begin
-	disp_mode <= "000";
+	disp_mode <= instruct(5 downto 3);
 	
 	ctrl_color <= "000000111";
     ------------- Memory and Serial Control Unit, pure combinational logic
@@ -224,9 +225,9 @@ begin
         click => click,
         clk => clk,
         rst => rst,
-        addr => ram2_write_addr,
-        data => ram2_write_data,
-        ram2_write_enable => ram2_write_enable
+        addr                => me_write_addr,
+        data                => me_write_data,
+        ram2_write_enable   => me_write_enable
     );
 
     ------------- VGA control : show value of Registers, PC, Memory operation address, etc ----
@@ -238,7 +239,9 @@ begin
         Vs => Vs,
         cache_wea => cache_wea,
         ram2_read_enable => ram2_read_enable,
-        cache_WE => cache_WE,
+        cache_WE => disp_en,
+        cache_write_addr    => me_write_addr (12 downto 0),
+        cache_write_data	=> me_write_data (7 downto 0),
         disp_addr => ram2_read_addr,
         disp_data => ram2_readout,
         r0=>r0,
