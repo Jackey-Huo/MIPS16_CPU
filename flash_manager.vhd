@@ -141,15 +141,22 @@ begin
                         load_finish_flag <= '0';
 
                         ram_choose <= '1'; --chose ram2
+                        -- "11" & "d860"
                         load_len <= "11" & x"FFFF"; -- load on the whole ram2
 
                         if ppt_slide_index = "00000" then
                             digit <= not "0000001";
+                            ppt_addr_index := "00" & x"00000";
+                            ppt_slide_index <= ppt_slide_index + 1;
+                        elsif ppt_slide_index = "00001" then
+                            digit (4 downto 0) <= ppt_slide_index;
+                            digit (6 downto 5) <= "00";
                             if event_clk = "0001" then
                                 ppt_addr_index := "00" & x"40000";
                                 ppt_slide_index <= ppt_slide_index + 1;
-                            else
+                            elsif event_clk = "0010" then
                                 ppt_addr_index := "00" & x"00000";
+                                ppt_slide_index <= "00000";
                             end if;
                             start_addr <= ppt_addr_index;
                         --elsif ppt_slide_index = "00001" then
@@ -162,7 +169,7 @@ begin
                             if event_clk = "0001" then -- forward
                                 ppt_slide_index <= ppt_slide_index + 1;
                                 ppt_addr_index := ppt_addr_index + x"40000";
-                            else-- backward
+                            elsif event_clk = "0010" then-- backward
                                 ppt_slide_index <= ppt_slide_index - 1;
                                 ppt_addr_index := ppt_addr_index - x"40000";
                             end if;

@@ -210,7 +210,7 @@ architecture Behavioral of cpu is
     signal hard_int_flag          : std_logic := '0';                  -- if there is INT op
     signal hard_int_insert_bubble : std_logic := '0';
     -- absolute interrupt headle address, changed by the kernel development
-    constant delint_addr   : std_logic_vector (15 downto 0) := x"0006";
+    constant delint_addr   : std_logic_vector (15 downto 0) := x"000F"; --x"0006";
     -- memory address containing keyboard ascii code when hardware interrupt occur
     constant hardint_keyboard_addr    : std_logic_vector (15 downto 0) := x"BFF0";
 

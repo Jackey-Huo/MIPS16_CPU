@@ -38,8 +38,6 @@ NOP
 JR R7
 NOP
 
-
-
 # 1
 LI R4 E0
 SLL R4 R4 0
