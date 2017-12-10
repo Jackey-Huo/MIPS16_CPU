@@ -241,7 +241,7 @@ begin
     flash_file_manager : flash_manager port map(
         not_boot            => boot_mode,
         clk                 => clk,
-        event_clk           => click,
+        event_clk           => IH(3 downto 0),
         disp_mode           => disp_mode,
         rst                 => rst,
 

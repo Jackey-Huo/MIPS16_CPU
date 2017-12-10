@@ -59,11 +59,12 @@ signal rt, gt, bt : std_logic_vector (2 downto 0) := "000";
 shared variable ascii_code : integer := 0;
 
 constant line_char_num : integer := 40;
-
+constant txt_begin_x		: integer := 100;
+constant txt_begin_y		: integer := 200;
 begin
 	color <= rt & bt & gt;
-	char_x <= x / 16;
-	char_y <= y / 16;
+	char_x <= (x - txt_begin_x) / 16;
+	char_y <= (y - txt_begin_y) / 16;
 	--vec_y <= conv_std_logic_vector(char_y, 8);
 	
 	process(vga_clk, rst)
