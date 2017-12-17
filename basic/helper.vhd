@@ -172,14 +172,16 @@ package helper is
                         addr: in std_logic_vector(3 downto 0);
                         signal r0, r1, r2, r3, r4, r5, r6, r7, SP, IH: in std_logic_vector(15 downto 0));
 
-    procedure conflict_detect( variable ctrl_fake_nop                 : out boolean;
-                             signal ctrl_mux_reg_a, ctrl_mux_reg_b    : out std_logic_vector (2 downto 0);
-                             signal ctrl_mux_bypass                   : out std_logic_vector (2 downto 0);
-                             ctrl_rd_reg_a, ctrl_rd_reg_b             : in std_logic_vector (3 downto 0);
-                             ctrl_rd_bypass                           : in std_logic_vector (3 downto 0);
-                             ctrl_wb_reg1, ctrl_wb_reg2, ctrl_wb_reg3 : in std_logic_vector (3 downto 0);
-                             ctrl_instruc_0, ctrl_instruc_1           : in std_logic_vector (15 downto 0);
-                             ctrl_instruc_2, ctrl_instruc_3           : in std_logic_vector (15 downto 0));
+    procedure conflict_detect( 
+        variable ctrl_fake_nop                 : out boolean;
+        signal ctrl_mux_reg_a, ctrl_mux_reg_b    : out std_logic_vector (2 downto 0);
+        signal ctrl_mux_bypass                   : out std_logic_vector (2 downto 0);
+        ctrl_rd_reg_a, ctrl_rd_reg_b             : in std_logic_vector (3 downto 0);
+        ctrl_rd_bypass                           : in std_logic_vector (3 downto 0);
+        ctrl_wb_reg1, ctrl_wb_reg2, ctrl_wb_reg3 : in std_logic_vector (3 downto 0);
+        ctrl_instruc_0, ctrl_instruc_1           : in std_logic_vector (15 downto 0);
+        ctrl_instruc_2, ctrl_instruc_3           : in std_logic_vector (15 downto 0)
+    );
 
     function sign_extend11(imm : std_logic_vector(10 downto 0))
                             return std_logic_vector;
